@@ -1,6 +1,6 @@
 /**
- * 오늘 날짜와 입력으로 문장 덱에서 카드 한 장을 고릅니다.
- * 같은 날, 같은 입력, 같은 순번이면 항상 같은 문장이 나옵니다.
+ * 오늘 날짜와 고른 기분으로 문장 덱에서 카드 한 장을 고릅니다.
+ * 같은 날, 같은 기분, 같은 순번이면 항상 같은 문장이 나옵니다.
  * 덱은 하루에 한 번 섞어 두고 차례로 넘기므로, 한 바퀴를 도는 동안은 문장도 그림도 겹치지 않습니다.
  */
 (function init_picker() {
@@ -8,7 +8,7 @@
 
   /**
    * 문자열을 항상 같은 숫자로 바꿉니다.
-   * 날짜와 입력을 주사위 눈금처럼 고정하는 역할입니다.
+   * 날짜와 기분을 주사위 눈금처럼 고정하는 역할입니다.
    */
   function hash_string(value) {
     try {
@@ -124,24 +124,6 @@
   };
 
   /**
-   * 나이 숫자로 나이 구간을 찾습니다.
-   */
-  root.get_age_band = function get_age_band(age) {
-    try {
-      if (!Array.isArray(root.AGE_BANDS)) {
-        return null;
-      }
-      const age_band = root.AGE_BANDS.find(function find_band(band) {
-        return age >= band.min_age && age <= band.max_age;
-      });
-      return age_band || null;
-    } catch (error) {
-      console.error("나이 구간을 정하지 못했습니다.", error);
-      return null;
-    }
-  };
-
-  /**
    * id가 같은 항목을 목록에서 찾습니다.
    */
   function find_by_id(list, id) {
@@ -159,23 +141,12 @@
   }
 
   /**
-   * 기분과 나이에 맞는 문장 목록을 꺼냅니다.
-   * 어린이 문장이 없으면 일반 문장으로 대신합니다.
+   * 기분에 맞는 문장 목록을 꺼냅니다. 없으면 빈 목록을 돌려줍니다.
    */
-  function get_phrase_list(mood, age_band_id) {
+  function get_phrase_list(mood) {
     try {
-      const mood_group = root.PHRASES ? root.PHRASES[mood] : null;
-      if (!mood_group) {
-        return [];
-      }
-
-      const deck_name = age_band_id === "child" ? "child" : "general";
-      const phrase_list = mood_group[deck_name];
-      if (Array.isArray(phrase_list) && phrase_list.length > 0) {
-        return phrase_list;
-      }
-
-      return Array.isArray(mood_group.general) ? mood_group.general : [];
+      const phrase_list = root.PHRASES ? root.PHRASES[mood] : null;
+      return Array.isArray(phrase_list) ? phrase_list : [];
     } catch (error) {
       console.error("문장 목록을 꺼내지 못했습니다.", error);
       return [];
@@ -223,18 +194,16 @@
   }
 
   /**
-   * 입력과 순번으로 카드 한 장을 만듭니다.
+   * 고른 기분과 순번으로 카드 한 장을 만듭니다.
    * offset이 0이면 그 날의 첫 장이고, 1씩 늘리면 섞어 둔 덱의 다음 장이 나옵니다.
    */
   root.pick_today_phrase = function pick_today_phrase(input, offset) {
     try {
       const safe_input = input || {};
-      const age_band = root.get_age_band(safe_input.age);
       const mood = find_by_id(root.MOODS, safe_input.mood);
-      const gender = find_by_id(root.GENDERS, safe_input.gender);
-      const phrase_list = get_phrase_list(safe_input.mood, age_band ? age_band.id : "");
+      const phrase_list = get_phrase_list(safe_input.mood);
 
-      if (!age_band || !mood || !gender || phrase_list.length === 0) {
+      if (!mood || phrase_list.length === 0) {
         console.error("카드를 만들 재료가 부족합니다.");
         return null;
       }
@@ -242,8 +211,8 @@
       const safe_offset = Number.isInteger(offset) && offset >= 0 ? offset : 0;
       const date_key = root.get_today_key();
 
-      // 성별은 카드 색만 바꾸므로 덱을 섞는 기준에는 넣지 않습니다.
-      const phrase_seed_key = [date_key, age_band.id, mood.id, "phrase"].join("|");
+      // 덱을 섞는 기준은 날짜와 기분입니다. 같은 날 같은 기분이면 누구에게나 같은 순서로 나옵니다.
+      const phrase_seed_key = [date_key, mood.id, "phrase"].join("|");
       const phrase = pick_from_deck(phrase_list, phrase_seed_key, safe_offset);
 
       if (!is_phrase_ready(phrase)) {
@@ -256,15 +225,13 @@
       const proverb = pick_from_deck(get_proverb_list(mood.id), proverb_seed_key, safe_offset);
 
       // 그림도 문장과 같은 순번으로 넘기므로, 문장이 한 바퀴 도는 동안 그림도 겹치지 않습니다.
-      const vignette_seed_key = [date_key, age_band.id, mood.id, "vignette"].join("|");
+      const vignette_seed_key = [date_key, mood.id, "vignette"].join("|");
       const vignette = pick_vignette(vignette_seed_key, safe_offset);
 
       return {
         date_key: date_key,
         date_label: root.get_today_label(),
-        age_band: age_band,
         mood: mood,
-        gender: gender,
         lead_text: phrase.lead,
         caution_text: phrase.caution,
         proverb_text: typeof proverb === "string" ? proverb : "",

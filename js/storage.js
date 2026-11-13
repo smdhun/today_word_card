@@ -1,5 +1,5 @@
 /**
- * 오늘 입력과 카드 순번을 브라우저에 기억합니다.
+ * 오늘 고른 기분과 카드 순번을 브라우저에 기억합니다.
  * 같은 날 다시 열면 같은 카드가 보이도록 하기 위한 서랍입니다.
  */
 (function init_storage() {
@@ -7,6 +7,7 @@
 
   /**
    * 저장할 값이 기대한 모양인지 확인합니다.
+   * 예전에 저장된 값에는 나이와 성별이 더 들어 있지만, 쓰지 않으므로 있어도 그냥 넘어갑니다.
    */
   function is_state_ready(state) {
     if (!state || typeof state !== "object") {
@@ -14,8 +15,6 @@
     }
     return (
       state.version === root.STORAGE_VERSION &&
-      typeof state.age_text === "string" &&
-      typeof state.gender === "string" &&
       typeof state.mood === "string" &&
       Number.isInteger(state.offset) &&
       typeof state.date_key === "string"
@@ -23,7 +22,7 @@
   }
 
   /**
-   * 기억해 둔 입력을 꺼냅니다. 없거나 깨져 있으면 null을 돌려줍니다.
+   * 기억해 둔 기분과 순번을 꺼냅니다. 없거나 깨져 있으면 null을 돌려줍니다.
    */
   root.load_card_state = function load_card_state() {
     try {
@@ -47,7 +46,7 @@
   };
 
   /**
-   * 입력과 순번을 저장합니다. 성공하면 true를 돌려줍니다.
+   * 기분과 순번을 저장합니다. 성공하면 true를 돌려줍니다.
    */
   root.save_card_state = function save_card_state(state) {
     try {

@@ -18,7 +18,6 @@
   --verse_bg: rgba(30, 28, 18, 0.5);
   --chip: #2d2a1f;
   --field: rgba(56, 53, 42, 0.6);
-  --field_focus: #38352a;
   --shadow_form: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -4px rgba(0, 0, 0, 0.35);
   --shadow_result: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
 
@@ -37,11 +36,6 @@
   /* 밤 풍경 그림 아래쪽을 카드 색으로 녹이는 색과, 그 위 글자색 */
   --vignette_fade: #222016;
   --vignette_ink: #e8c176;
-
-  /* 기분 표시 색. 성별 선택에 따라 하나가 쓰입니다. */
-  --seal_neutral: #e8c176;
-  --seal_female: #efb8c8;
-  --seal_male: #bac6ec;
 }
 
 :root[data-theme="light"] {
@@ -54,7 +48,6 @@
   --verse_bg: #f5f0e4;
   --chip: #ece5d5;
   --field: #efe8d9;
-  --field_focus: #e6dcc8;
   --shadow_form: 0 10px 15px -3px rgba(88, 70, 30, 0.12), 0 4px 6px -4px rgba(88, 70, 30, 0.1);
   --shadow_result: 0 20px 25px -5px rgba(88, 70, 30, 0.14), 0 8px 10px -6px rgba(88, 70, 30, 0.1);
 
@@ -70,10 +63,6 @@
 
   --vignette_fade: rgba(22, 19, 10, 0.85);
   --vignette_ink: #ffdea4;
-
-  --seal_neutral: #775a19;
-  --seal_female: #7d5260;
-  --seal_male: #3a4666;
 }
 
 * {
@@ -211,19 +200,6 @@ h2 {
   text-align: center;
 }
 
-.intro_chip {
-  margin-bottom: 12px;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background: var(--chip);
-  color: var(--primary);
-  font-family: var(--font_label);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 16px;
-  letter-spacing: 0.1em;
-}
-
 .intro h1 {
   margin-bottom: 6px;
   font-size: 24px;
@@ -285,8 +261,6 @@ fieldset {
   border: 0;
 }
 
-/* 선택 버튼도 label이라서, 바로 아래 자식인 제목 label만 고릅니다. */
-.field > label,
 .field legend {
   display: block;
   margin-bottom: 6px;
@@ -299,57 +273,11 @@ fieldset {
   letter-spacing: 0.04em;
 }
 
-.field_hint {
-  margin-top: 8px;
-  color: var(--ink_faint);
-  font-family: var(--font_label);
-  font-size: 12px;
-  line-height: 18px;
-}
-
-.age_box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-#age_input {
-  width: 100%;
-  height: 48px;
-  padding: 0 40px 0 16px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--field);
-  color: var(--ink);
-}
-
-#age_input:focus {
-  background: var(--field_focus);
-}
-
-#age_input::placeholder {
-  color: var(--ink_faint);
-}
-
-.age_unit {
-  position: absolute;
-  right: 16px;
-  color: var(--ink_soft);
-  pointer-events: none;
-}
-
-.choice_row,
+/* 기분 버튼은 한 줄에 3개씩, 두 줄로 놓습니다. */
 .mood_grid {
   display: grid;
-  gap: 8px;
-}
-
-.choice_row {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.mood_grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .choice {
@@ -506,8 +434,7 @@ fieldset {
 
 .button:focus-visible,
 .theme_toggle:focus-visible,
-.epilogue_source a:focus-visible,
-#age_input:focus-visible {
+.epilogue_source a:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
@@ -515,21 +442,12 @@ fieldset {
 /* ───────── 결과 카드 ───────── */
 
 .result_card {
-  --seal_color: var(--seal_neutral);
   position: relative;
   overflow: hidden;
   padding: 24px;
   border-radius: 12px;
   background: var(--card_result);
   box-shadow: var(--shadow_result);
-}
-
-.result_card[data-gender="female"] {
-  --seal_color: var(--seal_female);
-}
-
-.result_card[data-gender="male"] {
-  --seal_color: var(--seal_male);
 }
 
 /* 카드 위쪽 가운데의 은은한 금빛 */
@@ -579,7 +497,7 @@ fieldset {
 }
 
 .card_kicker {
-  color: var(--seal_color);
+  color: var(--primary);
   font-family: var(--font_label);
   font-size: 11px;
   font-weight: 500;
@@ -604,7 +522,7 @@ fieldset {
   padding: 4px 12px;
   border-radius: 999px;
   background: var(--chip);
-  color: var(--seal_color);
+  color: var(--primary);
   font-size: 14px;
   font-weight: 500;
   line-height: 20px;
@@ -615,7 +533,7 @@ fieldset {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--seal_color);
+  background: var(--primary);
   animation: dot_pulse 2s ease-in-out infinite;
 }
 

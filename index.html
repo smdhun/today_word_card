@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>오늘의 한마디</title>
-  <meta name="description" content="나이, 성별, 오늘의 기분으로 오늘을 보내는 짧은 격언을 고릅니다.">
+  <meta name="description" content="오늘의 기분으로 오늘을 보내는 짧은 격언을 고릅니다.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -47,41 +47,13 @@
 
   <main class="stage">
     <section class="intro">
-      <p class="intro_chip">심야의 서신</p>
       <h1>오늘의 한마디</h1>
       <p class="subtitle">오늘 밤, 당신에게 건네는 한 문장</p>
     </section>
 
     <div class="layout">
-      <section class="panel" aria-label="오늘의 정보 입력">
+      <section class="panel" aria-label="오늘의 기분 선택">
         <form id="fortune_form" autocomplete="off" novalidate>
-          <div class="field">
-            <label for="age_input">나이</label>
-            <div class="age_box">
-              <input id="age_input" name="age" type="number" inputmode="numeric" min="1" max="120" step="1" placeholder="예: 29">
-              <span class="age_unit" aria-hidden="true">세</span>
-            </div>
-          </div>
-
-          <fieldset class="field">
-            <legend>성별</legend>
-            <div class="choice_row">
-              <label class="choice" for="gender_female">
-                <input id="gender_female" type="radio" name="gender" value="female">
-                <span>여성</span>
-              </label>
-              <label class="choice" for="gender_male">
-                <input id="gender_male" type="radio" name="gender" value="male">
-                <span>남성</span>
-              </label>
-              <label class="choice" for="gender_none">
-                <input id="gender_none" type="radio" name="gender" value="none">
-                <span>선택 안 함</span>
-              </label>
-            </div>
-            <p class="field_hint">성별은 문장 내용이 아니라 카드 색에만 반영됩니다.</p>
-          </fieldset>
-
           <fieldset class="field">
             <legend>오늘의 기분</legend>
             <div class="mood_grid">
@@ -126,11 +98,7 @@
           <div id="card_head" class="card_head" hidden>
             <div>
               <p class="card_kicker">천궁의 운율</p>
-              <p class="card_date">
-                <span id="card_date"></span>
-                <span aria-hidden="true">·</span>
-                <span id="card_meta"></span>
-              </p>
+              <p id="card_date" class="card_date"></p>
             </div>
             <p class="mood_chip">
               <span class="mood_chip_dot" aria-hidden="true"></span>
@@ -147,7 +115,7 @@
             </p>
           </div>
 
-          <p id="card_empty" class="card_empty">나이, 성별, 오늘의 기분을 고르면 오늘을 위한 짧은 문장이 여기에 나타납니다.</p>
+          <p id="card_empty" class="card_empty">오늘의 기분을 고르면 오늘을 위한 짧은 문장이 여기에 나타납니다.</p>
 
           <div id="card_body" class="card_body" hidden>
             <h2 class="card_title">오늘의 격언</h2>
@@ -213,8 +181,7 @@
     </footer>
   </main>
 
-  <script src="js/phrases_general.js"></script>
-  <script src="js/phrases_child.js"></script>
+  <script src="js/phrases.js"></script>
   <script src="js/proverbs.js"></script>
   <script src="js/vignettes.js"></script>
   <script src="js/validate.js"></script>

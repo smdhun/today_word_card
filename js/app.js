@@ -26,7 +26,6 @@
    */
   function cache_elements() {
     els.form = require_element("fortune_form");
-    els.age_input = require_element("age_input");
     els.form_message = require_element("form_message");
     els.status_message = require_element("status_message");
     els.draw_button = require_element("draw_button");
@@ -37,7 +36,6 @@
     els.card_head = require_element("card_head");
     els.card_body = require_element("card_body");
     els.card_date = require_element("card_date");
-    els.card_meta = require_element("card_meta");
     els.card_mood = require_element("card_mood");
     els.card_lead = require_element("card_lead");
     els.card_caution = require_element("card_caution");
@@ -49,7 +47,6 @@
 
     return Boolean(
       els.form &&
-      els.age_input &&
       els.form_message &&
       els.status_message &&
       els.draw_button &&
@@ -60,7 +57,6 @@
       els.card_head &&
       els.card_body &&
       els.card_date &&
-      els.card_meta &&
       els.card_mood &&
       els.card_lead &&
       els.card_caution
@@ -113,20 +109,15 @@
   }
 
   /**
-   * 폼에서 나이, 성별, 기분을 읽습니다.
+   * 폼에서 고른 기분을 읽습니다.
    */
   function collect_input() {
     try {
-      const gender_input = document.querySelector('input[name="gender"]:checked');
       const mood_input = document.querySelector('input[name="mood"]:checked');
-      return {
-        age_text: els.age_input.value,
-        gender: gender_input ? gender_input.value : "",
-        mood: mood_input ? mood_input.value : "",
-      };
+      return { mood: mood_input ? mood_input.value : "" };
     } catch (error) {
       console.error("입력을 읽지 못했습니다.", error);
-      return { age_text: "", gender: "", mood: "" };
+      return { mood: "" };
     }
   }
 
@@ -250,13 +241,11 @@
   function render_card(card) {
     try {
       els.card_date.textContent = card.date_label;
-      els.card_meta.textContent = card.age_band.label;
       els.card_mood.textContent = card.mood.label;
       els.card_lead.textContent = card.lead_text;
       els.card_caution.textContent = card.caution_text;
       render_proverb(card.proverb_text);
       render_vignette(card.vignette);
-      els.result_card.dataset.gender = card.gender.id;
       els.result_card.dataset.mood = card.mood.id;
       els.card_empty.hidden = true;
       els.card_head.hidden = false;
@@ -277,7 +266,7 @@
   function build_copy_text(card) {
     const lines = [
       card.date_label,
-      card.age_band.label + " · " + card.mood.label,
+      card.mood.label,
       "",
       card.lead_text,
       card.caution_text,
@@ -326,13 +315,11 @@
   }
 
   /**
-   * 현재 카드와 입력을 브라우저에 저장합니다.
+   * 고른 기분과 현재 카드의 순번을 브라우저에 저장합니다.
    */
   function persist_card(validated, card) {
     const is_saved = root.save_card_state({
       version: root.STORAGE_VERSION,
-      age_text: validated.age_text,
-      gender: validated.gender,
       mood: validated.mood,
       offset: card.offset,
       date_key: card.date_key,
@@ -393,7 +380,7 @@
   }
 
   /**
-   * 같은 입력 안에서 다음 문장과 다음 그림으로 바꿉니다.
+   * 같은 기분 안에서 다음 문장과 다음 그림으로 바꿉니다.
    * 섞어 둔 덱의 다음 장을 넘기므로, 덱을 한 바퀴 돌기 전에는 같은 문장도 같은 그림도 나오지 않습니다.
    */
   function on_redraw() {
@@ -449,15 +436,9 @@
         return;
       }
 
-      els.age_input.value = saved.age_text;
-      check_radio("gender", saved.gender);
       check_radio("mood", saved.mood);
 
-      const validated = root.validate_input({
-        age_text: saved.age_text,
-        gender: saved.gender,
-        mood: saved.mood,
-      });
+      const validated = root.validate_input({ mood: saved.mood });
       if (!validated.is_valid) {
         return;
       }
