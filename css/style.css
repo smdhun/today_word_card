@@ -337,7 +337,8 @@ fieldset {
 .aurora_kicker,
 .aurora_lead,
 .title_aurora,
-.epilogue_aurora {
+.epilogue_aurora,
+.label_aurora {
   display: none;
 }
 

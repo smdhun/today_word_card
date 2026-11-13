@@ -98,6 +98,7 @@
       if (!save_design(next_design)) {
         show_save_notice();
       }
+      document.dispatchEvent(new CustomEvent("today_word_design_change"));
     } catch (error) {
       console.error("디자인을 바꾸지 못했습니다.", error);
     }

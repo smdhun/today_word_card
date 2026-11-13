@@ -73,7 +73,10 @@
       <section class="panel" aria-label="오늘의 기분 선택">
         <form id="fortune_form" autocomplete="off" novalidate>
           <fieldset class="field">
-            <legend>오늘의 기분</legend>
+            <legend>
+              <span class="label_tarot">오늘의 기분</span>
+              <span class="label_aurora">감정 고르기</span>
+            </legend>
             <div class="mood_grid">
               <label class="choice" for="mood_joy">
                 <input id="mood_joy" type="radio" name="mood" value="joy">
@@ -124,7 +127,8 @@
 
           <button id="draw_button" class="button button_primary" type="submit">
             <svg class="icon" aria-hidden="true"><use href="#icon_auto_awesome"/></svg>
-            <span>오늘의 문장 뽑기</span>
+            <span class="label_tarot">오늘의 문장 뽑기</span>
+            <span class="label_aurora">새로운 문장 뽑기</span>
           </button>
         </form>
       </section>
@@ -143,18 +147,22 @@
             </p>
           </div>
 
-          <!-- 문장을 뽑기 전에는 이 그림이 보이고, 뽑은 뒤에는 js/vignettes.js의 그림으로 바뀝니다. -->
+          <!-- 문장을 뽑기 전에는 이 그림이 보입니다. 타로는 풍경, 오로라는 캐릭터로 바뀝니다. -->
           <div id="card_vignette" class="card_vignette">
             <img id="vignette_image" src="images/night_sky.jpg" alt="" width="512" height="279">
           </div>
 
-          <p id="card_empty" class="card_empty">오늘의 기분을 고르면 오늘을 위한 짧은 문장이 여기에 나타납니다.</p>
+          <p id="card_empty" class="card_empty">
+            <span class="label_tarot">오늘의 기분을 고르면 오늘을 위한 짧은 문장이 여기에 나타납니다.</span>
+            <span class="label_aurora">오늘 밤의 감정을 고르면, 그 결에 맞는 문장이 여기에 머뭅니다.</span>
+          </p>
 
           <div id="card_body" class="card_body" hidden>
             <div class="verse verse_lead" aria-live="polite">
               <p class="verse_label">
                 <svg class="icon" aria-hidden="true"><use href="#icon_nights_stay"/></svg>
-                하루를 보내는 태도
+                <span class="label_tarot">하루를 보내는 태도</span>
+                <span class="label_aurora">밤의 한 줄</span>
               </p>
               <p id="card_lead" class="sentence sentence_lead" tabindex="-1"></p>
             </div>
@@ -162,7 +170,8 @@
             <div class="verse verse_caution" aria-live="polite">
               <p class="verse_label">
                 <svg class="icon" aria-hidden="true"><use href="#icon_wb_twilight"/></svg>
-                마음에 둘 주의점
+                <span class="label_tarot">마음에 둘 주의점</span>
+                <span class="label_aurora">사색의 결</span>
               </p>
               <p id="card_caution" class="sentence sentence_caution"></p>
             </div>
@@ -170,7 +179,8 @@
             <div id="movie_quote_block" class="verse verse_movie" aria-live="polite" hidden>
               <p class="verse_label">
                 <svg class="icon" aria-hidden="true"><use href="#icon_auto_awesome"/></svg>
-                영화에서 온 한 줄
+                <span class="label_tarot">영화에서 온 한 줄</span>
+                <span class="label_aurora">화면 속의 한 줄</span>
               </p>
               <p id="card_movie_quote" class="sentence sentence_movie"></p>
               <p id="card_movie_source" class="movie_quote_source"></p>
@@ -179,7 +189,8 @@
             <div id="proverb_block" class="verse verse_proverb" aria-live="polite" hidden>
               <p class="verse_label">
                 <svg class="icon" aria-hidden="true"><use href="#icon_auto_awesome"/></svg>
-                오늘의 속담
+                <span class="label_tarot">오늘의 속담</span>
+                <span class="label_aurora">오래 남은 말</span>
               </p>
               <p id="card_proverb" class="sentence sentence_proverb"></p>
             </div>
@@ -202,9 +213,9 @@
         <a href="https://opendict.korean.go.kr/" target="_blank" rel="noopener noreferrer">국립국어원 우리말샘</a>
         (<a href="https://creativecommons.org/licenses/by-sa/2.0/kr/" target="_blank" rel="noopener noreferrer">CC BY-SA 2.0 KR</a>)
       </p>
-      <!-- 카드 그림은 출처 표기 의무가 없는 사진이지만, 어디서 왔는지 밝혀 둡니다. -->
+      <!-- 타로 풍경만 커먼즈 사진입니다. 오로라 캐릭터는 이 화면을 위해 만든 그림입니다. -->
       <p class="epilogue_source">
-        사진 출처:
+        풍경 사진 출처:
         <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
         (퍼블릭 도메인, CC0)
       </p>
@@ -215,6 +226,7 @@
   <script src="js/proverbs.js"></script>
   <script src="js/movie_quotes.js"></script>
   <script src="js/vignettes.js"></script>
+  <script src="js/faces.js"></script>
   <script src="js/validate.js"></script>
   <script src="js/picker.js"></script>
   <script src="js/storage.js"></script>

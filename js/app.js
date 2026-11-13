@@ -286,6 +286,9 @@
    * 속담과 영화 문장이 있으면 맨 아래에 차례로 덧붙입니다.
    */
   function build_copy_text(card) {
+    const is_aurora = document.documentElement.dataset.design === root.DESIGN_AURORA;
+    const proverb_label = is_aurora ? "오래 남은 말" : "오늘의 속담";
+    const movie_label = is_aurora ? "화면 속의 한 줄" : "영화에서 온 한 줄";
     const lines = [
       card.mood.label,
       "",
@@ -296,10 +299,10 @@
       lines.unshift(card.vignette.caption);
     }
     if (card.proverb_text) {
-      lines.push("", "오늘의 속담: " + card.proverb_text);
+      lines.push("", proverb_label + ": " + card.proverb_text);
     }
     if (card.movie_quote && card.movie_quote.text) {
-      lines.push("", "영화에서 온 한 줄: " + card.movie_quote.text);
+      lines.push("", movie_label + ": " + card.movie_quote.text);
       lines.push(card.movie_quote.movie + " (" + card.movie_quote.year + ")");
     }
     return lines.join("\n");
@@ -498,6 +501,30 @@
   }
 
   /**
+   * 디자인이 바뀌면 같은 순번의 문장과 그림을 그 모드 덱에서 다시 고릅니다.
+   */
+  function on_design_change() {
+    try {
+      if (!current_card) {
+        return;
+      }
+      const validated = root.validate_input(collect_input());
+      if (!validated || !validated.is_valid) {
+        return;
+      }
+      const card = root.pick_today_phrase(validated, current_card.offset);
+      if (!card) {
+        show_error(root.MESSAGES.draw_failed);
+        return;
+      }
+      apply_card(validated, card);
+    } catch (error) {
+      console.error("디자인에 맞는 문장을 다시 고르지 못했습니다.", error);
+      show_error(root.MESSAGES.draw_failed);
+    }
+  }
+
+  /**
    * 버튼과 저장 카드를 연결하고 첫 화면을 준비합니다.
    */
   function start_app() {
@@ -511,11 +538,11 @@
         return;
       }
 
-      els.card_empty.textContent = root.MESSAGES.empty_guide;
       warn_if_options_mismatch();
       els.form.addEventListener("submit", on_submit);
       els.redraw_button.addEventListener("click", on_redraw);
       els.copy_button.addEventListener("click", on_copy);
+      document.addEventListener("today_word_design_change", on_design_change);
       restore_saved_card();
     } catch (error) {
       console.error("화면을 시작하지 못했습니다.", error);

@@ -180,15 +180,39 @@
   }
 
   /**
-   * 기분에 맞는 그림 목록을 꺼냅니다. 없으면 빈 목록을 돌려줍니다.
+   * 지금 화면이 오로라인지 확인합니다. 확인하지 못하면 타로로 둡니다.
    */
-  function get_vignette_list(mood) {
+  function is_aurora_design() {
     try {
+      return document.documentElement.dataset.design === root.DESIGN_AURORA;
+    } catch (error) {
+      console.error("디자인 상태를 확인하지 못했습니다.", error);
+      return false;
+    }
+  }
+
+  /**
+   * 기분에 맞는 그림 덱을 꺼냅니다.
+   * 오로라는 캐릭터 그림을, 타로는 풍경 사진을 씁니다.
+   */
+  function get_vignette_deck(mood) {
+    try {
+      const face_list = root.FACE_VIGNETTES ? root.FACE_VIGNETTES[mood] : null;
+      if (is_aurora_design() && Array.isArray(face_list) && face_list.length > 0) {
+        return {
+          list: face_list,
+          folder: root.FACE_FOLDER || "",
+        };
+      }
+
       const vignette_list = root.VIGNETTES ? root.VIGNETTES[mood] : null;
-      return Array.isArray(vignette_list) ? vignette_list : [];
+      return {
+        list: Array.isArray(vignette_list) ? vignette_list : [],
+        folder: root.VIGNETTE_FOLDER || "",
+      };
     } catch (error) {
       console.error("그림 목록을 꺼내지 못했습니다.", error);
-      return [];
+      return { list: [], folder: "" };
     }
   }
 
@@ -198,12 +222,13 @@
    */
   function pick_vignette(mood, seed_key, offset) {
     try {
-      const vignette = pick_from_deck(get_vignette_list(mood), seed_key, offset);
+      const deck = get_vignette_deck(mood);
+      const vignette = pick_from_deck(deck.list, seed_key, offset);
       if (!vignette || !vignette.file || !vignette.caption) {
         return null;
       }
       return {
-        src: (root.VIGNETTE_FOLDER || "") + vignette.file,
+        src: deck.folder + vignette.file,
         caption: vignette.caption,
       };
     } catch (error) {
@@ -237,8 +262,11 @@
       const safe_offset = Number.isInteger(offset) && offset >= 0 ? offset : 0;
       const date_key = root.get_today_key();
 
-      // 덱을 섞는 기준은 날짜와 기분입니다. 같은 날 같은 기분이면 누구에게나 같은 순서로 나옵니다.
-      const phrase_seed_key = [date_key, mood.id, "phrase"].join("|");
+      // 덱을 섞는 기준에 디자인도 넣습니다. 타로와 오로라는 같은 날이어도 다른 문장이 나옵니다.
+      const design_key = document.documentElement.dataset.design === root.DESIGN_AURORA
+        ? root.DESIGN_AURORA
+        : root.DESIGN_TAROT;
+      const phrase_seed_key = [date_key, mood.id, design_key, "phrase"].join("|");
       const phrase = pick_from_deck(phrase_list, phrase_seed_key, safe_offset);
 
       if (!is_phrase_ready(phrase)) {
@@ -247,15 +275,15 @@
       }
 
       // 속담은 덤이므로, 고르지 못해도 카드는 그대로 만듭니다.
-      const proverb_seed_key = [date_key, mood.id, "proverb"].join("|");
+      const proverb_seed_key = [date_key, mood.id, design_key, "proverb"].join("|");
       const proverb = pick_from_deck(get_proverb_list(mood.id), proverb_seed_key, safe_offset);
 
-      // 그림은 문장과 같은 순번으로 넘깁니다. 15장까지는 겹치지 않습니다.
-      const vignette_seed_key = [date_key, mood.id, "vignette"].join("|");
+      // 그림도 디자인마다 다른 덱에서 고릅니다. 타로는 풍경, 오로라는 캐릭터입니다.
+      const vignette_seed_key = [date_key, mood.id, design_key, "vignette"].join("|");
       const vignette = pick_vignette(mood.id, vignette_seed_key, safe_offset);
 
       // 영화 문장도 같은 순번으로 넘깁니다. 299장이라 한참 동안 같은 문장이 나오지 않습니다.
-      const movie_seed_key = [date_key, mood.id, "movie"].join("|");
+      const movie_seed_key = [date_key, mood.id, design_key, "movie"].join("|");
       const movie_quote = pick_from_deck(get_movie_quote_list(), movie_seed_key, safe_offset);
       const is_movie_quote_ready = Boolean(
         movie_quote && movie_quote.text && movie_quote.movie && Number.isInteger(movie_quote.year)
