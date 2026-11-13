@@ -1,16 +1,95 @@
-/* 책상 위 한지 카드. 색 이름은 화면 전체에서 같이 씁니다. */
+/*
+ * 책상 위 한지 카드.
+ * 색은 모두 아래 변수로 씁니다. 화이트 모드가 기본이고,
+ * html 태그에 data-theme="dark"가 붙으면 다크 모드 색으로 바뀝니다.
+ */
 :root {
+  color-scheme: light;
+
+  /* 바탕(책상) */
+  --desk: #f1e9dc;
+  --desk_glow_warm: rgba(214, 146, 92, 0.2);
+  --desk_glow_red: rgba(143, 45, 42, 0.1);
+  --desk_grain: rgba(60, 40, 20, 0.025);
+
+  /* 머리글과 바닥글 */
+  --hero_ink: #241c16;
+  --hero_muted: #645341;
+  --hero_line: rgba(36, 28, 22, 0.5);
+  --toggle_hover: rgba(36, 28, 22, 0.07);
+
+  /* 종이(입력 패널과 결과 카드) */
+  --paper: #fffdf8;
+  --paper_sheen: rgba(255, 255, 255, 0.7);
+  --paper_edge: #e6d9c5;
+  --paper_shadow: 0 18px 40px rgba(88, 62, 36, 0.14);
+
+  /* 글자 */
   --ink: #241c16;
-  --paper: #f6f0e4;
-  --paper_deep: #efe4d2;
-  --cinnabar: #8f2d2a;
-  --pine: #1f4f4a;
+  --ink_soft: #4e4034;
   --muted: #6f5e4d;
-  --line: #e3d4be;
+
+  /* 입력칸과 선택 버튼 */
+  --field_bg: #ffffff;
+  --field_line: #d9c8ae;
+  --choice_bg: #fbf6ec;
+  --choice_checked_bg: #fff1e6;
+
+  /* 강조색 */
+  --accent_line: #8f2d2a;
+  --accent_text: #8f2d2a;
+  --ok_text: #1f4f4a;
+  --button_bg: #8f2d2a;
+  --button_bg_hover: #7b2422;
+  --on_button: #fff8f2;
+  --ghost_line: #c9b59a;
+  --ghost_hover: #f6eee0;
+
+  /* 카드 도장 색. 성별 선택에 따라 하나가 쓰입니다. */
+  --seal_neutral: #8a4b22;
+  --seal_female: #9c3044;
+  --seal_male: #1f4f4a;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
   --desk: #231910;
-  --cream: #fffaf3;
-  --seal_color: #8a4b22;
-  --line_color: rgba(138, 75, 34, 0.45);
+  --desk_glow_warm: rgba(214, 146, 92, 0.22);
+  --desk_glow_red: rgba(120, 42, 36, 0.28);
+  --desk_grain: rgba(255, 255, 255, 0.018);
+
+  --hero_ink: #f6efe4;
+  --hero_muted: #d9cbb8;
+  --hero_line: rgba(246, 239, 228, 0.6);
+  --toggle_hover: rgba(246, 239, 228, 0.1);
+
+  --paper: #2e231a;
+  --paper_sheen: rgba(255, 255, 255, 0.05);
+  --paper_edge: rgba(255, 236, 208, 0.14);
+  --paper_shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+
+  --ink: #f3e9da;
+  --ink_soft: #dccdb9;
+  --muted: #b5a48f;
+
+  --field_bg: #201811;
+  --field_line: #5a4a3a;
+  --choice_bg: #372b21;
+  --choice_checked_bg: #4a2a26;
+
+  --accent_line: #e07a70;
+  --accent_text: #f0958b;
+  --ok_text: #86cbbd;
+  --button_bg: #a83a35;
+  --button_bg_hover: #bd4640;
+  --on_button: #fff8f2;
+  --ghost_line: #6a5846;
+  --ghost_hover: #3a2e24;
+
+  --seal_neutral: #e0a878;
+  --seal_female: #ee9aa9;
+  --seal_male: #86cbbd;
 }
 
 * {
@@ -30,9 +109,9 @@ body {
   overflow-wrap: break-word;
   background-color: var(--desk);
   background-image:
-    radial-gradient(circle at 12% 0%, rgba(214, 146, 92, 0.22), transparent 34%),
-    radial-gradient(circle at 88% 100%, rgba(120, 42, 36, 0.28), transparent 38%),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 8px);
+    radial-gradient(circle at 12% 0%, var(--desk_glow_warm), transparent 34%),
+    radial-gradient(circle at 88% 100%, var(--desk_glow_red), transparent 38%),
+    repeating-linear-gradient(90deg, var(--desk_grain) 0 1px, transparent 1px 8px);
 }
 
 button,
@@ -46,9 +125,40 @@ input {
 }
 
 .hero {
+  position: relative;
   margin-bottom: 28px;
-  color: #f6efe4;
+  color: var(--hero_ink);
   text-align: center;
+}
+
+/* 화면 모드 전환 버튼. 머리글 오른쪽 위에 둡니다. */
+.theme_toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--hero_line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hero_ink);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.theme_toggle:hover {
+  background: var(--toggle_hover);
+}
+
+/* 버튼에는 지금 모드의 반대쪽으로 가는 문구 하나만 보입니다. */
+.theme_label_to_light,
+:root[data-theme="dark"] .theme_label_to_dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme_label_to_light {
+  display: inline;
 }
 
 .brand_seal {
@@ -57,9 +167,9 @@ input {
   width: 54px;
   height: 54px;
   margin: 0 auto 12px;
-  border: 2px solid rgba(246, 239, 228, 0.7);
+  border: 2px solid var(--hero_line);
   border-radius: 50%;
-  color: #f6efe4;
+  color: var(--hero_ink);
   font-family: "Nanum Myeongjo", Batang, serif;
   font-size: 28px;
 }
@@ -75,7 +185,7 @@ input {
 .subtitle {
   max-width: 38rem;
   margin: 10px auto 0;
-  color: #e4d5c2;
+  color: var(--hero_muted);
   line-height: 1.7;
 }
 
@@ -89,11 +199,11 @@ input {
 .panel,
 .result_card {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.38), transparent 28%),
+    linear-gradient(180deg, var(--paper_sheen), transparent 28%),
     var(--paper);
-  border: 1px solid rgba(255, 248, 236, 0.28);
+  border: 1px solid var(--paper_edge);
   border-radius: 22px;
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--paper_shadow);
 }
 
 .panel {
@@ -116,7 +226,8 @@ input {
   margin: 0 0 18px;
 }
 
-.field label,
+/* 선택 버튼도 label이라서, 바로 아래 자식인 제목 label만 고릅니다. */
+.field > label,
 .field legend {
   display: block;
   margin-bottom: 8px;
@@ -139,10 +250,14 @@ fieldset {
 #age_input {
   width: 100%;
   padding: 12px 14px;
-  border: 1px solid #d9c8ae;
+  border: 1px solid var(--field_line);
   border-radius: 12px;
-  background: var(--cream);
+  background: var(--field_bg);
   color: var(--ink);
+}
+
+#age_input::placeholder {
+  color: var(--muted);
 }
 
 .choice_row,
@@ -165,9 +280,9 @@ fieldset {
   justify-content: center;
   min-height: 46px;
   padding: 8px;
-  border: 1px solid #d9c8ae;
+  border: 1px solid var(--field_line);
   border-radius: 12px;
-  background: rgba(255, 250, 243, 0.7);
+  background: var(--choice_bg);
   cursor: pointer;
   text-align: center;
 }
@@ -188,13 +303,13 @@ fieldset {
 }
 
 .choice:has(input:checked) {
-  border-color: var(--cinnabar);
-  background: #fff7ef;
-  box-shadow: inset 0 0 0 1px var(--cinnabar);
+  border-color: var(--accent_line);
+  background: var(--choice_checked_bg);
+  box-shadow: inset 0 0 0 1px var(--accent_line);
 }
 
 .choice:has(input:focus-visible) {
-  outline: 2px solid var(--cinnabar);
+  outline: 2px solid var(--accent_line);
   outline-offset: 2px;
 }
 
@@ -210,12 +325,12 @@ fieldset {
 }
 
 .form_message {
-  color: var(--cinnabar);
+  color: var(--accent_text);
   font-weight: 700;
 }
 
 .status_message {
-  color: var(--pine);
+  color: var(--ok_text);
   font-weight: 700;
 }
 
@@ -233,13 +348,13 @@ fieldset {
 
 .button_primary {
   border: 0;
-  background: var(--cinnabar);
-  color: #fff8f2;
+  background: var(--button_bg);
+  color: var(--on_button);
   font-weight: 700;
 }
 
 .button_primary:hover:not(:disabled) {
-  background: #7b2422;
+  background: var(--button_bg_hover);
 }
 
 .button_row {
@@ -249,41 +364,36 @@ fieldset {
 }
 
 .button_ghost {
-  border: 1px solid #c9b59a;
+  border: 1px solid var(--ghost_line);
   background: transparent;
   color: var(--ink);
   font-weight: 700;
 }
 
 .button_ghost:hover:not(:disabled) {
-  background: rgba(255, 250, 243, 0.8);
+  background: var(--ghost_hover);
 }
 
 .button:focus-visible,
+.theme_toggle:focus-visible,
 #age_input:focus-visible {
-  outline: 2px solid var(--cinnabar);
+  outline: 2px solid var(--accent_line);
   outline-offset: 2px;
 }
 
+/* 도장 색 하나를 정하면 카드 테두리 선은 그 색을 옅게 써서 따라옵니다. */
 .result_card {
-  --seal_color: #8a4b22;
-  --line_color: rgba(138, 75, 34, 0.45);
+  --seal_color: var(--seal_neutral);
+  --line_color: color-mix(in srgb, var(--seal_color) 48%, transparent);
   padding: 14px;
 }
 
 .result_card[data-gender="female"] {
-  --seal_color: #9c3044;
-  --line_color: rgba(156, 48, 68, 0.45);
+  --seal_color: var(--seal_female);
 }
 
 .result_card[data-gender="male"] {
-  --seal_color: #1f4f4a;
-  --line_color: rgba(31, 79, 74, 0.5);
-}
-
-.result_card[data-gender="none"] {
-  --seal_color: #8a4b22;
-  --line_color: rgba(138, 75, 34, 0.5);
+  --seal_color: var(--seal_male);
 }
 
 .result_frame {
@@ -390,13 +500,13 @@ fieldset {
 }
 
 .sentence_caution {
-  color: #4e4034;
+  color: var(--ink_soft);
   font-size: 1.08rem;
 }
 
 .footnote {
   margin: 18px 0 0;
-  color: #d9cbb8;
+  color: var(--hero_muted);
   font-size: 0.88rem;
   line-height: 1.6;
   text-align: center;
@@ -422,6 +532,15 @@ fieldset {
 
   .choice_row .choice:last-child {
     grid-column: 1 / -1;
+  }
+}
+
+/* 좁은 화면에서는 모드 버튼이 도장과 겹치지 않도록 한 줄 위로 올립니다. */
+@media (max-width: 520px) {
+  .theme_toggle {
+    position: static;
+    display: block;
+    margin: 0 0 14px auto;
   }
 }
 
