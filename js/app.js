@@ -35,7 +35,7 @@
     els.card_empty = require_element("card_empty");
     els.card_head = require_element("card_head");
     els.card_body = require_element("card_body");
-    els.card_date = require_element("card_date");
+    els.card_caption = require_element("card_caption");
     els.card_mood = require_element("card_mood");
     els.card_lead = require_element("card_lead");
     els.card_caution = require_element("card_caution");
@@ -59,7 +59,7 @@
       els.card_empty &&
       els.card_head &&
       els.card_body &&
-      els.card_date &&
+      els.card_caption &&
       els.card_mood &&
       els.card_lead &&
       els.card_caution
@@ -197,10 +197,12 @@
       els.vignette_image.src = vignette.src;
       els.vignette_caption.textContent = vignette.caption;
 
-      // 클래스를 뗐다가 다시 붙여야 같은 움직임이 매번 새로 시작됩니다.
+      // 그림과 그림 이름이 같은 박자로 다시 움직이게 합니다.
       els.card_vignette.classList.remove("is_changing");
+      els.card_caption.classList.remove("is_changing");
       void els.card_vignette.offsetWidth;
       els.card_vignette.classList.add("is_changing");
+      els.card_caption.classList.add("is_changing");
     } catch (error) {
       console.error("그림을 바꾸지 못했습니다.", error);
     }
@@ -260,7 +262,6 @@
    */
   function render_card(card) {
     try {
-      els.card_date.textContent = card.date_label;
       els.card_mood.textContent = card.mood.label;
       els.card_lead.textContent = card.lead_text;
       els.card_caution.textContent = card.caution_text;
@@ -286,12 +287,14 @@
    */
   function build_copy_text(card) {
     const lines = [
-      card.date_label,
       card.mood.label,
       "",
       card.lead_text,
       card.caution_text,
     ];
+    if (card.vignette && card.vignette.caption) {
+      lines.unshift(card.vignette.caption);
+    }
     if (card.proverb_text) {
       lines.push("", "오늘의 속담: " + card.proverb_text);
     }

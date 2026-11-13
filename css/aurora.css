@@ -1,0 +1,176 @@
+/*
+ * 오로라 디자인입니다. stitch_card_design/오로라 시안의 밤하늘 유리 카드입니다.
+ * html에 data-design="aurora"가 붙을 때만 적용되고, 타로 화면은 그대로 둡니다.
+ */
+:root[data-design="aurora"] {
+  color-scheme: dark;
+  --surface: #0f131d;
+  --surface_bar: rgba(15, 19, 29, 0.78);
+  --card_form: rgba(23, 27, 38, 0.62);
+  --card_result: rgba(28, 31, 42, 0.74);
+  --verse_bg: rgba(10, 14, 24, 0.55);
+  --chip: rgba(38, 42, 53, 0.85);
+  --field: rgba(23, 27, 38, 0.55);
+  --shadow_form: 0 16px 40px -16px rgba(0, 0, 0, 0.65);
+  --shadow_result: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 35px -5px rgba(160, 120, 255, 0.2);
+  --ink: #dfe2f1;
+  --ink_soft: #cbc3d7;
+  --ink_faint: #958ea0;
+  --primary: #d0bcff;
+  --primary_hover: #e9ddff;
+  --on_primary: #23005c;
+  --secondary: #4cd7f6;
+  --error: #ffb4ab;
+  --vignette_fade: #171b26;
+  --vignette_ink: #4cd7f6;
+}
+
+/* 바탕에 보라, 청록, 분홍 빛을 멀리 번지게 합니다. */
+:root[data-design="aurora"] body {
+  background:
+    radial-gradient(circle at 12% -8%, rgba(3, 181, 211, 0.22), transparent 34%),
+    radial-gradient(circle at 100% 18%, rgba(160, 120, 255, 0.28), transparent 36%),
+    radial-gradient(circle at 30% 100%, rgba(247, 81, 161, 0.14), transparent 32%),
+    #0f131d;
+}
+
+:root[data-design="aurora"] .title_tarot,
+:root[data-design="aurora"] .epilogue_tarot {
+  display: none;
+}
+
+:root[data-design="aurora"] .aurora_kicker,
+:root[data-design="aurora"] .aurora_lead,
+:root[data-design="aurora"] .title_aurora,
+:root[data-design="aurora"] .epilogue_aurora {
+  display: block;
+}
+
+:root[data-design="aurora"] .aurora_kicker {
+  margin: 0 0 8px;
+  color: var(--secondary);
+  font-family: var(--font_label);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+}
+
+:root[data-design="aurora"] .intro h1 {
+  font-family: var(--font_label);
+  font-weight: 600;
+}
+
+:root[data-design="aurora"] .aurora_lead {
+  max-width: 28em;
+  margin: 8px 0 0;
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+:root[data-design="aurora"] .panel,
+:root[data-design="aurora"] .result_card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+:root[data-design="aurora"] .panel::before {
+  background: rgba(160, 120, 255, 0.22);
+}
+
+:root[data-design="aurora"] .result_card::before {
+  background: rgba(76, 215, 246, 0.16);
+}
+
+:root[data-design="aurora"] .mood_grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+:root[data-design="aurora"] .choice {
+  justify-content: flex-start;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(23, 27, 38, 0.6);
+  text-align: left;
+}
+
+:root[data-design="aurora"] .choice_num,
+:root[data-design="aurora"] .choice_mark,
+:root[data-design="aurora"] .choice_dot {
+  display: inline-flex;
+}
+
+:root[data-design="aurora"] .choice_num {
+  color: var(--ink_faint);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+:root[data-design="aurora"] .choice_mark {
+  font-size: 16px;
+  line-height: 1;
+}
+
+:root[data-design="aurora"] .choice_name {
+  flex: 1;
+}
+
+:root[data-design="aurora"] .choice_dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+:root[data-design="aurora"] .choice:has(input:checked) {
+  border-color: rgba(76, 215, 246, 0.55);
+  background: linear-gradient(90deg, rgba(38, 42, 53, 0.95), rgba(28, 31, 42, 0.9));
+  color: var(--secondary);
+  box-shadow: 0 0 20px -4px rgba(76, 215, 246, 0.45);
+}
+
+:root[data-design="aurora"] .choice:has(input:checked) .choice_num,
+:root[data-design="aurora"] .choice:has(input:checked) .choice_name {
+  color: var(--secondary);
+}
+
+:root[data-design="aurora"] .choice:has(input:checked) .choice_dot {
+  background: var(--secondary);
+  box-shadow: 0 0 8px #4cd7f6;
+}
+
+:root[data-design="aurora"] .mood_grid .choice:has(input:checked)::before {
+  content: none;
+}
+
+:root[data-design="aurora"] .button_primary {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: linear-gradient(90deg, #a078ff, #6d3bd7 48%, #03b5d3);
+  color: #ffffff;
+  box-shadow: 0 10px 28px -6px rgba(160, 120, 255, 0.5);
+}
+
+:root[data-design="aurora"] .button_primary:hover:not(:disabled) {
+  background: linear-gradient(90deg, #b794ff, #7c4dff 48%, #22d3ee);
+}
+
+:root[data-design="aurora"] .sentence_lead {
+  font-size: 20px;
+  line-height: 34px;
+}
+
+:root[data-design="aurora"] .verse_caution .verse_label,
+:root[data-design="aurora"] .card_caption {
+  color: var(--secondary);
+}
+
+:root[data-design="aurora"] .design_button[aria-pressed="true"] {
+  background: linear-gradient(90deg, #a078ff, #03b5d3);
+  color: #ffffff;
+}

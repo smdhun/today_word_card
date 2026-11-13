@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" data-theme="dark">
+<html lang="ko" data-theme="dark" data-design="tarot">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,9 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/aurora.css">
   <!-- 화면이 그려지기 전에 모드를 정해야 색이 깜빡이지 않습니다. -->
   <script src="js/constants.js"></script>
   <script src="js/theme.js"></script>
+  <script src="js/design.js"></script>
 </head>
 <body>
   <!-- 아이콘 모음. 화면에는 보이지 않고, 아래에서 <use>로 꺼내 씁니다. -->
@@ -38,6 +40,11 @@
           <svg class="icon" aria-hidden="true"><use href="#icon_content_copy"/></svg>
           <span>문장 복사</span>
         </button>
+        <!-- 문장 복사와 한 칸 띄워, 화면 옷만 갈아입힙니다. -->
+        <div class="design_switch" role="group" aria-label="화면 디자인">
+          <button id="design_tarot" class="design_button" type="button" data-design-button data-design="tarot" aria-pressed="true">타로</button>
+          <button id="design_aurora" class="design_button" type="button" data-design-button data-design="aurora" aria-pressed="false">오로라</button>
+        </div>
       </div>
       <button id="theme_toggle" class="theme_toggle" type="button">
         <span class="theme_label theme_label_to_light">
@@ -54,7 +61,12 @@
 
   <main class="stage">
     <section class="intro">
-      <h1>오늘의 한마디</h1>
+      <p class="aurora_kicker">깊은 밤의 의식</p>
+      <h1>
+        <span class="title_tarot">오늘의 한마디</span>
+        <span class="title_aurora">마음의 결을 고르는 시간</span>
+      </h1>
+      <p class="aurora_lead">오늘 당신의 밤에 머물고 있는 감정을 가만히 짚어보세요.</p>
     </section>
 
     <div class="layout">
@@ -65,27 +77,45 @@
             <div class="mood_grid">
               <label class="choice" for="mood_joy">
                 <input id="mood_joy" type="radio" name="mood" value="joy">
-                <span>기쁨</span>
+                <span class="choice_num" aria-hidden="true">01</span>
+                <span class="choice_mark" aria-hidden="true">✨</span>
+                <span class="choice_name">기쁨</span>
+                <span class="choice_dot" aria-hidden="true"></span>
               </label>
               <label class="choice" for="mood_calm">
                 <input id="mood_calm" type="radio" name="mood" value="calm">
-                <span>평온</span>
+                <span class="choice_num" aria-hidden="true">02</span>
+                <span class="choice_mark" aria-hidden="true">🌿</span>
+                <span class="choice_name">평온</span>
+                <span class="choice_dot" aria-hidden="true"></span>
               </label>
               <label class="choice" for="mood_excited">
                 <input id="mood_excited" type="radio" name="mood" value="excited">
-                <span>설렘</span>
+                <span class="choice_num" aria-hidden="true">03</span>
+                <span class="choice_mark" aria-hidden="true">🌙</span>
+                <span class="choice_name">설렘</span>
+                <span class="choice_dot" aria-hidden="true"></span>
               </label>
               <label class="choice" for="mood_anxious">
                 <input id="mood_anxious" type="radio" name="mood" value="anxious">
-                <span>불안</span>
+                <span class="choice_num" aria-hidden="true">04</span>
+                <span class="choice_mark" aria-hidden="true">🌊</span>
+                <span class="choice_name">불안</span>
+                <span class="choice_dot" aria-hidden="true"></span>
               </label>
               <label class="choice" for="mood_tired">
                 <input id="mood_tired" type="radio" name="mood" value="tired">
-                <span>피곤</span>
+                <span class="choice_num" aria-hidden="true">05</span>
+                <span class="choice_mark" aria-hidden="true">🕯️</span>
+                <span class="choice_name">피곤</span>
+                <span class="choice_dot" aria-hidden="true"></span>
               </label>
               <label class="choice" for="mood_sad">
                 <input id="mood_sad" type="radio" name="mood" value="sad">
-                <span>우울</span>
+                <span class="choice_num" aria-hidden="true">06</span>
+                <span class="choice_mark" aria-hidden="true">🌧️</span>
+                <span class="choice_name">우울</span>
+                <span class="choice_dot" aria-hidden="true"></span>
               </label>
             </div>
           </fieldset>
@@ -102,10 +132,11 @@
       <article id="result_card" class="result_card">
         <div class="card_inner">
           <div id="card_head" class="card_head" hidden>
-            <div>
-              <p class="card_kicker">천궁의 운율</p>
-              <p id="card_date" class="card_date"></p>
-            </div>
+            <!-- 날짜 대신, 지금 걸린 그림의 이름을 적습니다. -->
+            <p id="card_caption" class="card_caption">
+              <svg class="icon" aria-hidden="true"><use href="#icon_bedtime"/></svg>
+              <span id="vignette_caption"></span>
+            </p>
             <p class="mood_chip">
               <span class="mood_chip_dot" aria-hidden="true"></span>
               <span id="card_mood"></span>
@@ -115,10 +146,6 @@
           <!-- 문장을 뽑기 전에는 이 그림이 보이고, 뽑은 뒤에는 js/vignettes.js의 그림으로 바뀝니다. -->
           <div id="card_vignette" class="card_vignette">
             <img id="vignette_image" src="images/night_sky.jpg" alt="" width="512" height="279">
-            <p class="vignette_caption">
-              <svg class="icon" aria-hidden="true"><use href="#icon_bedtime"/></svg>
-              <span id="vignette_caption">성찰의 밤</span>
-            </p>
           </div>
 
           <p id="card_empty" class="card_empty">오늘의 기분을 고르면 오늘을 위한 짧은 문장이 여기에 나타납니다.</p>
@@ -166,7 +193,8 @@
     </div>
 
     <footer class="epilogue">
-      <p>밤하늘의 별처럼 삶의 길을 밝히는 한 줄의 성찰</p>
+      <p class="epilogue_tarot">밤하늘의 별처럼 삶의 길을 밝히는 한 줄의 성찰</p>
+      <p class="epilogue_aurora">화면을 닫기 전, 깊은 숨을 들이쉬고 내쉬어보세요.</p>
       <p class="epilogue_stars" aria-hidden="true">· · · ✦ · · ·</p>
       <!-- 속담은 우리말샘 자료라서, 라이선스 조건에 따라 출처를 밝힙니다. -->
       <p class="epilogue_source">

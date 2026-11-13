@@ -147,6 +147,39 @@ h2 {
   letter-spacing: 0;
 }
 
+/* 문장 복사와 조금 띄운 디자인 전환 버튼 */
+.design_switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+}
+
+.design_button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.design_button:hover {
+  color: var(--ink);
+}
+
+.design_button[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--on_primary);
+  font-weight: 600;
+}
+
 .theme_toggle {
   flex: none;
   min-height: 40px;
@@ -297,8 +330,15 @@ fieldset {
   cursor: pointer;
 }
 
-.choice:hover {
-  color: var(--ink);
+/* 오로라에서만 보이는 번호와 기호. 타로에서는 기분 이름만 둡니다. */
+.choice_num,
+.choice_mark,
+.choice_dot,
+.aurora_kicker,
+.aurora_lead,
+.title_aurora,
+.epilogue_aurora {
+  display: none;
 }
 
 /* 실제 라디오 버튼은 숨기고, 키보드와 화면낭독기에서는 그대로 쓰입니다. */
@@ -330,7 +370,8 @@ fieldset {
   transform: rotate(45deg);
 }
 
-.choice:has(input:focus-visible) {
+.choice:has(input:focus-visible),
+.design_button:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
@@ -493,22 +534,22 @@ fieldset {
   gap: 12px;
 }
 
-.card_kicker {
-  color: var(--primary);
-  font-family: var(--font_label);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 16px;
-  letter-spacing: 0.1em;
-}
-
-.card_date {
-  color: var(--ink_soft);
+.card_caption {
+  --icon_size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--vignette_ink);
   font-family: var(--font_label);
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
   letter-spacing: 0.04em;
+}
+
+.card_caption.is_changing {
+  animation: caption_rise 0.6s ease-out;
 }
 
 .mood_chip {
@@ -564,10 +605,6 @@ fieldset {
   animation: vignette_fade_in 0.6s ease-out;
 }
 
-.card_vignette.is_changing .vignette_caption {
-  animation: caption_rise 0.6s ease-out;
-}
-
 @keyframes vignette_fade_in {
   from {
     opacity: 0;
@@ -592,23 +629,6 @@ fieldset {
     color-mix(in srgb, var(--vignette_fade) 40%, transparent) 50%,
     transparent 100%
   );
-}
-
-.vignette_caption {
-  --icon_size: 16px;
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--vignette_ink);
-  font-family: var(--font_label);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 16px;
-  letter-spacing: 0.08em;
 }
 
 .card_empty {
@@ -797,10 +817,16 @@ fieldset {
   }
 
   .top_action,
-  .theme_toggle {
+  .theme_toggle,
+  .design_button {
     padding-right: 8px;
     padding-left: 8px;
     font-size: 12px;
+  }
+
+  .design_switch {
+    gap: 4px;
+    margin-left: 8px;
   }
 }
 
