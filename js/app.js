@@ -39,6 +39,8 @@
     els.card_mood = require_element("card_mood");
     els.card_lead = require_element("card_lead");
     els.card_caution = require_element("card_caution");
+    els.proverb_block = require_element("proverb_block");
+    els.card_proverb = require_element("card_proverb");
 
     return Boolean(
       els.form &&
@@ -152,6 +154,21 @@
   }
 
   /**
+   * 속담 칸을 채웁니다. 속담이 없는 카드라면 칸을 통째로 숨깁니다.
+   */
+  function render_proverb(proverb_text) {
+    try {
+      if (!els.proverb_block || !els.card_proverb) {
+        return;
+      }
+      els.card_proverb.textContent = proverb_text || "";
+      els.proverb_block.hidden = !proverb_text;
+    } catch (error) {
+      console.error("속담을 보여주지 못했습니다.", error);
+    }
+  }
+
+  /**
    * 고른 카드를 화면에 그립니다.
    */
   function render_card(card) {
@@ -161,6 +178,7 @@
       els.card_mood.textContent = card.mood.label;
       els.card_lead.textContent = card.lead_text;
       els.card_caution.textContent = card.caution_text;
+      render_proverb(card.proverb_text);
       els.result_card.dataset.gender = card.gender.id;
       els.result_card.dataset.mood = card.mood.id;
       els.card_empty.hidden = true;
@@ -177,15 +195,20 @@
 
   /**
    * 카드 내용을 복사할 문자열로 만듭니다.
+   * 속담이 있는 카드라면 맨 아래에 한 줄을 덧붙입니다.
    */
   function build_copy_text(card) {
-    return [
+    const lines = [
       card.date_label,
       card.age_band.label + " · " + card.mood.label,
       "",
       card.lead_text,
       card.caution_text,
-    ].join("\n");
+    ];
+    if (card.proverb_text) {
+      lines.push("", "오늘의 속담: " + card.proverb_text);
+    }
+    return lines.join("\n");
   }
 
   /**
@@ -286,6 +309,7 @@
 
   /**
    * 같은 입력 안에서 다음 문장으로 바꿉니다.
+   * 섞어 둔 덱의 다음 장을 넘기므로, 덱을 한 바퀴 돌기 전에는 같은 문장이 나오지 않습니다.
    */
   function on_redraw() {
     try {
@@ -295,9 +319,8 @@
         show_error(validated.message, validated.focus_id);
         return;
       }
-      const previous_text = current_card ? current_card.full_text : "";
-      const start_offset = current_card ? current_card.offset + 1 : 1;
-      const card = root.pick_another_phrase(validated, start_offset, previous_text);
+      const next_offset = current_card ? current_card.offset + 1 : 1;
+      const card = root.pick_today_phrase(validated, next_offset);
       if (!card) {
         show_error(root.MESSAGES.draw_failed, "redraw_button");
         return;

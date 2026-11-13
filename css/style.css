@@ -506,6 +506,7 @@ fieldset {
 
 .button:focus-visible,
 .theme_toggle:focus-visible,
+.epilogue_source a:focus-visible,
 #age_input:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
@@ -738,6 +739,11 @@ fieldset {
   color: var(--secondary);
 }
 
+/* 속담 칸은 덤이라서, 라벨을 강조색 대신 차분한 글자색으로 둡니다. */
+.verse_proverb .verse_label {
+  color: var(--ink_soft);
+}
+
 /* 문장은 인용문처럼 따옴표로 감쌉니다. */
 .sentence::before {
   content: "\201C";
@@ -801,6 +807,23 @@ fieldset {
   color: color-mix(in srgb, var(--primary) 45%, transparent);
   font-size: 10px;
   letter-spacing: 0.1em;
+}
+
+/* 속담 자료의 출처 표시 */
+.epilogue_source {
+  margin-top: 12px;
+  font-family: var(--font_label);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.epilogue_source a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+.epilogue_source a:hover {
+  color: var(--primary);
 }
 
 /* ───────── 넓은 화면: 입력과 결과를 나란히 ───────── */

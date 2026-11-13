@@ -167,6 +167,14 @@
               <p id="card_caution" class="sentence sentence_caution"></p>
             </div>
 
+            <div id="proverb_block" class="verse verse_proverb" aria-live="polite" hidden>
+              <p class="verse_label">
+                <svg class="icon" aria-hidden="true"><use href="#icon_auto_awesome"/></svg>
+                오늘의 속담
+              </p>
+              <p id="card_proverb" class="sentence sentence_proverb"></p>
+            </div>
+
             <p class="star_divider" aria-hidden="true">✦</p>
 
             <div class="button_row">
@@ -189,11 +197,18 @@
     <footer class="epilogue">
       <p>밤하늘의 별처럼 삶의 길을 밝히는 한 줄의 성찰</p>
       <p class="epilogue_stars" aria-hidden="true">· · · ✦ · · ·</p>
+      <!-- 속담은 우리말샘 자료라서, 라이선스 조건에 따라 출처를 밝힙니다. -->
+      <p class="epilogue_source">
+        속담 출처:
+        <a href="https://opendict.korean.go.kr/" target="_blank" rel="noopener noreferrer">국립국어원 우리말샘</a>
+        (<a href="https://creativecommons.org/licenses/by-sa/2.0/kr/" target="_blank" rel="noopener noreferrer">CC BY-SA 2.0 KR</a>)
+      </p>
     </footer>
   </main>
 
   <script src="js/phrases_general.js"></script>
   <script src="js/phrases_child.js"></script>
+  <script src="js/proverbs.js"></script>
   <script src="js/validate.js"></script>
   <script src="js/picker.js"></script>
   <script src="js/storage.js"></script>

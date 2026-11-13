@@ -1,6 +1,7 @@
 /**
  * 오늘 날짜와 입력으로 문장 덱에서 카드 한 장을 고릅니다.
  * 같은 날, 같은 입력, 같은 순번이면 항상 같은 문장이 나옵니다.
+ * 덱은 하루에 한 번 섞어 두고 차례로 넘기므로, 한 바퀴를 도는 동안은 문장이 겹치지 않습니다.
  */
 (function init_picker() {
   const root = (window.TodayWordCard = window.TodayWordCard || {});
@@ -21,6 +22,66 @@
     } catch (error) {
       console.error("문장 번호를 계산하지 못했습니다.", error);
       return 0;
+    }
+  }
+
+  /**
+   * 씨앗 숫자 하나로 0 이상 1 미만의 수를 차례로 만들어 주는 주사위입니다.
+   * 씨앗이 같으면 나오는 수의 순서도 항상 같습니다.
+   */
+  function create_seeded_random(seed) {
+    let state = seed >>> 0;
+    return function next_random() {
+      state = (state + 0x6d2b79f5) >>> 0;
+      let mixed = state;
+      mixed = Math.imul(mixed ^ (mixed >>> 15), mixed | 1);
+      mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61);
+      return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /**
+   * 덱을 섞은 순서표를 만듭니다. [3, 0, 2, 1]처럼 문장 번호가 한 번씩만 들어 있습니다.
+   * 맨 뒤 카드부터 한 장씩, 앞쪽의 아무 카드와 자리를 바꾸는 방식입니다.
+   */
+  function build_deck_order(seed_key, deck_size) {
+    try {
+      const order = [];
+      for (let index = 0; index < deck_size; index += 1) {
+        order.push(index);
+      }
+
+      const next_random = create_seeded_random(hash_string(seed_key));
+      for (let last_index = deck_size - 1; last_index > 0; last_index -= 1) {
+        const swap_index = Math.floor(next_random() * (last_index + 1));
+        const kept_value = order[last_index];
+        order[last_index] = order[swap_index];
+        order[swap_index] = kept_value;
+      }
+      return order;
+    } catch (error) {
+      console.error("덱의 순서를 정하지 못했습니다.", error);
+      return [];
+    }
+  }
+
+  /**
+   * 섞어 둔 덱에서 순번에 해당하는 한 장을 꺼냅니다.
+   * 순번이 덱 크기를 넘으면 첫 장으로 돌아갑니다.
+   */
+  function pick_from_deck(deck, seed_key, offset) {
+    try {
+      if (!Array.isArray(deck) || deck.length === 0) {
+        return null;
+      }
+      const order = build_deck_order(seed_key, deck.length);
+      if (order.length !== deck.length) {
+        return null;
+      }
+      return deck[order[offset % deck.length]];
+    } catch (error) {
+      console.error("덱에서 한 장을 꺼내지 못했습니다.", error);
+      return null;
     }
   }
 
@@ -122,6 +183,19 @@
   }
 
   /**
+   * 기분에 맞는 속담 목록을 꺼냅니다. 없으면 빈 목록을 돌려줍니다.
+   */
+  function get_proverb_list(mood) {
+    try {
+      const proverb_list = root.PROVERBS ? root.PROVERBS[mood] : null;
+      return Array.isArray(proverb_list) ? proverb_list : [];
+    } catch (error) {
+      console.error("속담 목록을 꺼내지 못했습니다.", error);
+      return [];
+    }
+  }
+
+  /**
    * 문장 두 칸이 비어 있지 않은지 확인합니다.
    */
   function is_phrase_ready(phrase) {
@@ -130,7 +204,7 @@
 
   /**
    * 입력과 순번으로 카드 한 장을 만듭니다.
-   * offset이 0이면 그 날의 기본 문장입니다.
+   * offset이 0이면 그 날의 첫 장이고, 1씩 늘리면 섞어 둔 덱의 다음 장이 나옵니다.
    */
   root.pick_today_phrase = function pick_today_phrase(input, offset) {
     try {
@@ -147,23 +221,21 @@
 
       const safe_offset = Number.isInteger(offset) && offset >= 0 ? offset : 0;
       const date_key = root.get_today_key();
-      // 성별은 카드 색만 바꾸므로 문장 번호에는 넣지 않습니다.
-      const seed_key = [
-        date_key,
-        age_band.id,
-        mood.id,
-        String(safe_offset),
-      ].join("|");
-      const phrase_index = hash_string(seed_key) % phrase_list.length;
-      const phrase = phrase_list[phrase_index];
+
+      // 성별은 카드 색만 바꾸므로 덱을 섞는 기준에는 넣지 않습니다.
+      const phrase_seed_key = [date_key, age_band.id, mood.id, "phrase"].join("|");
+      const phrase = pick_from_deck(phrase_list, phrase_seed_key, safe_offset);
 
       if (!is_phrase_ready(phrase)) {
-        console.error("고른 문장의 모양이 올바르지 않습니다.", phrase_index);
+        console.error("고른 문장의 모양이 올바르지 않습니다.", safe_offset);
         return null;
       }
 
+      // 속담은 덤이므로, 고르지 못해도 카드는 그대로 만듭니다.
+      const proverb_seed_key = [date_key, mood.id, "proverb"].join("|");
+      const proverb = pick_from_deck(get_proverb_list(mood.id), proverb_seed_key, safe_offset);
+
       const age_voice = root.AGE_VOICES[age_band.id] || "오늘";
-      const lead_text = age_voice + ", " + phrase.lead;
 
       return {
         date_key: date_key,
@@ -171,45 +243,13 @@
         age_band: age_band,
         mood: mood,
         gender: gender,
-        lead_text: lead_text,
+        lead_text: age_voice + ", " + phrase.lead,
         caution_text: phrase.caution,
-        full_text: lead_text + " " + phrase.caution,
+        proverb_text: typeof proverb === "string" ? proverb : "",
         offset: safe_offset,
       };
     } catch (error) {
       console.error("오늘의 문장을 고르지 못했습니다.", error);
-      return null;
-    }
-  };
-
-  /**
-   * 직전 문장과 겹치지 않는 다음 카드를 찾습니다.
-   * 다른 문장 보기를 눌러도 같은 글이 반복되지 않게 합니다.
-   */
-  root.pick_another_phrase = function pick_another_phrase(input, offset, previous_text) {
-    try {
-      const age_band = root.get_age_band(input ? input.age : null);
-      const phrase_list = get_phrase_list(
-        input ? input.mood : "",
-        age_band ? age_band.id : ""
-      );
-      const total = phrase_list.length || 1;
-      let next_offset = Number.isInteger(offset) && offset >= 0 ? offset : 0;
-
-      for (let try_count = 0; try_count < total; try_count += 1) {
-        const card = root.pick_today_phrase(input, next_offset);
-        if (!card) {
-          return null;
-        }
-        if (!previous_text || card.full_text !== previous_text) {
-          return card;
-        }
-        next_offset += 1;
-      }
-
-      return root.pick_today_phrase(input, next_offset);
-    } catch (error) {
-      console.error("다른 문장을 고르지 못했습니다.", error);
       return null;
     }
   };
