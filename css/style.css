@@ -201,16 +201,10 @@ h2 {
 }
 
 .intro h1 {
-  margin-bottom: 6px;
   font-size: 24px;
   font-weight: 400;
   line-height: 34px;
   letter-spacing: -0.025em;
-}
-
-.subtitle {
-  color: var(--ink_soft);
-  opacity: 0.8;
 }
 
 .layout {
@@ -626,34 +620,6 @@ fieldset {
   gap: 16px;
 }
 
-/* 제목 양옆의 금색 선 */
-.card_title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--primary);
-  font-size: 19px;
-  font-weight: 500;
-  line-height: 26px;
-  letter-spacing: -0.025em;
-}
-
-.card_title::before,
-.card_title::after {
-  content: "";
-  height: 1px;
-}
-
-.card_title::before {
-  width: 24px;
-  background: color-mix(in srgb, var(--primary) 40%, transparent);
-}
-
-.card_title::after {
-  flex: 1;
-  background: color-mix(in srgb, var(--primary) 20%, transparent);
-}
-
 .verse {
   display: flex;
   flex-direction: column;
@@ -675,6 +641,46 @@ fieldset {
   letter-spacing: 0.04em;
 }
 
+/* 칸 제목 앞 아이콘만 천천히 움직입니다. 글자는 그대로 둡니다. */
+.verse_label .icon {
+  transform-origin: center;
+}
+
+.verse_lead .verse_label .icon {
+  animation: icon_float 3.2s ease-in-out infinite;
+}
+
+.verse_caution .verse_label .icon {
+  animation: icon_sway 3.6s ease-in-out infinite;
+}
+
+.verse_movie .verse_label .icon {
+  animation: icon_twinkle 2.4s ease-in-out infinite;
+}
+
+.verse_proverb .verse_label .icon {
+  animation: icon_twinkle 2.8s ease-in-out 0.7s infinite;
+}
+
+@keyframes icon_float {
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes icon_sway {
+  50% {
+    transform: rotate(-10deg);
+  }
+}
+
+@keyframes icon_twinkle {
+  50% {
+    opacity: 0.4;
+    transform: scale(0.82);
+  }
+}
+
 .verse_lead .verse_label {
   color: var(--primary);
 }
@@ -683,9 +689,17 @@ fieldset {
   color: var(--secondary);
 }
 
-/* 속담 칸은 덤이라서, 라벨을 강조색 대신 차분한 글자색으로 둡니다. */
-.verse_proverb .verse_label {
+/* 속담과 영화 문장은 덤이라서, 라벨을 강조색 대신 차분한 글자색으로 둡니다. */
+.verse_proverb .verse_label,
+.verse_movie .verse_label {
   color: var(--ink_soft);
+}
+
+.movie_quote_source {
+  color: var(--ink_faint);
+  font-family: var(--font_label);
+  font-size: 12px;
+  line-height: 18px;
 }
 
 /* 문장은 인용문처럼 따옴표로 감쌉니다. */

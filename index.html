@@ -48,7 +48,6 @@
   <main class="stage">
     <section class="intro">
       <h1>오늘의 한마디</h1>
-      <p class="subtitle">오늘 밤, 당신에게 건네는 한 문장</p>
     </section>
 
     <div class="layout">
@@ -118,8 +117,6 @@
           <p id="card_empty" class="card_empty">오늘의 기분을 고르면 오늘을 위한 짧은 문장이 여기에 나타납니다.</p>
 
           <div id="card_body" class="card_body" hidden>
-            <h2 class="card_title">오늘의 격언</h2>
-
             <div class="verse verse_lead" aria-live="polite">
               <p class="verse_label">
                 <svg class="icon" aria-hidden="true"><use href="#icon_nights_stay"/></svg>
@@ -134,6 +131,15 @@
                 마음에 둘 주의점
               </p>
               <p id="card_caution" class="sentence sentence_caution"></p>
+            </div>
+
+            <div id="movie_quote_block" class="verse verse_movie" aria-live="polite" hidden>
+              <p class="verse_label">
+                <svg class="icon" aria-hidden="true"><use href="#icon_auto_awesome"/></svg>
+                영화에서 온 한 줄
+              </p>
+              <p id="card_movie_quote" class="sentence sentence_movie"></p>
+              <p id="card_movie_source" class="movie_quote_source"></p>
             </div>
 
             <div id="proverb_block" class="verse verse_proverb" aria-live="polite" hidden>
@@ -183,6 +189,7 @@
 
   <script src="js/phrases.js"></script>
   <script src="js/proverbs.js"></script>
+  <script src="js/movie_quotes.js"></script>
   <script src="js/vignettes.js"></script>
   <script src="js/validate.js"></script>
   <script src="js/picker.js"></script>

@@ -1,7 +1,8 @@
 /**
  * 오늘 날짜와 고른 기분으로 문장 덱에서 카드 한 장을 고릅니다.
  * 같은 날, 같은 기분, 같은 순번이면 항상 같은 문장이 나옵니다.
- * 덱은 하루에 한 번 섞어 두고 차례로 넘기므로, 한 바퀴를 도는 동안은 문장도 그림도 겹치지 않습니다.
+ * 덱은 하루에 한 번 섞어 두고 차례로 넘기므로, 한 바퀴를 도는 동안은 문장이 겹치지 않습니다.
+ * 그림은 기분마다 15장이라, 15번까지는 겹치지 않고 그다음부터 다시 돌아옵니다.
  */
 (function init_picker() {
   const root = (window.TodayWordCard = window.TodayWordCard || {});
@@ -167,12 +168,37 @@
   }
 
   /**
-   * 카드 위에 걸 그림 한 장을 고릅니다.
+   * 영화 문장 목록을 꺼냅니다. 없으면 빈 목록을 돌려줍니다.
+   */
+  function get_movie_quote_list() {
+    try {
+      return Array.isArray(root.MOVIE_QUOTES) ? root.MOVIE_QUOTES : [];
+    } catch (error) {
+      console.error("영화 문장 목록을 꺼내지 못했습니다.", error);
+      return [];
+    }
+  }
+
+  /**
+   * 기분에 맞는 그림 목록을 꺼냅니다. 없으면 빈 목록을 돌려줍니다.
+   */
+  function get_vignette_list(mood) {
+    try {
+      const vignette_list = root.VIGNETTES ? root.VIGNETTES[mood] : null;
+      return Array.isArray(vignette_list) ? vignette_list : [];
+    } catch (error) {
+      console.error("그림 목록을 꺼내지 못했습니다.", error);
+      return [];
+    }
+  }
+
+  /**
+   * 기분에 맞는 그림 한 장을 고릅니다.
    * 그림은 덤이라서, 고르지 못하면 null을 돌려주고 카드는 그대로 만듭니다.
    */
-  function pick_vignette(seed_key, offset) {
+  function pick_vignette(mood, seed_key, offset) {
     try {
-      const vignette = pick_from_deck(root.VIGNETTES, seed_key, offset);
+      const vignette = pick_from_deck(get_vignette_list(mood), seed_key, offset);
       if (!vignette || !vignette.file || !vignette.caption) {
         return null;
       }
@@ -224,9 +250,16 @@
       const proverb_seed_key = [date_key, mood.id, "proverb"].join("|");
       const proverb = pick_from_deck(get_proverb_list(mood.id), proverb_seed_key, safe_offset);
 
-      // 그림도 문장과 같은 순번으로 넘기므로, 문장이 한 바퀴 도는 동안 그림도 겹치지 않습니다.
+      // 그림은 문장과 같은 순번으로 넘깁니다. 15장까지는 겹치지 않습니다.
       const vignette_seed_key = [date_key, mood.id, "vignette"].join("|");
-      const vignette = pick_vignette(vignette_seed_key, safe_offset);
+      const vignette = pick_vignette(mood.id, vignette_seed_key, safe_offset);
+
+      // 영화 문장도 같은 순번으로 넘깁니다. 299장이라 한참 동안 같은 문장이 나오지 않습니다.
+      const movie_seed_key = [date_key, mood.id, "movie"].join("|");
+      const movie_quote = pick_from_deck(get_movie_quote_list(), movie_seed_key, safe_offset);
+      const is_movie_quote_ready = Boolean(
+        movie_quote && movie_quote.text && movie_quote.movie && Number.isInteger(movie_quote.year)
+      );
 
       return {
         date_key: date_key,
@@ -235,6 +268,7 @@
         lead_text: phrase.lead,
         caution_text: phrase.caution,
         proverb_text: typeof proverb === "string" ? proverb : "",
+        movie_quote: is_movie_quote_ready ? movie_quote : null,
         vignette: vignette,
         offset: safe_offset,
       };

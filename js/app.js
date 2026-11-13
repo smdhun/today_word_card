@@ -41,6 +41,9 @@
     els.card_caution = require_element("card_caution");
     els.proverb_block = require_element("proverb_block");
     els.card_proverb = require_element("card_proverb");
+    els.movie_quote_block = require_element("movie_quote_block");
+    els.card_movie_quote = require_element("card_movie_quote");
+    els.card_movie_source = require_element("card_movie_source");
     els.card_vignette = require_element("card_vignette");
     els.vignette_image = require_element("vignette_image");
     els.vignette_caption = require_element("vignette_caption");
@@ -165,6 +168,23 @@
   }
 
   /**
+   * 영화 문장 칸을 채웁니다. 문장이 없으면 칸을 통째로 숨깁니다.
+   */
+  function render_movie_quote(movie_quote) {
+    try {
+      if (!els.movie_quote_block || !els.card_movie_quote || !els.card_movie_source) {
+        return;
+      }
+      const is_ready = Boolean(movie_quote && movie_quote.text);
+      els.card_movie_quote.textContent = is_ready ? movie_quote.text : "";
+      els.card_movie_source.textContent = is_ready ? movie_quote.movie + " (" + movie_quote.year + ")" : "";
+      els.movie_quote_block.hidden = !is_ready;
+    } catch (error) {
+      console.error("영화 문장을 보여주지 못했습니다.", error);
+    }
+  }
+
+  /**
    * 다 불러온 새 그림과 캡션을 화면에 겁니다.
    * 지금 그림을 바닥에 깔아 두고 새 그림을 그 위에서 서서히 나타나게 해서, 두 그림이 겹쳐 바뀌어 보입니다.
    */
@@ -245,6 +265,7 @@
       els.card_lead.textContent = card.lead_text;
       els.card_caution.textContent = card.caution_text;
       render_proverb(card.proverb_text);
+      render_movie_quote(card.movie_quote);
       render_vignette(card.vignette);
       els.result_card.dataset.mood = card.mood.id;
       els.card_empty.hidden = true;
@@ -261,7 +282,7 @@
 
   /**
    * 카드 내용을 복사할 문자열로 만듭니다.
-   * 속담이 있는 카드라면 맨 아래에 한 줄을 덧붙입니다.
+   * 속담과 영화 문장이 있으면 맨 아래에 차례로 덧붙입니다.
    */
   function build_copy_text(card) {
     const lines = [
@@ -273,6 +294,10 @@
     ];
     if (card.proverb_text) {
       lines.push("", "오늘의 속담: " + card.proverb_text);
+    }
+    if (card.movie_quote && card.movie_quote.text) {
+      lines.push("", "영화에서 온 한 줄: " + card.movie_quote.text);
+      lines.push(card.movie_quote.movie + " (" + card.movie_quote.year + ")");
     }
     return lines.join("\n");
   }
