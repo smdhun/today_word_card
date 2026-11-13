@@ -28,18 +28,25 @@
 
   <header class="top_bar">
     <div class="top_bar_inner">
-      <p class="brand">
-        <svg class="icon" aria-hidden="true"><use href="#icon_dark_mode"/></svg>
-        <span>Today</span>
-      </p>
+      <!-- Today 자리. 문장을 다시 뽑거나 복사하는 버튼입니다. -->
+      <div class="top_actions">
+        <button id="redraw_button" class="button button_ghost top_action" type="button" disabled>
+          <svg class="icon" aria-hidden="true"><use href="#icon_cached"/></svg>
+          <span>다른 문장 보기</span>
+        </button>
+        <button id="copy_button" class="button button_ghost top_action" type="button" disabled>
+          <svg class="icon" aria-hidden="true"><use href="#icon_content_copy"/></svg>
+          <span>문장 복사</span>
+        </button>
+      </div>
       <button id="theme_toggle" class="theme_toggle" type="button">
         <span class="theme_label theme_label_to_light">
           <svg class="icon" aria-hidden="true"><use href="#icon_light_mode"/></svg>
-          화이트 모드로 보기
+          화이트모드
         </span>
         <span class="theme_label theme_label_to_dark">
           <svg class="icon" aria-hidden="true"><use href="#icon_dark_mode"/></svg>
-          다크 모드로 보기
+          다크모드
         </span>
       </button>
     </div>
@@ -151,17 +158,6 @@
             </div>
 
             <p class="star_divider" aria-hidden="true">✦</p>
-
-            <div class="button_row">
-              <button id="redraw_button" class="button button_ghost" type="button" disabled>
-                <svg class="icon" aria-hidden="true"><use href="#icon_cached"/></svg>
-                <span>다른 문장 보기</span>
-              </button>
-              <button id="copy_button" class="button button_ghost" type="button" disabled>
-                <svg class="icon" aria-hidden="true"><use href="#icon_content_copy"/></svg>
-                <span>문장 복사</span>
-              </button>
-            </div>
           </div>
 
           <p id="status_message" class="status_message" role="status"></p>
