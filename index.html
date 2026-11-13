@@ -138,11 +138,12 @@
             </p>
           </div>
 
-          <div class="card_vignette">
-            <img src="images/night_sky.jpg" alt="" width="512" height="279">
+          <!-- 문장을 뽑기 전에는 이 그림이 보이고, 뽑은 뒤에는 js/vignettes.js의 그림으로 바뀝니다. -->
+          <div id="card_vignette" class="card_vignette">
+            <img id="vignette_image" src="images/night_sky.jpg" alt="" width="512" height="279">
             <p class="vignette_caption">
               <svg class="icon" aria-hidden="true"><use href="#icon_bedtime"/></svg>
-              성찰의 밤
+              <span id="vignette_caption">성찰의 밤</span>
             </p>
           </div>
 
@@ -203,12 +204,19 @@
         <a href="https://opendict.korean.go.kr/" target="_blank" rel="noopener noreferrer">국립국어원 우리말샘</a>
         (<a href="https://creativecommons.org/licenses/by-sa/2.0/kr/" target="_blank" rel="noopener noreferrer">CC BY-SA 2.0 KR</a>)
       </p>
+      <!-- 카드 그림은 출처 표기 의무가 없는 사진이지만, 어디서 왔는지 밝혀 둡니다. -->
+      <p class="epilogue_source">
+        사진 출처:
+        <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
+        (퍼블릭 도메인, CC0)
+      </p>
     </footer>
   </main>
 
   <script src="js/phrases_general.js"></script>
   <script src="js/phrases_child.js"></script>
   <script src="js/proverbs.js"></script>
+  <script src="js/vignettes.js"></script>
   <script src="js/validate.js"></script>
   <script src="js/picker.js"></script>
   <script src="js/storage.js"></script>

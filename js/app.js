@@ -7,6 +7,8 @@
 
   const els = {};
   let current_card = null;
+  // 그림을 요청할 때마다 1씩 올립니다. 늦게 도착한 예전 그림을 걸러내는 번호표입니다.
+  let vignette_request_no = 0;
 
   /**
    * id로 요소를 찾고, 없으면 기록만 남깁니다.
@@ -41,6 +43,9 @@
     els.card_caution = require_element("card_caution");
     els.proverb_block = require_element("proverb_block");
     els.card_proverb = require_element("card_proverb");
+    els.card_vignette = require_element("card_vignette");
+    els.vignette_image = require_element("vignette_image");
+    els.vignette_caption = require_element("vignette_caption");
 
     return Boolean(
       els.form &&
@@ -169,6 +174,77 @@
   }
 
   /**
+   * 다 불러온 새 그림과 캡션을 화면에 겁니다.
+   * 지금 그림을 바닥에 깔아 두고 새 그림을 그 위에서 서서히 나타나게 해서, 두 그림이 겹쳐 바뀌어 보입니다.
+   */
+  function show_vignette(vignette) {
+    try {
+      const is_previous_loaded = els.vignette_image.naturalWidth > 0;
+      if (is_previous_loaded && els.vignette_image.currentSrc) {
+        els.card_vignette.style.backgroundImage = 'url("' + els.vignette_image.currentSrc + '")';
+      }
+      els.vignette_image.src = vignette.src;
+      els.vignette_caption.textContent = vignette.caption;
+
+      // 클래스를 뗐다가 다시 붙여야 같은 움직임이 매번 새로 시작됩니다.
+      els.card_vignette.classList.remove("is_changing");
+      void els.card_vignette.offsetWidth;
+      els.card_vignette.classList.add("is_changing");
+    } catch (error) {
+      console.error("그림을 바꾸지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 카드의 그림을 바꿉니다. 그림이 없는 카드이거나 불러오지 못하면 지금 그림을 그대로 둡니다.
+   * 새 그림을 먼저 다 받은 뒤에 바꿔 걸어서, 반쯤 그려진 그림이 보이지 않게 합니다.
+   */
+  function render_vignette(vignette) {
+    try {
+      if (!vignette || !els.card_vignette || !els.vignette_image || !els.vignette_caption) {
+        return;
+      }
+
+      vignette_request_no += 1;
+      const request_no = vignette_request_no;
+
+      if (els.vignette_image.getAttribute("src") === vignette.src) {
+        els.vignette_caption.textContent = vignette.caption;
+        return;
+      }
+
+      const loader = new Image();
+      loader.onload = function on_vignette_loaded() {
+        // 기다리는 사이에 버튼을 또 눌렀다면, 이 그림은 이미 지나간 카드의 것이므로 버립니다.
+        if (request_no === vignette_request_no) {
+          show_vignette(vignette);
+        }
+      };
+      loader.onerror = function on_vignette_failed() {
+        console.error("그림을 불러오지 못했습니다.", vignette.src);
+      };
+      loader.src = vignette.src;
+    } catch (error) {
+      console.error("그림을 보여주지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 다음 순번의 그림을 미리 받아 둡니다.
+   * 덕분에 "다른 문장 보기"를 눌렀을 때 그림이 문장과 거의 동시에 바뀝니다.
+   */
+  function preload_next_vignette(validated, card) {
+    try {
+      const next_card = root.pick_today_phrase(validated, card.offset + 1);
+      if (next_card && next_card.vignette) {
+        new Image().src = next_card.vignette.src;
+      }
+    } catch (error) {
+      console.error("다음 그림을 미리 받지 못했습니다.", error);
+    }
+  }
+
+  /**
    * 고른 카드를 화면에 그립니다.
    */
   function render_card(card) {
@@ -179,6 +255,7 @@
       els.card_lead.textContent = card.lead_text;
       els.card_caution.textContent = card.caution_text;
       render_proverb(card.proverb_text);
+      render_vignette(card.vignette);
       els.result_card.dataset.gender = card.gender.id;
       els.result_card.dataset.mood = card.mood.id;
       els.card_empty.hidden = true;
@@ -267,6 +344,16 @@
   }
 
   /**
+   * 만든 카드를 현재 카드로 삼아 화면에 그리고, 저장하고, 다음 그림을 미리 받아 둡니다.
+   */
+  function apply_card(validated, card) {
+    current_card = card;
+    render_card(card);
+    persist_card(validated, card);
+    preload_next_vignette(validated, card);
+  }
+
+  /**
    * 검사에 통과한 입력으로 카드를 만들고 보여줍니다.
    */
   function draw_card(validated, offset, is_quiet) {
@@ -279,9 +366,7 @@
     if (!is_quiet) {
       clear_messages();
     }
-    current_card = card;
-    render_card(card);
-    persist_card(validated, card);
+    apply_card(validated, card);
     return card;
   }
 
@@ -308,8 +393,8 @@
   }
 
   /**
-   * 같은 입력 안에서 다음 문장으로 바꿉니다.
-   * 섞어 둔 덱의 다음 장을 넘기므로, 덱을 한 바퀴 돌기 전에는 같은 문장이 나오지 않습니다.
+   * 같은 입력 안에서 다음 문장과 다음 그림으로 바꿉니다.
+   * 섞어 둔 덱의 다음 장을 넘기므로, 덱을 한 바퀴 돌기 전에는 같은 문장도 같은 그림도 나오지 않습니다.
    */
   function on_redraw() {
     try {
@@ -326,9 +411,7 @@
         return;
       }
       // 버튼이 카드 안에 있으므로 포커스는 버튼에 그대로 둡니다.
-      current_card = card;
-      render_card(card);
-      persist_card(validated, card);
+      apply_card(validated, card);
     } catch (error) {
       console.error("다른 문장으로 바꾸지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed, "redraw_button");

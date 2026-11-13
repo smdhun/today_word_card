@@ -1,7 +1,7 @@
 /**
  * 오늘 날짜와 입력으로 문장 덱에서 카드 한 장을 고릅니다.
  * 같은 날, 같은 입력, 같은 순번이면 항상 같은 문장이 나옵니다.
- * 덱은 하루에 한 번 섞어 두고 차례로 넘기므로, 한 바퀴를 도는 동안은 문장이 겹치지 않습니다.
+ * 덱은 하루에 한 번 섞어 두고 차례로 넘기므로, 한 바퀴를 도는 동안은 문장도 그림도 겹치지 않습니다.
  */
 (function init_picker() {
   const root = (window.TodayWordCard = window.TodayWordCard || {});
@@ -124,7 +124,7 @@
   };
 
   /**
-   * 나이 숫자로 말투 구간을 찾습니다.
+   * 나이 숫자로 나이 구간을 찾습니다.
    */
   root.get_age_band = function get_age_band(age) {
     try {
@@ -196,6 +196,26 @@
   }
 
   /**
+   * 카드 위에 걸 그림 한 장을 고릅니다.
+   * 그림은 덤이라서, 고르지 못하면 null을 돌려주고 카드는 그대로 만듭니다.
+   */
+  function pick_vignette(seed_key, offset) {
+    try {
+      const vignette = pick_from_deck(root.VIGNETTES, seed_key, offset);
+      if (!vignette || !vignette.file || !vignette.caption) {
+        return null;
+      }
+      return {
+        src: (root.VIGNETTE_FOLDER || "") + vignette.file,
+        caption: vignette.caption,
+      };
+    } catch (error) {
+      console.error("그림을 고르지 못했습니다.", error);
+      return null;
+    }
+  }
+
+  /**
    * 문장 두 칸이 비어 있지 않은지 확인합니다.
    */
   function is_phrase_ready(phrase) {
@@ -235,7 +255,9 @@
       const proverb_seed_key = [date_key, mood.id, "proverb"].join("|");
       const proverb = pick_from_deck(get_proverb_list(mood.id), proverb_seed_key, safe_offset);
 
-      const age_voice = root.AGE_VOICES[age_band.id] || "오늘";
+      // 그림도 문장과 같은 순번으로 넘기므로, 문장이 한 바퀴 도는 동안 그림도 겹치지 않습니다.
+      const vignette_seed_key = [date_key, age_band.id, mood.id, "vignette"].join("|");
+      const vignette = pick_vignette(vignette_seed_key, safe_offset);
 
       return {
         date_key: date_key,
@@ -243,9 +265,10 @@
         age_band: age_band,
         mood: mood,
         gender: gender,
-        lead_text: age_voice + ", " + phrase.lead,
+        lead_text: phrase.lead,
         caution_text: phrase.caution,
         proverb_text: typeof proverb === "string" ? proverb : "",
+        vignette: vignette,
         offset: safe_offset,
       };
     } catch (error) {

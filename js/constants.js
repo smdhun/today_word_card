@@ -9,7 +9,7 @@
   root.AGE_MIN = 1;
   root.AGE_MAX = 120;
 
-  // 나이를 말투 구간으로 나눕니다. 조언의 내용을 제한하는 기준이 아닙니다.
+  // 나이를 구간으로 나눕니다. 카드에 표시할 이름과, 어린이 덱을 쓸지 정하는 데 씁니다.
   root.AGE_BANDS = [
     { id: "child", label: "어린이", min_age: 1, max_age: 12 },
     { id: "teen", label: "10대", min_age: 13, max_age: 19 },
@@ -19,17 +19,6 @@
     { id: "fifties", label: "50대", min_age: 50, max_age: 59 },
     { id: "senior", label: "60대 이상", min_age: 60, max_age: 120 },
   ];
-
-  // 문장 앞에 붙는 나이 말투. 성별은 여기 들어가지 않습니다.
-  root.AGE_VOICES = {
-    child: "호기심이 길을 만드는 오늘",
-    teen: "경험이 재산이 되는 오늘",
-    twenties: "선택이 많은 오늘",
-    thirties: "책임과 바람이 함께 있는 오늘",
-    forties: "중심을 잡기 좋은 오늘",
-    fifties: "속도를 스스로 고를 수 있는 오늘",
-    senior: "익숙함 속에서 새 기쁨을 찾기 좋은 오늘",
-  };
 
   root.GENDERS = [
     { id: "female", label: "여성" },
