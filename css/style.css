@@ -1,95 +1,79 @@
 /*
- * 책상 위 한지 카드.
- * 색은 모두 아래 변수로 씁니다. 화이트 모드가 기본이고,
- * html 태그에 data-theme="dark"가 붙으면 다크 모드 색으로 바뀝니다.
+ * 밤의 타로 디자인 (stitch_card_design/타로 시안 기준).
+ * 색은 모두 아래 변수로 씁니다. 다크 모드가 기본이고,
+ * html 태그에 data-theme="light"가 붙으면 화이트 모드 색으로 바뀝니다.
  */
 :root {
-  color-scheme: light;
-
-  /* 바탕(책상) */
-  --desk: #f1e9dc;
-  --desk_glow_warm: rgba(214, 146, 92, 0.2);
-  --desk_glow_red: rgba(143, 45, 42, 0.1);
-  --desk_grain: rgba(60, 40, 20, 0.025);
-
-  /* 머리글과 바닥글 */
-  --hero_ink: #241c16;
-  --hero_muted: #645341;
-  --hero_line: rgba(36, 28, 22, 0.5);
-  --toggle_hover: rgba(36, 28, 22, 0.07);
-
-  /* 종이(입력 패널과 결과 카드) */
-  --paper: #fffdf8;
-  --paper_sheen: rgba(255, 255, 255, 0.7);
-  --paper_edge: #e6d9c5;
-  --paper_shadow: 0 18px 40px rgba(88, 62, 36, 0.14);
-
-  /* 글자 */
-  --ink: #241c16;
-  --ink_soft: #4e4034;
-  --muted: #6f5e4d;
-
-  /* 입력칸과 선택 버튼 */
-  --field_bg: #ffffff;
-  --field_line: #d9c8ae;
-  --choice_bg: #fbf6ec;
-  --choice_checked_bg: #fff1e6;
-
-  /* 강조색 */
-  --accent_line: #8f2d2a;
-  --accent_text: #8f2d2a;
-  --ok_text: #1f4f4a;
-  --button_bg: #8f2d2a;
-  --button_bg_hover: #7b2422;
-  --on_button: #fff8f2;
-  --ghost_line: #c9b59a;
-  --ghost_hover: #f6eee0;
-
-  /* 카드 도장 색. 성별 선택에 따라 하나가 쓰입니다. */
-  --seal_neutral: #8a4b22;
-  --seal_female: #9c3044;
-  --seal_male: #1f4f4a;
-}
-
-:root[data-theme="dark"] {
   color-scheme: dark;
 
-  --desk: #231910;
-  --desk_glow_warm: rgba(214, 146, 92, 0.22);
-  --desk_glow_red: rgba(120, 42, 36, 0.28);
-  --desk_grain: rgba(255, 255, 255, 0.018);
+  /* 글꼴. 제목과 문장은 명조, 라벨과 버튼은 고딕입니다. */
+  --font_serif: "Noto Serif KR", "Nanum Myeongjo", Batang, serif;
+  --font_label: "Plus Jakarta Sans", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
 
-  --hero_ink: #f6efe4;
-  --hero_muted: #d9cbb8;
-  --hero_line: rgba(246, 239, 228, 0.6);
-  --toggle_hover: rgba(246, 239, 228, 0.1);
+  /* 바탕과 카드 */
+  --surface: #16130a;
+  --surface_bar: rgba(22, 19, 10, 0.85);
+  --card_form: #1e1c12;
+  --card_result: #222016;
+  --verse_bg: rgba(30, 28, 18, 0.5);
+  --chip: #2d2a1f;
+  --field: rgba(56, 53, 42, 0.6);
+  --field_focus: #38352a;
+  --shadow_form: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -4px rgba(0, 0, 0, 0.35);
+  --shadow_result: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
 
-  --paper: #2e231a;
-  --paper_sheen: rgba(255, 255, 255, 0.05);
-  --paper_edge: rgba(255, 236, 208, 0.14);
-  --paper_shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+  /* 글자 */
+  --ink: #e9e2d2;
+  --ink_soft: #d1c5b4;
+  --ink_faint: #a39988;
 
-  --ink: #f3e9da;
-  --ink_soft: #dccdb9;
-  --muted: #b5a48f;
+  /* 강조색. 금색이 주인공이고, 푸른색은 주의점 라벨에만 씁니다. */
+  --primary: #e8c176;
+  --primary_hover: #ffdea4;
+  --on_primary: #412d00;
+  --secondary: #bac6ec;
+  --error: #ffb4ab;
 
-  --field_bg: #201811;
-  --field_line: #5a4a3a;
-  --choice_bg: #372b21;
-  --choice_checked_bg: #4a2a26;
+  /* 밤 풍경 그림 아래쪽을 카드 색으로 녹이는 색과, 그 위 글자색 */
+  --vignette_fade: #222016;
+  --vignette_ink: #e8c176;
 
-  --accent_line: #e07a70;
-  --accent_text: #f0958b;
-  --ok_text: #86cbbd;
-  --button_bg: #a83a35;
-  --button_bg_hover: #bd4640;
-  --on_button: #fff8f2;
-  --ghost_line: #6a5846;
-  --ghost_hover: #3a2e24;
+  /* 기분 표시 색. 성별 선택에 따라 하나가 쓰입니다. */
+  --seal_neutral: #e8c176;
+  --seal_female: #efb8c8;
+  --seal_male: #bac6ec;
+}
 
-  --seal_neutral: #e0a878;
-  --seal_female: #ee9aa9;
-  --seal_male: #86cbbd;
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --surface: #f5f0e4;
+  --surface_bar: rgba(245, 240, 228, 0.85);
+  --card_form: #fdfaf2;
+  --card_result: #fffdf7;
+  --verse_bg: #f5f0e4;
+  --chip: #ece5d5;
+  --field: #efe8d9;
+  --field_focus: #e6dcc8;
+  --shadow_form: 0 10px 15px -3px rgba(88, 70, 30, 0.12), 0 4px 6px -4px rgba(88, 70, 30, 0.1);
+  --shadow_result: 0 20px 25px -5px rgba(88, 70, 30, 0.14), 0 8px 10px -6px rgba(88, 70, 30, 0.1);
+
+  --ink: #1f1c13;
+  --ink_soft: #4e4639;
+  --ink_faint: #6b6253;
+
+  --primary: #775a19;
+  --primary_hover: #5d4200;
+  --on_primary: #ffffff;
+  --secondary: #3a4666;
+  --error: #ba1a1a;
+
+  --vignette_fade: rgba(22, 19, 10, 0.85);
+  --vignette_ink: #ffdea4;
+
+  --seal_neutral: #775a19;
+  --seal_female: #7d5260;
+  --seal_male: #3a4666;
 }
 
 * {
@@ -103,161 +87,255 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: var(--surface);
   color: var(--ink);
-  font-family: "Nanum Gothic", "Malgun Gothic", sans-serif;
+  font-family: var(--font_serif);
+  font-size: 16px;
+  line-height: 28px;
+  letter-spacing: 0.01em;
   word-break: keep-all;
   overflow-wrap: break-word;
-  background-color: var(--desk);
-  background-image:
-    radial-gradient(circle at 12% 0%, var(--desk_glow_warm), transparent 34%),
-    radial-gradient(circle at 88% 100%, var(--desk_glow_red), transparent 38%),
-    repeating-linear-gradient(90deg, var(--desk_grain) 0 1px, transparent 1px 8px);
 }
 
 button,
 input {
   font: inherit;
+  letter-spacing: inherit;
 }
 
-.stage {
-  width: min(1040px, calc(100% - 32px));
-  margin: 36px auto 56px;
+p,
+h1,
+h2 {
+  margin: 0;
 }
 
-.hero {
-  position: relative;
-  margin-bottom: 28px;
-  color: var(--hero_ink);
-  text-align: center;
+/* 아이콘. 크기는 쓰는 곳에서 --icon_size로 정하고, 색은 글자색을 따릅니다. */
+.icon_sprite {
+  display: none;
 }
 
-/* 화면 모드 전환 버튼. 머리글 오른쪽 위에 둡니다. */
-.theme_toggle {
-  position: absolute;
+.icon {
+  flex: none;
+  width: var(--icon_size, 18px);
+  height: var(--icon_size, 18px);
+  fill: currentColor;
+}
+
+/* ───────── 위쪽 띠: 이름과 화면 모드 버튼 ───────── */
+
+.top_bar {
+  position: sticky;
   top: 0;
-  right: 0;
+  z-index: 10;
+  background: var(--surface_bar);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+.top_bar_inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: min(840px, 100% - 40px);
+  height: 64px;
+  margin: 0 auto;
+}
+
+.brand {
+  --icon_size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 36px;
+  letter-spacing: -0.025em;
+}
+
+.brand .icon {
+  color: var(--primary);
+}
+
+.theme_toggle {
   min-height: 40px;
-  padding: 8px 16px;
-  border: 1px solid var(--hero_line);
+  padding: 0 14px;
+  border: 0;
   border-radius: 999px;
-  background: transparent;
-  color: var(--hero_ink);
-  font-size: 0.88rem;
-  font-weight: 700;
+  background: var(--chip);
+  color: var(--primary);
+  font-family: var(--font_label);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.04em;
   cursor: pointer;
 }
 
 .theme_toggle:hover {
-  background: var(--toggle_hover);
+  color: var(--primary_hover);
 }
 
 /* 버튼에는 지금 모드의 반대쪽으로 가는 문구 하나만 보입니다. */
-.theme_label_to_light,
-:root[data-theme="dark"] .theme_label_to_dark {
+.theme_label {
+  --icon_size: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme_label_to_dark,
+:root[data-theme="light"] .theme_label_to_light {
   display: none;
 }
 
-:root[data-theme="dark"] .theme_label_to_light {
-  display: inline;
+:root[data-theme="light"] .theme_label_to_dark {
+  display: inline-flex;
 }
 
-.brand_seal {
-  display: grid;
-  place-items: center;
-  width: 54px;
-  height: 54px;
-  margin: 0 auto 12px;
-  border: 2px solid var(--hero_line);
-  border-radius: 50%;
-  color: var(--hero_ink);
-  font-family: "Nanum Myeongjo", Batang, serif;
-  font-size: 28px;
+/* ───────── 본문 틀 ───────── */
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: min(840px, 100% - 40px);
+  margin: 0 auto;
+  padding: 8px 0 48px;
 }
 
-.hero h1 {
-  margin: 0;
-  font-family: "Nanum Myeongjo", Batang, serif;
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.intro_chip {
+  margin-bottom: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--primary);
+  font-family: var(--font_label);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.1em;
+}
+
+.intro h1 {
+  margin-bottom: 6px;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 34px;
+  letter-spacing: -0.025em;
 }
 
 .subtitle {
-  max-width: 38rem;
-  margin: 10px auto 0;
-  color: var(--hero_muted);
-  line-height: 1.7;
+  color: var(--ink_soft);
+  opacity: 0.8;
 }
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(280px, 0.92fr) minmax(300px, 1.08fr);
-  gap: 22px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
 }
 
-.panel,
-.result_card {
-  background:
-    linear-gradient(180deg, var(--paper_sheen), transparent 28%),
-    var(--paper);
-  border: 1px solid var(--paper_edge);
-  border-radius: 22px;
-  box-shadow: var(--paper_shadow);
-}
+/* ───────── 입력 카드 ───────── */
 
 .panel {
-  padding: 26px 22px 22px;
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--card_form);
+  box-shadow: var(--shadow_form);
 }
 
-.panel h2,
-.card_title {
-  margin: 0;
-  font-family: "Nanum Myeongjo", Batang, serif;
-  letter-spacing: -0.03em;
+/* 카드 오른쪽 위의 은은한 금빛 */
+.panel::before {
+  content: "";
+  position: absolute;
+  top: -48px;
+  right: -48px;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  filter: blur(40px);
+  pointer-events: none;
 }
 
-.panel h2 {
-  margin-bottom: 18px;
-  font-size: 1.45rem;
+#fortune_form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .field {
-  margin: 0 0 18px;
+  margin: 0;
+}
+
+fieldset {
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
 }
 
 /* 선택 버튼도 label이라서, 바로 아래 자식인 제목 label만 고릅니다. */
 .field > label,
 .field legend {
   display: block;
-  margin-bottom: 8px;
-  font-weight: 700;
-}
-
-fieldset {
-  border: 0;
-  min-inline-size: 0;
+  margin-bottom: 6px;
   padding: 0;
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.04em;
 }
 
 .field_hint {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 0.86rem;
-  line-height: 1.5;
+  margin-top: 8px;
+  color: var(--ink_faint);
+  font-family: var(--font_label);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.age_box {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 #age_input {
   width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--field_line);
-  border-radius: 12px;
-  background: var(--field_bg);
+  height: 48px;
+  padding: 0 40px 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--field);
   color: var(--ink);
 }
 
+#age_input:focus {
+  background: var(--field_focus);
+}
+
 #age_input::placeholder {
-  color: var(--muted);
+  color: var(--ink_faint);
+}
+
+.age_unit {
+  position: absolute;
+  right: 16px;
+  color: var(--ink_soft);
+  pointer-events: none;
 }
 
 .choice_row,
@@ -271,22 +349,34 @@ fieldset {
 }
 
 .mood_grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .choice {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
-  padding: 8px;
-  border: 1px solid var(--field_line);
-  border-radius: 12px;
-  background: var(--choice_bg);
-  cursor: pointer;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: var(--field);
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.04em;
   text-align: center;
+  cursor: pointer;
 }
 
+.choice:hover {
+  color: var(--ink);
+}
+
+/* 실제 라디오 버튼은 숨기고, 키보드와 화면낭독기에서는 그대로 쓰입니다. */
 .choice input {
   position: absolute;
   width: 1px;
@@ -298,47 +388,67 @@ fieldset {
   border: 0;
 }
 
-.choice span {
-  font-weight: 700;
+.choice:has(input:checked) {
+  background: var(--primary);
+  color: var(--on_primary);
+  font-weight: 600;
 }
 
-.choice:has(input:checked) {
-  border-color: var(--accent_line);
-  background: var(--choice_checked_bg);
-  box-shadow: inset 0 0 0 1px var(--accent_line);
+/* 고른 기분 앞에 체크 표시를 그립니다. */
+.mood_grid .choice:has(input:checked)::before {
+  content: "";
+  width: 5px;
+  height: 10px;
+  margin-top: -3px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .choice:has(input:focus-visible) {
-  outline: 2px solid var(--accent_line);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
-}
-
-.message_slot {
-  min-height: 3rem;
-  margin-bottom: 8px;
 }
 
 .form_message,
 .status_message {
-  margin: 0;
-  line-height: 1.5;
+  font-family: var(--font_label);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
 }
 
 .form_message {
-  color: var(--accent_text);
-  font-weight: 700;
+  color: var(--error);
 }
 
 .status_message {
-  color: var(--ok_text);
-  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
 }
 
+.status_message.is_error {
+  color: var(--error);
+}
+
+/* 안내할 내용이 없을 때는 자리를 차지하지 않습니다. */
+.form_message:empty,
+.status_message:empty {
+  display: none;
+}
+
+/* ───────── 버튼 ───────── */
+
 .button {
-  width: 100%;
-  min-height: 48px;
-  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  font-family: var(--font_label);
   cursor: pointer;
+  /* 색은 모드를 바꿀 때 한 번에 바뀌어야 하므로, 눌림 움직임만 부드럽게 합니다. */
+  transition: transform 0.15s;
 }
 
 .button:disabled {
@@ -347,45 +457,70 @@ fieldset {
 }
 
 .button_primary {
-  border: 0;
-  background: var(--button_bg);
-  color: var(--on_button);
-  font-weight: 700;
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: var(--on_primary);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
 }
 
 .button_primary:hover:not(:disabled) {
-  background: var(--button_bg_hover);
+  background: var(--primary_hover);
+}
+
+.button_primary:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .button_row {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .button_ghost {
-  border: 1px solid var(--ghost_line);
-  background: transparent;
-  color: var(--ink);
-  font-weight: 700;
+  min-height: 44px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: var(--chip);
+  color: var(--ink_soft);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.04em;
 }
 
 .button_ghost:hover:not(:disabled) {
-  background: var(--ghost_hover);
+  color: var(--ink);
+}
+
+.button_ghost:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .button:focus-visible,
 .theme_toggle:focus-visible,
 #age_input:focus-visible {
-  outline: 2px solid var(--accent_line);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
-/* 도장 색 하나를 정하면 카드 테두리 선은 그 색을 옅게 써서 따라옵니다. */
+/* ───────── 결과 카드 ───────── */
+
 .result_card {
   --seal_color: var(--seal_neutral);
-  --line_color: color-mix(in srgb, var(--seal_color) 48%, transparent);
-  padding: 14px;
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+  border-radius: 12px;
+  background: var(--card_result);
+  box-shadow: var(--shadow_result);
 }
 
 .result_card[data-gender="female"] {
@@ -396,103 +531,224 @@ fieldset {
   --seal_color: var(--seal_male);
 }
 
-.result_frame {
-  position: relative;
-  height: 100%;
-  min-height: 420px;
-  padding: 28px 22px 26px;
-  border: 1px solid var(--line_color);
-  border-radius: 16px;
-}
-
-.result_frame::before,
-.result_frame::after {
+/* 카드 위쪽 가운데의 은은한 금빛 */
+.result_card::before {
   content: "";
   position: absolute;
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--line_color);
+  top: -64px;
+  left: 50%;
+  width: 192px;
+  height: 192px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  filter: blur(64px);
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
-.result_frame::before {
-  top: 8px;
-  left: 8px;
-  border-right: 0;
-  border-bottom: 0;
+/* 문장을 뽑을 때마다 카드가 살짝 떠오르듯 나타납니다. */
+.result_card.is_revealing {
+  animation: card_reveal 0.35s ease-out;
 }
 
-.result_frame::after {
-  right: 8px;
-  bottom: 8px;
-  border-top: 0;
-  border-left: 0;
+@keyframes card_reveal {
+  from {
+    opacity: 0.4;
+    transform: scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-.card_empty {
-  margin: 0;
-  color: var(--muted);
-  font-family: "Nanum Myeongjo", Batang, serif;
-  font-size: 1.2rem;
-  line-height: 1.8;
-}
-
-.card_top {
+.card_inner {
+  position: relative;
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card_head {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
+.card_kicker {
+  color: var(--seal_color);
+  font-family: var(--font_label);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.1em;
+}
+
 .card_date {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.92rem;
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.04em;
 }
 
-.card_meta {
-  margin: 8px 0 0;
+.mood_chip {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--chip);
   color: var(--seal_color);
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
-.card_mood {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 72px;
-  height: 72px;
-  margin: 0;
-  border: 2px solid var(--seal_color);
+.mood_chip_dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  color: var(--seal_color);
-  font-family: "Nanum Myeongjo", Batang, serif;
-  font-weight: 700;
-  transform: rotate(-8deg);
+  background: var(--seal_color);
+  animation: dot_pulse 2s ease-in-out infinite;
 }
 
-.card_title {
-  margin: 18px 0 8px;
-  font-size: 1.8rem;
+@keyframes dot_pulse {
+  50% {
+    opacity: 0.5;
+  }
 }
 
-.sentence_label {
-  margin: 18px 0 6px;
-  color: var(--seal_color);
-  font-size: 0.78rem;
-  font-weight: 700;
+/* 밤 풍경 그림. 그림을 불러오지 못해도 밤하늘 색이 대신 보입니다. */
+.card_vignette {
+  position: relative;
+  height: 144px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #1b2440 0%, #2a2f45 55%, #16130a 100%);
+}
+
+.card_vignette img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card_vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    var(--vignette_fade) 0%,
+    color-mix(in srgb, var(--vignette_fade) 40%, transparent) 50%,
+    transparent 100%
+  );
+}
+
+.vignette_caption {
+  --icon_size: 16px;
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--vignette_ink);
+  font-family: var(--font_label);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
   letter-spacing: 0.08em;
 }
 
-.sentence_lead,
-.sentence_caution {
-  margin: 0;
-  font-family: "Nanum Myeongjo", Batang, serif;
-  line-height: 1.85;
+.card_empty {
+  padding: 8px 4px;
+  color: var(--ink_soft);
+  text-align: center;
+}
+
+.card_body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 제목 양옆의 금색 선 */
+.card_title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 26px;
+  letter-spacing: -0.025em;
+}
+
+.card_title::before,
+.card_title::after {
+  content: "";
+  height: 1px;
+}
+
+.card_title::before {
+  width: 24px;
+  background: color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+.card_title::after {
+  flex: 1;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.verse {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--verse_bg);
+}
+
+.verse_label {
+  --icon_size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font_label);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  letter-spacing: 0.04em;
+}
+
+.verse_lead .verse_label {
+  color: var(--primary);
+}
+
+.verse_caution .verse_label {
+  color: var(--secondary);
+}
+
+/* 문장은 인용문처럼 따옴표로 감쌉니다. */
+.sentence::before {
+  content: "\201C";
+}
+
+.sentence::after {
+  content: "\201D";
 }
 
 .sentence_lead {
-  font-size: clamp(1.2rem, 2vw, 1.45rem);
-  font-weight: 700;
+  font-size: 17px;
 }
 
 .sentence_lead:focus {
@@ -501,46 +757,68 @@ fieldset {
 
 .sentence_caution {
   color: var(--ink_soft);
-  font-size: 1.08rem;
+  line-height: 26px;
 }
 
-.footnote {
-  margin: 18px 0 0;
-  color: var(--hero_muted);
-  font-size: 0.88rem;
-  line-height: 1.6;
+/* 별 하나를 가운데 둔 구분선 */
+.star_divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+  color: var(--primary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.star_divider::before,
+.star_divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+}
+
+.star_divider::before {
+  background: linear-gradient(to right, transparent, color-mix(in srgb, var(--primary) 30%, transparent));
+}
+
+.star_divider::after {
+  background: linear-gradient(to left, transparent, color-mix(in srgb, var(--primary) 30%, transparent));
+}
+
+/* ───────── 맺음말 ───────── */
+
+.epilogue {
+  padding: 8px 16px 0;
+  color: var(--ink_faint);
+  font-size: 13px;
+  line-height: 22px;
   text-align: center;
 }
 
-@media (max-width: 800px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
-  .stage {
-    margin-top: 20px;
-  }
-
-  .result_frame {
-    min-height: 320px;
-  }
-
-  .choice_row,
-  .mood_grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .choice_row .choice:last-child {
-    grid-column: 1 / -1;
-  }
+.epilogue_stars {
+  margin-top: 8px;
+  color: color-mix(in srgb, var(--primary) 45%, transparent);
+  font-size: 10px;
+  letter-spacing: 0.1em;
 }
 
-/* 좁은 화면에서는 모드 버튼이 도장과 겹치지 않도록 한 줄 위로 올립니다. */
-@media (max-width: 520px) {
-  .theme_toggle {
-    position: static;
-    display: block;
-    margin: 0 0 14px auto;
+/* ───────── 넓은 화면: 입력과 결과를 나란히 ───────── */
+
+@media (min-width: 760px) {
+  .stage {
+    gap: 32px;
+    padding-top: 24px;
+  }
+
+  .intro h1 {
+    font-size: 32px;
+    line-height: 44px;
+  }
+
+  .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
   }
 }
 

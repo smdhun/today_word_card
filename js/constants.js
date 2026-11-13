@@ -52,6 +52,8 @@
   // 화면 모드. css/style.css의 data-theme 값과 같아야 합니다.
   root.THEME_LIGHT = "light";
   root.THEME_DARK = "dark";
+  // 밤을 주제로 한 디자인이라서, 고른 적이 없으면 다크 모드로 엽니다.
+  root.THEME_DEFAULT = root.THEME_DARK;
   root.THEME_STORAGE_KEY = "today_word_card_theme";
 
   // 사용자에게 보여줄 안내. 원인 내부 정보는 넣지 않습니다.

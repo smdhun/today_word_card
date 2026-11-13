@@ -32,6 +32,7 @@
     els.copy_button = require_element("copy_button");
     els.result_card = require_element("result_card");
     els.card_empty = require_element("card_empty");
+    els.card_head = require_element("card_head");
     els.card_body = require_element("card_body");
     els.card_date = require_element("card_date");
     els.card_meta = require_element("card_meta");
@@ -49,6 +50,7 @@
       els.copy_button &&
       els.result_card &&
       els.card_empty &&
+      els.card_head &&
       els.card_body &&
       els.card_date &&
       els.card_meta &&
@@ -78,12 +80,14 @@
   }
 
   /**
-   * 복사나 저장처럼 다음 행동을 알려 주는 짧은 안내입니다.
+   * 복사나 저장처럼 카드 아래에 보여주는 짧은 안내입니다.
+   * is_error가 true이면 실패 안내 색으로 보여줍니다.
    */
-  function show_status(message) {
+  function show_status(message, is_error) {
     try {
       els.form_message.textContent = "";
       els.status_message.textContent = message || "";
+      els.status_message.classList.toggle("is_error", Boolean(is_error));
     } catch (error) {
       console.error("안내 문장을 보여주지 못했습니다.", error);
     }
@@ -134,6 +138,20 @@
   }
 
   /**
+   * 카드가 떠오르는 움직임을 처음부터 다시 재생합니다.
+   * 클래스를 뗐다가 다시 붙여야 같은 움직임이 매번 새로 시작됩니다.
+   */
+  function play_reveal() {
+    try {
+      els.result_card.classList.remove("is_revealing");
+      void els.result_card.offsetWidth;
+      els.result_card.classList.add("is_revealing");
+    } catch (error) {
+      console.error("카드 움직임을 재생하지 못했습니다.", error);
+    }
+  }
+
+  /**
    * 고른 카드를 화면에 그립니다.
    */
   function render_card(card) {
@@ -146,10 +164,11 @@
       els.result_card.dataset.gender = card.gender.id;
       els.result_card.dataset.mood = card.mood.id;
       els.card_empty.hidden = true;
+      els.card_head.hidden = false;
       els.card_body.hidden = false;
       els.redraw_button.disabled = false;
       els.copy_button.disabled = false;
-      els.result_card.classList.add("is_ready");
+      play_reveal();
     } catch (error) {
       console.error("카드를 그리지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed);
@@ -283,10 +302,10 @@
         show_error(root.MESSAGES.draw_failed, "redraw_button");
         return;
       }
+      // 버튼이 카드 안에 있으므로 포커스는 버튼에 그대로 둡니다.
       current_card = card;
       render_card(card);
       persist_card(validated, card);
-      els.card_lead.focus();
     } catch (error) {
       console.error("다른 문장으로 바꾸지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed, "redraw_button");
@@ -307,10 +326,10 @@
         show_status(root.MESSAGES.copy_done);
         return;
       }
-      show_error(root.MESSAGES.copy_failed, "card_lead");
+      show_status(root.MESSAGES.copy_failed, true);
     } catch (error) {
       console.error("복사 버튼을 처리하지 못했습니다.", error);
-      show_error(root.MESSAGES.copy_failed, "card_lead");
+      show_status(root.MESSAGES.copy_failed, true);
     }
   }
 
