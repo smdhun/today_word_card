@@ -28,6 +28,8 @@
   // 고른 적이 없으면 오로라 화면으로 엽니다.
   root.DESIGN_DEFAULT = root.DESIGN_AURORA;
   root.DESIGN_STORAGE_KEY = "today_word_card_design";
+  // 위쪽 버튼 안내를 이미 본 브라우저인지 기억하는 서랍 이름입니다.
+  root.DESIGN_HINT_KEY = "today_word_card_design_hint";
 
   // 사용자에게 보여줄 안내. 원인 내부 정보는 넣지 않습니다.
   root.MESSAGES = {

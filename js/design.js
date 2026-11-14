@@ -72,7 +72,89 @@
   }
 
   /**
+   * 화면 안내를 이미 치운 브라우저인지 확인합니다.
+   * 서랍을 읽지 못하면 안내를 다시 보여 줍니다.
+   */
+  function has_seen_design_hint() {
+    try {
+      if (!window.localStorage || !root.DESIGN_HINT_KEY) {
+        return false;
+      }
+      return window.localStorage.getItem(root.DESIGN_HINT_KEY) === "seen";
+    } catch (error) {
+      console.error("화면 안내 기록을 읽지 못했습니다.", error);
+      return false;
+    }
+  }
+
+  /**
+   * 화면 안내를 본 것으로 기록합니다. 실패해도 카드 사용은 그대로 둡니다.
+   */
+  function remember_design_hint() {
+    try {
+      if (!window.localStorage || !root.DESIGN_HINT_KEY) {
+        return false;
+      }
+      window.localStorage.setItem(root.DESIGN_HINT_KEY, "seen");
+      return true;
+    } catch (error) {
+      console.error("화면 안내를 기억해 두지 못했습니다. 다음 방문 때 안내가 다시 나올 수 있습니다.", error);
+      return false;
+    }
+  }
+
+  /**
+   * 화면 안내를 숨기고, 이 브라우저에서는 다시 나오지 않게 기록합니다.
+   */
+  function hide_design_hint() {
+    try {
+      const hint = document.getElementById("design_hint");
+      if (!hint || hint.hidden) {
+        return;
+      }
+      hint.hidden = true;
+      hint.classList.remove("is_showing");
+      remember_design_hint();
+    } catch (error) {
+      console.error("화면 안내를 닫지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 처음 방문이면 세 버튼 아래 안내를 보여 줍니다.
+   */
+  function show_design_hint() {
+    try {
+      const hint = document.getElementById("design_hint");
+      if (!hint) {
+        console.error("화면 안내 칸을 찾지 못했습니다.");
+        return;
+      }
+      if (has_seen_design_hint()) {
+        return;
+      }
+      hint.hidden = false;
+      hint.classList.add("is_showing");
+    } catch (error) {
+      console.error("화면 안내를 보여주지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 닫기를 누르면 안내만 치웁니다. 고른 화면은 바꾸지 않습니다.
+   */
+  function on_close_design_hint(event) {
+    try {
+      event.preventDefault();
+      hide_design_hint();
+    } catch (error) {
+      console.error("화면 안내를 닫지 못했습니다.", error);
+    }
+  }
+
+  /**
    * 버튼을 누르면 그 디자인으로 바꾸고 선택을 기억합니다.
+   * 이미 선택된 버튼을 다시 눌러도 안내는 치웁니다.
    */
   function on_pick_design(event) {
     try {
@@ -87,6 +169,7 @@
         show_save_notice();
       }
       document.dispatchEvent(new CustomEvent("today_word_design_change"));
+      hide_design_hint();
     } catch (error) {
       console.error("디자인을 바꾸지 못했습니다.", error);
     }
@@ -105,8 +188,15 @@
       buttons.forEach(function attach(button) {
         button.addEventListener("click", on_pick_design);
       });
+      const close_button = document.getElementById("design_hint_close");
+      if (!close_button) {
+        console.error("화면 안내의 닫기 버튼을 찾지 못했습니다.");
+      } else {
+        close_button.addEventListener("click", on_close_design_hint);
+      }
       const current_design = document.documentElement.dataset.design;
       mark_pressed_button(is_known_design(current_design) ? current_design : root.DESIGN_DEFAULT);
+      show_design_hint();
     } catch (error) {
       console.error("디자인 버튼을 연결하지 못했습니다.", error);
     }

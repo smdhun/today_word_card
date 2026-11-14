@@ -95,6 +95,7 @@ h2 {
 
 .top_bar_inner {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -141,6 +142,84 @@ h2 {
   background: var(--primary);
   color: var(--on_primary);
   font-weight: 600;
+}
+
+/* 처음 방문 안내. 세 버튼 아래의 말풍선입니다. */
+.design_hint {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(420px, 100%);
+  margin-bottom: 12px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 12px;
+  background: var(--chip);
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.design_hint[hidden] {
+  display: none;
+}
+
+/* 말풍선 위쪽 삼각형. 세 버튼의 가운데를 가리킵니다. */
+.design_hint::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--chip);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.design_hint.is_showing {
+  animation: design_hint_in 0.28s ease;
+}
+
+@keyframes design_hint_in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.design_hint_text {
+  margin: 0;
+}
+
+.design_hint_title {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.design_hint_close {
+  flex: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink_soft);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.design_hint_close:hover {
+  color: var(--ink);
 }
 
 /* ───────── 본문 틀 ───────── */
@@ -302,7 +381,8 @@ fieldset {
 }
 
 .choice:has(input:focus-visible),
-.design_button:focus-visible {
+.design_button:focus-visible,
+.design_hint_close:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
@@ -737,10 +817,20 @@ fieldset {
 
 /* ───────── 넓은 화면: 입력과 결과를 나란히 ───────── */
 
+@media (prefers-reduced-motion: reduce) {
+  .design_hint.is_showing {
+    animation: none;
+  }
+}
+
 @media (max-width: 480px) {
   .design_button {
     padding-right: 8px;
     padding-left: 8px;
+    font-size: 12px;
+  }
+
+  .design_hint {
     font-size: 12px;
   }
 
