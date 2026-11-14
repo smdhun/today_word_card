@@ -9,6 +9,9 @@
   let current_card = null;
   // 그림을 요청할 때마다 1씩 올립니다. 늦게 도착한 예전 그림을 걸러내는 번호표입니다.
   let vignette_request_no = 0;
+  // 오로라 등장을 다시 누르면 이전 움직임을 멈추는 번호입니다.
+  let aurora_motion_no = 0;
+  let aurora_hold_timer = 0;
 
   /**
    * id로 요소를 찾고, 없으면 기록만 남깁니다.
@@ -368,15 +371,225 @@
   }
 
   /**
+   * 지금 화면이 오로라인지 확인합니다.
+   */
+  function is_aurora_design() {
+    try {
+      return document.documentElement.dataset.design === root.DESIGN_AURORA;
+    } catch (error) {
+      console.error("화면 종류를 확인하지 못했습니다.", error);
+      return false;
+    }
+  }
+
+  /**
+   * 움직임 줄이기를 켠 브라우저인지 확인합니다.
+   */
+  function prefers_reduced_motion() {
+    try {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch (error) {
+      console.error("움직임 설정을 확인하지 못했습니다.", error);
+      return false;
+    }
+  }
+
+  /**
+   * 날아다니던 그림을 카드 안의 제자리로 되돌립니다.
+   */
+  function release_flying_image() {
+    try {
+      const image = els.card_vignette;
+      if (!image) {
+        return;
+      }
+      const hold = document.getElementById("card_vignette_hold");
+      if (hold && hold.parentNode) {
+        hold.parentNode.insertBefore(image, hold.nextSibling);
+        hold.remove();
+      }
+      image.classList.remove("is_aurora_flight");
+      image.style.position = "";
+      image.style.zIndex = "";
+      image.style.margin = "";
+      image.style.left = "";
+      image.style.top = "";
+      image.style.width = "";
+      image.style.height = "";
+      if (els.result_card) {
+        els.result_card.classList.remove("is_aurora_hold", "is_aurora_arriving");
+      }
+    } catch (error) {
+      console.error("그림을 제자리로 되돌리지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 요소의 한가운데가 화면 한가운데에 오도록 스크롤 위치를 계산합니다.
+   */
+  function scroll_top_for_center(element) {
+    const rect = element.getBoundingClientRect();
+    const next_top = rect.top + window.scrollY + rect.height / 2 - window.innerHeight / 2;
+    return Math.max(0, next_top);
+  }
+
+  /**
+   * 문장 묶음이 화면 한가운데까지 내려갈 빈칸을 아래에 더합니다.
+   */
+  function ensure_scroll_room(scroll_top) {
+    const page = document.documentElement;
+    page.style.paddingBottom = "0px";
+    const max_scroll = page.scrollHeight - window.innerHeight;
+    const deficit = scroll_top - max_scroll;
+    if (deficit > 1) {
+      page.style.paddingBottom = Math.ceil(deficit + 16) + "px";
+    } else {
+      page.style.paddingBottom = "";
+    }
+  }
+
+  /**
+   * 고정된 그림의 위치와 크기를 한 번에 넣습니다.
+   */
+  function place_flying_image(rect) {
+    const image = els.card_vignette;
+    image.style.position = "fixed";
+    image.style.zIndex = "20";
+    image.style.margin = "0";
+    image.style.left = rect.left + "px";
+    image.style.top = rect.top + "px";
+    image.style.width = rect.width + "px";
+    image.style.height = rect.height + "px";
+  }
+
+  /**
+   * 0에서 1로 갈 때 처음과 끝이 천천히 움직이게 합니다.
+   */
+  function ease_in_out(progress) {
+    if (progress < 0.5) {
+      return 2 * progress * progress;
+    }
+    return 1 - Math.pow(-2 * progress + 2, 2) / 2;
+  }
+
+  /**
+   * 오로라에서 문장을 뽑으면 그림이 화면 가운데 나타났다가 위로 올라갑니다.
+   * 그림이 올라간 자리에는 밤의 한 줄, 사색의 결, 격언 두 칸이 화면 가운데 옵니다.
+   */
+  function play_aurora_arrival() {
+    try {
+      aurora_motion_no += 1;
+      const motion_no = aurora_motion_no;
+      window.clearTimeout(aurora_hold_timer);
+      release_flying_image();
+
+      const image = els.card_vignette;
+      const text = els.card_body;
+      if (!image || !text || text.hidden) {
+        return;
+      }
+
+      if (prefers_reduced_motion()) {
+        ensure_scroll_room(scroll_top_for_center(text));
+        window.scrollTo(0, scroll_top_for_center(text));
+        return;
+      }
+
+      const rest = image.getBoundingClientRect();
+      const hold = document.createElement("div");
+      hold.id = "card_vignette_hold";
+      hold.className = "card_vignette_hold";
+      hold.setAttribute("aria-hidden", "true");
+      hold.style.height = rest.height + "px";
+      image.parentNode.insertBefore(hold, image);
+      // 카드에 backdrop-filter가 있으면 fixed가 화면이 아니라 카드 기준으로 붙습니다.
+      document.body.appendChild(image);
+
+      // 가로는 카드 칸에 두고, 세로는 화면 한가운데에 띄웁니다. 그래서 이후 이동은 위로만 갑니다.
+      const center_width = Math.min(rest.width, window.innerWidth - 32);
+      const center_height = Math.min(window.innerHeight * 0.42, Math.max(rest.height, 220));
+      const center_left = Math.max(16, rest.left + (rest.width - center_width) / 2);
+      const center_rect = {
+        left: center_left,
+        top: Math.max(16, (window.innerHeight - center_height) / 2),
+        width: center_width,
+        height: center_height,
+      };
+      place_flying_image(center_rect);
+      image.classList.add("is_aurora_flight");
+      els.result_card.classList.add("is_aurora_hold");
+
+      // 가운데에서 잠깐 보여 준 뒤 위로 올립니다.
+      aurora_hold_timer = window.setTimeout(function rise_image() {
+        try {
+          if (motion_no !== aurora_motion_no) {
+            return;
+          }
+          const text_scroll = scroll_top_for_center(text);
+          ensure_scroll_room(text_scroll);
+          const target_scroll = scroll_top_for_center(text);
+          const place = hold.getBoundingClientRect();
+          const place_top = place.top + window.scrollY - target_scroll;
+          const end_rect = {
+            left: place.left,
+            top: place_top,
+            width: place.width,
+            height: place.height,
+          };
+          const start_scroll = window.scrollY;
+          const start_time = performance.now();
+          const fly_ms = 850;
+          els.result_card.classList.remove("is_aurora_hold");
+          els.result_card.classList.add("is_aurora_arriving");
+
+          function step_flight(now) {
+            if (motion_no !== aurora_motion_no) {
+              return;
+            }
+            const progress = Math.min(1, (now - start_time) / fly_ms);
+            const eased = ease_in_out(progress);
+            window.scrollTo(0, start_scroll + (target_scroll - start_scroll) * eased);
+            place_flying_image({
+              left: center_rect.left + (end_rect.left - center_rect.left) * eased,
+              top: center_rect.top + (end_rect.top - center_rect.top) * eased,
+              width: center_rect.width + (end_rect.width - center_rect.width) * eased,
+              height: center_rect.height + (end_rect.height - center_rect.height) * eased,
+            });
+            if (progress < 1) {
+              window.requestAnimationFrame(step_flight);
+              return;
+            }
+            release_flying_image();
+          }
+          window.requestAnimationFrame(step_flight);
+        } catch (error) {
+          console.error("그림을 위로 올리지 못했습니다. 문장은 카드에 그대로 있습니다.", error);
+          release_flying_image();
+        }
+      }, 700);
+    } catch (error) {
+      console.error("그림 등장을 시작하지 못했습니다. 문장을 다시 뽑아 주세요.", error);
+      release_flying_image();
+    }
+  }
+
+  /**
    * 그림 아래의 문장 뽑기. 다음 문장과 다음 그림을 보여줍니다.
    */
   function on_submit(event) {
     try {
       event.preventDefault();
       const card = show_next_card("draw_button");
-      if (card) {
-        els.card_lead.focus();
+      if (!card) {
+        return;
       }
+      // 오로라는 그림이 가운데 나타났다가 문장 쪽으로 올라갑니다. 포커스가 스크롤을 가로채지 않게 합니다.
+      if (is_aurora_design()) {
+        els.card_lead.focus({ preventScroll: true });
+        play_aurora_arrival();
+        return;
+      }
+      els.card_lead.focus();
     } catch (error) {
       console.error("문장 뽑기를 끝내지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed, "draw_button");
@@ -436,6 +649,10 @@
    */
   function on_design_change() {
     try {
+      aurora_motion_no += 1;
+      window.clearTimeout(aurora_hold_timer);
+      release_flying_image();
+      document.documentElement.style.paddingBottom = "";
       if (!current_card) {
         return;
       }
