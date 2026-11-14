@@ -244,7 +244,7 @@
 
   /**
    * 다음 순번의 그림을 미리 받아 둡니다.
-   * 덕분에 "다른 문장 보기"를 눌렀을 때 그림이 문장과 거의 동시에 바뀝니다.
+   * 덕분에 문장뽑기를 눌렀을 때 그림이 문장과 거의 동시에 바뀝니다.
    */
   function preload_next_vignette(validated, card) {
     try {
@@ -389,18 +389,37 @@
   }
 
   /**
-   * 오늘의 문장 뽑기. 순번을 0으로 되돌려 그 날의 기본 문장을 보여줍니다.
+   * 고른 기분의 다음 문장과 그림을 보여줍니다.
+   * 카드가 없으면 그날의 첫 장을, 있으면 섞어 둔 다음 장을 엽니다.
+   * 위쪽 문장뽑기와 아래쪽 문장 뽑기가 이 길을 함께 씁니다.
+   */
+  function show_next_card(focus_id) {
+    clear_messages();
+    const validated = root.validate_input(collect_input());
+    if (!validated.is_valid) {
+      show_error(validated.message, validated.focus_id);
+      return null;
+    }
+
+    const next_offset = current_card ? current_card.offset + 1 : 0;
+    const card = root.pick_today_phrase(validated, next_offset);
+    if (!card) {
+      console.error("다음 문장을 고르지 못했습니다.", next_offset);
+      show_error(root.MESSAGES.draw_failed, focus_id);
+      return null;
+    }
+
+    apply_card(validated, card);
+    return card;
+  }
+
+  /**
+   * 오늘의 문장 뽑기. 위쪽 문장뽑기와 같이 다음 문장을 보여줍니다.
    */
   function on_submit(event) {
     try {
       event.preventDefault();
-      clear_messages();
-      const validated = root.validate_input(collect_input());
-      if (!validated.is_valid) {
-        show_error(validated.message, validated.focus_id);
-        return;
-      }
-      const card = draw_card(validated, 0, false);
+      const card = show_next_card("draw_button");
       if (card) {
         els.card_lead.focus();
       }
@@ -411,25 +430,12 @@
   }
 
   /**
-   * 같은 기분 안에서 다음 문장과 다음 그림으로 바꿉니다.
-   * 섞어 둔 덱의 다음 장을 넘기므로, 덱을 한 바퀴 돌기 전에는 같은 문장도 같은 그림도 나오지 않습니다.
+   * 위쪽 문장뽑기. 같은 기분 안에서 다음 문장과 다음 그림으로 바꿉니다.
+   * 덱을 한 바퀴 돌기 전에는 같은 문장도 같은 그림도 나오지 않습니다.
    */
   function on_redraw() {
     try {
-      clear_messages();
-      const validated = root.validate_input(collect_input());
-      if (!validated.is_valid) {
-        show_error(validated.message, validated.focus_id);
-        return;
-      }
-      const next_offset = current_card ? current_card.offset + 1 : 1;
-      const card = root.pick_today_phrase(validated, next_offset);
-      if (!card) {
-        show_error(root.MESSAGES.draw_failed, "redraw_button");
-        return;
-      }
-      // 버튼이 카드 안에 있으므로 포커스는 버튼에 그대로 둡니다.
-      apply_card(validated, card);
+      show_next_card("redraw_button");
     } catch (error) {
       console.error("다른 문장으로 바꾸지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed, "redraw_button");

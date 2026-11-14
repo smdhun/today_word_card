@@ -131,7 +131,7 @@ h2 {
   margin: 0 auto;
 }
 
-/* 왼쪽: 다른 문장 보기, 문장 복사 */
+/* 왼쪽: 문장뽑기, 문장 복사 */
 .top_actions {
   display: flex;
   align-items: center;
@@ -678,8 +678,9 @@ fieldset {
   animation: icon_sway 3.6s ease-in-out infinite;
 }
 
+/* 화면 속 한 줄 아이콘은 4.4초에 한 번 커집니다. 타로와 오로라가 함께 씁니다. */
 .verse_movie .verse_label .icon {
-  animation: icon_bloom 2.2s ease-in-out infinite;
+  animation: icon_bloom 4.4s ease-in-out infinite;
 }
 
 .verse_proverb .verse_label .icon {
@@ -742,8 +743,9 @@ fieldset {
   content: "\201D";
 }
 
+/* 하루를 보내는 태도는 다른 격언과 같은 16px입니다. 타로와 오로라가 함께 씁니다. */
 .sentence_lead {
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .sentence_lead:focus {
