@@ -252,6 +252,22 @@ h2 {
   font-family: var(--font_label);
 }
 
+/* 타로는 기분을 고르지 않습니다. 왼쪽 칸을 숨기고 카드만 가운데에 둡니다. */
+:root[data-design="tarot"] .panel {
+  display: none;
+}
+
+@media (min-width: 760px) {
+  :root[data-design="tarot"] .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 타로 그림 높이를 오로라에서 문장을 뽑은 뒤의 그림 높이(258px)와 같게 둡니다. */
+:root[data-design="tarot"] .card_vignette {
+  height: 258px;
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -337,6 +353,12 @@ fieldset {
   letter-spacing: 0.04em;
   text-align: center;
   cursor: pointer;
+}
+
+/* 사진 출처는 타로에서만 보여 줍니다. */
+:root[data-design="aurora"] .epilogue_source,
+:root[data-design="relation"] .epilogue_source {
+  display: none;
 }
 
 /* 오로라에서만 보이는 기호. 타로에서는 기분 이름만 둡니다. */

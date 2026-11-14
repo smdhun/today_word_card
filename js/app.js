@@ -115,13 +115,17 @@
 
   /**
    * 폼에서 고른 기분을 읽습니다.
+   * 타로는 기분 칸이 없으므로 기본 기분으로 문장을 고릅니다.
    */
   function collect_input() {
     try {
+      if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
+        return { mood: root.MOOD_DEFAULT || "joy" };
+      }
       const mood_input = document.querySelector('input[name="mood"]:checked');
       return { mood: mood_input ? mood_input.value : "" };
     } catch (error) {
-      console.error("입력을 읽지 못했습니다.", error);
+      console.error("입력을 읽지 못했습니다. 기쁨으로 다시 뽑아 주세요.", error);
       return { mood: "" };
     }
   }
@@ -220,6 +224,11 @@
       }
       els.vignette_image.src = vignette.src;
       els.vignette_caption.textContent = vignette.caption;
+      // 타로는 강아지·고양이 설명, 오로라는 캐릭터 표정을 그림 이름으로 둡니다.
+      const is_aurora = document.documentElement.dataset.design === root.DESIGN_AURORA;
+      els.vignette_image.alt = is_aurora
+        ? "오로라 캐릭터, " + vignette.caption
+        : vignette.caption;
 
       // 그림과 그림 이름이 같은 박자로 다시 움직이게 합니다.
       els.card_vignette.classList.remove("is_changing");
@@ -247,6 +256,10 @@
 
       if (els.vignette_image.getAttribute("src") === vignette.src) {
         els.vignette_caption.textContent = vignette.caption;
+        const is_aurora_same = document.documentElement.dataset.design === root.DESIGN_AURORA;
+        els.vignette_image.alt = is_aurora_same
+          ? "오로라 캐릭터, " + vignette.caption
+          : vignette.caption;
         return;
       }
 
