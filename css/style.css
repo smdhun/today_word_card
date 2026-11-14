@@ -144,6 +144,75 @@ h2 {
   font-weight: 600;
 }
 
+/* 인간관계 오른쪽의 음악 목록. 막대 높이를 밀지 않도록 아래에 겹칩니다. */
+.music_box {
+  position: relative;
+}
+
+.music_toggle.is_playing {
+  color: var(--primary);
+}
+
+.music_panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 15;
+  width: min(280px, 70vw);
+  max-height: min(360px, 60vh);
+  padding: 8px;
+  overflow: auto;
+  border-radius: 12px;
+  background: var(--card_result);
+  box-shadow: var(--shadow_result);
+}
+
+.music_list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.music_track {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.music_track:hover,
+.music_track:focus-visible {
+  color: var(--ink);
+  outline: 2px solid var(--primary);
+  outline-offset: 0;
+}
+
+.music_track.is_playing {
+  background: var(--primary);
+  color: var(--on_primary);
+  font-weight: 600;
+}
+
+.music_message {
+  margin: 0 0 8px;
+  color: var(--error);
+  font-family: var(--font_label);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
 /* 처음 방문 안내. 세 버튼 아래의 말풍선입니다. */
 .design_hint {
   position: relative;
