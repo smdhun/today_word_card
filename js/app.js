@@ -464,12 +464,32 @@
   }
 
   /**
+   * 저장된 카드가 없으면 오로라의 기쁨 카드를 첫 화면으로 보여 줍니다.
+   */
+  function show_default_card() {
+    try {
+      const mood_id = root.MOOD_DEFAULT || "joy";
+      check_radio("mood", mood_id);
+      const validated = root.validate_input({ mood: mood_id });
+      if (!validated.is_valid) {
+        console.error("첫 화면의 기분을 확인하지 못했습니다.", mood_id);
+        return;
+      }
+      draw_card(validated, 0, true);
+    } catch (error) {
+      console.error("첫 화면 카드를 열지 못했습니다. 기쁨을 고른 뒤 다시 뽑아 주세요.", error);
+    }
+  }
+
+  /**
    * 같은 날이면 저장해 둔 순번을, 날짜가 바뀌었으면 0을 씁니다.
+   * 저장이 없으면 기쁨 카드를 엽니다.
    */
   function restore_saved_card() {
     try {
       const saved = root.load_card_state();
       if (!saved) {
+        show_default_card();
         return;
       }
 

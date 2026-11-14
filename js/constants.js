@@ -15,6 +15,9 @@
     { id: "sad", label: "우울" },
   ];
 
+  // 고른 기분이 없으면 기쁨으로 첫 카드를 엽니다.
+  root.MOOD_DEFAULT = "joy";
+
   root.STORAGE_KEY = "today_word_card_v1";
   root.STORAGE_VERSION = 1;
 

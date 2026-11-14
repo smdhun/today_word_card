@@ -6,6 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.8, maximum-scale=5, user-scalable=yes">
   <title>오늘의 한마디</title>
   <meta name="description" content="오늘의 기분으로 오늘을 보내는 짧은 격언을 고릅니다.">
+  <!-- 링크를 붙여 넣을 때 카카오톡 등이 읽는 미리보기. 스크립트 없이 이 주소의 그림을 가져갑니다. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="오늘의 한마디">
+  <meta property="og:title" content="오늘의 한마디">
+  <meta property="og:description" content="오늘의 기분으로 오늘을 보내는 짧은 격언을 고릅니다.">
+  <meta property="og:url" content="https://today-word-card.pages.dev/">
+  <meta property="og:image" content="https://today-word-card.pages.dev/images/faces/joy/open_laugh.jpg">
+  <meta property="og:image:width" content="640">
+  <meta property="og:image:height" content="349">
+  <meta property="og:image:alt" content="오로라의 기쁨 캐릭터">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="오늘의 한마디">
+  <meta name="twitter:description" content="오늘의 기분으로 오늘을 보내는 짧은 격언을 고릅니다.">
+  <meta name="twitter:image" content="https://today-word-card.pages.dev/images/faces/joy/open_laugh.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -82,7 +96,7 @@
             </legend>
             <div class="mood_grid">
               <label class="choice" for="mood_joy">
-                <input id="mood_joy" type="radio" name="mood" value="joy">
+                <input id="mood_joy" type="radio" name="mood" value="joy" checked>
                 <span class="choice_num" aria-hidden="true">01</span>
                 <span class="choice_mark" aria-hidden="true">✨</span>
                 <span class="choice_name">기쁨</span>
