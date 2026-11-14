@@ -616,6 +616,53 @@ fieldset {
   object-fit: cover;
 }
 
+/* 그림만 넘겨 보는 화살표. 세로 가운데, 좌우 가장자리에 붙입니다. */
+.vignette_nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 72px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(8, 10, 16, 0.42);
+  color: #f7f4ee;
+  font-family: var(--font_label);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.vignette_nav_prev {
+  left: 0;
+  border-radius: 0 12px 12px 0;
+}
+
+.vignette_nav_next {
+  right: 0;
+  border-radius: 12px 0 0 12px;
+}
+
+.vignette_nav:hover,
+.vignette_nav:focus-visible {
+  background: rgba(8, 10, 16, 0.72);
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+:root[data-design="aurora"] .vignette_nav {
+  color: #d7f7ff;
+}
+
+:root[data-design="tarot"] .vignette_nav {
+  color: #f3e2bc;
+}
+
 /* 새 그림은 이전 그림 위에서 서서히 나타나고, 캡션은 살짝 떠오릅니다. */
 .card_vignette.is_changing img {
   animation: vignette_fade_in 0.6s ease-out;
@@ -645,6 +692,11 @@ fieldset {
     color-mix(in srgb, var(--vignette_fade) 40%, transparent) 50%,
     transparent 100%
   );
+}
+
+/* 타로 달빛 사진은 원본 밝기 그대로 둡니다. 아래를 카드 색으로 덮지 않습니다. */
+:root[data-design="tarot"] .card_vignette::after {
+  content: none;
 }
 
 .card_empty {

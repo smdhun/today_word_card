@@ -256,6 +256,30 @@
   }
 
   /**
+   * 지금 화면에서 넘겨 볼 수 있는 그림 전체를 돌려줍니다.
+   * 문장 뽑기와 달리 섞지 않습니다. 파일에 적어 둔 순서 그대로입니다.
+   */
+  root.list_vignettes = function list_vignettes(mood) {
+    try {
+      const deck = get_vignette_deck(mood);
+      if (!Array.isArray(deck.list) || deck.list.length === 0) {
+        return [];
+      }
+      return deck.list.filter(function keep_ready(item) {
+        return Boolean(item && item.file && item.caption);
+      }).map(function to_source(item) {
+        return {
+          src: deck.folder + item.file,
+          caption: item.caption,
+        };
+      });
+    } catch (error) {
+      console.error("넘겨 볼 그림 목록을 만들지 못했습니다.", error);
+      return [];
+    }
+  };
+
+  /**
    * 기분에 맞는 그림 한 장을 고릅니다.
    * 그림은 덤이라서, 고르지 못하면 null을 돌려주고 카드는 그대로 만듭니다.
    */

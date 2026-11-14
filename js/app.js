@@ -9,6 +9,8 @@
   let current_card = null;
   // 그림을 요청할 때마다 1씩 올립니다. 늦게 도착한 예전 그림을 걸러내는 번호표입니다.
   let vignette_request_no = 0;
+  // 아직 화면에 안 걸린 그림 주소입니다. 넘기는 동안 이전 그림에서 다시 세지 않게 합니다.
+  let pending_vignette_src = "";
   // 오로라 등장을 다시 누르면 이전 움직임을 멈추는 번호입니다.
   let aurora_motion_no = 0;
   let aurora_hold_timer = 0;
@@ -51,6 +53,8 @@
     els.card_vignette = require_element("card_vignette");
     els.vignette_image = require_element("vignette_image");
     els.vignette_caption = require_element("vignette_caption");
+    els.vignette_prev = require_element("vignette_prev");
+    els.vignette_next = require_element("vignette_next");
 
     return Boolean(
       els.form &&
@@ -64,7 +68,9 @@
       els.card_caption &&
       els.card_mood &&
       els.card_lead &&
-      els.card_caution
+      els.card_caution &&
+      els.vignette_prev &&
+      els.vignette_next
     );
   }
 
@@ -253,8 +259,10 @@
 
       vignette_request_no += 1;
       const request_no = vignette_request_no;
+      pending_vignette_src = vignette.src;
 
       if (els.vignette_image.getAttribute("src") === vignette.src) {
+        pending_vignette_src = "";
         els.vignette_caption.textContent = vignette.caption;
         const is_aurora_same = document.documentElement.dataset.design === root.DESIGN_AURORA;
         els.vignette_image.alt = is_aurora_same
@@ -267,6 +275,7 @@
       loader.onload = function on_vignette_loaded() {
         // 기다리는 사이에 버튼을 또 눌렀다면, 이 그림은 이미 지나간 카드의 것이므로 버립니다.
         if (request_no === vignette_request_no) {
+          pending_vignette_src = "";
           show_vignette(vignette);
         }
       };
@@ -276,6 +285,84 @@
       loader.src = vignette.src;
     } catch (error) {
       console.error("그림을 보여주지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 주소 끝이 같은 그림인지 확인합니다. 화면에는 전체 주소가 붙을 수 있습니다.
+   */
+  function is_same_vignette_src(shown, item_src) {
+    if (!shown || !item_src) {
+      return false;
+    }
+    return shown === item_src || shown.endsWith("/" + item_src) || shown.endsWith(item_src);
+  }
+
+  /**
+   * 화살표가 넘길 그림 묶음의 기분입니다.
+   * 타로는 기분과 상관없이 같은 달빛 사진이고, 오로라는 고른 기분의 캐릭터입니다.
+   */
+  function current_browse_mood() {
+    try {
+      if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
+        return root.MOOD_DEFAULT || "joy";
+      }
+      const checked = document.querySelector('input[name="mood"]:checked');
+      if (checked && checked.value) {
+        return checked.value;
+      }
+      if (current_card && current_card.mood && current_card.mood.id) {
+        return current_card.mood.id;
+      }
+      return root.MOOD_DEFAULT || "joy";
+    } catch (error) {
+      console.error("그림 넘김의 기분을 읽지 못했습니다. 기쁨 그림을 사용합니다.", error);
+      return root.MOOD_DEFAULT || "joy";
+    }
+  }
+
+  /**
+   * 왼쪽·오른쪽 화살표로 그림만 바꿉니다. 문장과 순번은 그대로 둡니다.
+   * step이 1이면 다음 그림, -1이면 이전 그림입니다. 끝에서는 처음으로 돌아갑니다.
+   */
+  function on_browse_vignette(step) {
+    try {
+      if (typeof root.list_vignettes !== "function") {
+        show_status("그림 목록을 열지 못했습니다. 페이지를 새로고침한 뒤 다시 눌러 주세요.", true);
+        return;
+      }
+
+      const list = root.list_vignettes(current_browse_mood());
+      if (!list.length) {
+        show_status("지금은 넘길 그림이 없습니다. 페이지를 새로고침한 뒤 다시 눌러 주세요.", true);
+        return;
+      }
+
+      const shown = pending_vignette_src || (els.vignette_image ? els.vignette_image.getAttribute("src") : "");
+      const shown_index = list.findIndex(function find_shown(item) {
+        return is_same_vignette_src(shown, item.src);
+      });
+      // 지금 그림이 이 목록에 없으면, 다음을 누르면 첫 장부터, 이전을 누르면 마지막 장부터 봅니다.
+      const base_index = shown_index >= 0 ? shown_index : (step > 0 ? -1 : 0);
+      const next_index = (base_index + step + list.length) % list.length;
+      const next_vignette = list[next_index];
+
+      render_vignette(next_vignette);
+      if (current_card) {
+        current_card.vignette = next_vignette;
+      }
+
+      const ahead = list[(next_index + 1) % list.length];
+      const behind = list[(next_index - 1 + list.length) % list.length];
+      if (ahead) {
+        new Image().src = ahead.src;
+      }
+      if (behind) {
+        new Image().src = behind.src;
+      }
+    } catch (error) {
+      console.error("그림을 넘기지 못했습니다.", error);
+      show_status("그림을 넘기지 못했습니다. 잠시 후 다시 눌러 주세요.", true);
     }
   }
 
@@ -751,6 +838,12 @@
 
       warn_if_options_mismatch();
       els.form.addEventListener("submit", on_submit);
+      els.vignette_prev.addEventListener("click", function on_prev_vignette() {
+        on_browse_vignette(-1);
+      });
+      els.vignette_next.addEventListener("click", function on_next_vignette() {
+        on_browse_vignette(1);
+      });
       document.addEventListener("today_word_design_change", on_design_change);
       restore_saved_card();
     } catch (error) {
