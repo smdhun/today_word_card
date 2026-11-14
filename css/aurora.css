@@ -107,21 +107,25 @@
   white-space: nowrap;
 }
 
-:root[data-design="aurora"] .choice_num,
 :root[data-design="aurora"] .choice_mark,
 :root[data-design="aurora"] .choice_dot {
   display: inline-flex;
 }
 
-:root[data-design="aurora"] .choice_num {
-  color: var(--ink_faint);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-}
-
 :root[data-design="aurora"] .choice_mark {
   font-size: 16px;
   line-height: 1;
+}
+
+/* 고른 기분의 앞 그림만 살짝 떠오릅니다. 여섯 기분이 같은 움직임을 씁니다. */
+:root[data-design="aurora"] .choice:has(input:checked) .choice_mark {
+  animation: aurora_mood_mark 1.6s ease-in-out infinite;
+}
+
+@keyframes aurora_mood_mark {
+  50% {
+    transform: translateY(-3px) scale(1.12);
+  }
 }
 
 :root[data-design="aurora"] .choice_name {
@@ -142,7 +146,6 @@
   box-shadow: 0 0 20px -4px rgba(76, 215, 246, 0.45);
 }
 
-:root[data-design="aurora"] .choice:has(input:checked) .choice_num,
 :root[data-design="aurora"] .choice:has(input:checked) .choice_name {
   color: var(--secondary);
 }

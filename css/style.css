@@ -339,8 +339,7 @@ fieldset {
   cursor: pointer;
 }
 
-/* 오로라에서만 보이는 번호와 기호. 타로에서는 기분 이름만 둡니다. */
-.choice_num,
+/* 오로라에서만 보이는 기호. 타로에서는 기분 이름만 둡니다. */
 .choice_mark,
 .choice_dot,
 .aurora_kicker,
@@ -818,7 +817,8 @@ fieldset {
 /* ───────── 넓은 화면: 입력과 결과를 나란히 ───────── */
 
 @media (prefers-reduced-motion: reduce) {
-  .design_hint.is_showing {
+  .design_hint.is_showing,
+  :root[data-design="aurora"] .choice:has(input:checked) .choice_mark {
     animation: none;
   }
 }
