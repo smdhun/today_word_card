@@ -17,20 +17,8 @@
   }
 
   /**
-   * 사용자가 전에 고른 디자인을 꺼냅니다. 고른 적이 없으면 null입니다.
-   */
-  function load_saved_design() {
-    try {
-      const saved_design = window.localStorage.getItem(root.DESIGN_STORAGE_KEY);
-      return is_known_design(saved_design) ? saved_design : null;
-    } catch (error) {
-      console.error("저장된 디자인을 읽지 못했습니다.", error);
-      return null;
-    }
-  }
-
-  /**
    * 고른 디자인을 저장합니다. 성공하면 true를 돌려줍니다.
+   * 다음 실행의 첫 화면은 이 값과 상관없이 오로라입니다.
    */
   function save_design(design) {
     try {
@@ -134,7 +122,8 @@
         return;
       }
 
-      apply_design(load_saved_design() || root.DESIGN_DEFAULT);
+      // 실행할 때마다 오로라로 시작합니다. 링크를 연 사람도 같은 화면을 먼저 봅니다.
+      apply_design(root.DESIGN_DEFAULT);
 
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", bind_design_buttons);

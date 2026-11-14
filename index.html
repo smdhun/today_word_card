@@ -34,8 +34,6 @@
   <!-- 아이콘 모음. 화면에는 보이지 않고, 아래에서 <use>로 꺼내 씁니다. -->
   <svg class="icon_sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <symbol id="icon_auto_awesome" viewBox="0 -960 960 960"><path d="m760-600-50-110-110-50 110-50 50-110 50 110 110 50-110 50-50 110Zm0 560-50-110-110-50 110-50 50-110 50 110 110 50-110 50-50 110ZM360-160 260-380 40-480l220-100 100-220 100 220 220 100-220 100-100 220Zm0-194 40-86 86-40-86-40-40-86-40 86-86 40 86 40 40 86Zm0-126Z"/></symbol>
-    <!-- 영화 문장 앞 화면. 별이 아니라 재생 표시가 있는 화면입니다. -->
-    <symbol id="icon_screen" viewBox="0 -960 960 960"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm240-160 280-160-280-160v320Z"/></symbol>
     <symbol id="icon_nights_stay" viewBox="0 -960 960 960"><path d="M504-465Zm20 385H420l20-12.5q20-12.5 43.5-28t43.5-28l20-12.5q81-6 149.5-49T805-325q-86-8-163-43.5T504-465q-61-61-97-138t-43-163q-77 43-120.5 118.5T200-484v12l-12 5.5q-12 5.5-26.5 11.5T135-443.5l-12 5.5q-2-11-2.5-23t-.5-23q0-146 93-257.5T450-880q-18 99 11 193.5T561-521q71 71 165.5 100T920-410q-26 144-138 237T524-80Zm-284-80h180q25 0 42.5-17.5T480-220q0-25-17-42.5T422-280h-52l-20-48q-14-33-44-52.5T240-400q-50 0-85 34.5T120-280q0 50 35 85t85 35Zm0 80q-83 0-141.5-58.5T40-280q0-83 58.5-141.5T240-480q60 0 109.5 32.5T423-360q57 2 97 42.5t40 97.5q0 58-41 99t-99 41H240Z"/></symbol>
     <symbol id="icon_wb_twilight" viewBox="0 -960 960 960"><path d="m734-556-56-58 86-84 56 56-86 86ZM80-160v-80h800v80H80Zm360-520v-120h80v120h-80ZM226-558l-84-86 56-56 86 86-58 56Zm71 158h366q-23-54-72-87t-111-33q-62 0-111 33t-72 87Zm-97 80q0-117 81.5-198.5T480-600q117 0 198.5 81.5T760-320H200Zm280-80Z"/></symbol>
     <symbol id="icon_bedtime" viewBox="0 -960 960 960"><path d="M484-80q-84 0-157.5-32t-128-86.5Q144-253 112-326.5T80-484q0-146 93-257.5T410-880q-18 99 11 193.5T521-521q71 71 165.5 100T880-410q-26 144-138 237T484-80Zm0-80q88 0 163-44t118-121q-86-8-163-43.5T464-465q-61-61-97-138t-43-163q-77 43-120.5 118.5T160-484q0 135 94.5 229.5T484-160Zm-20-305Z"/></symbol>
@@ -136,9 +134,9 @@
             </p>
           </div>
 
-          <!-- 문장을 뽑기 전에는 이 그림이 보입니다. 타로는 풍경, 오로라는 캐릭터로 바뀝니다. -->
+          <!-- 첫 그림은 오로라의 기쁨입니다. 스크립트 전에도, 링크 미리보기에서도 이 얼굴이 먼저입니다. -->
           <div id="card_vignette" class="card_vignette">
-            <img id="vignette_image" src="images/night_sky.jpg" alt="" width="512" height="279">
+            <img id="vignette_image" src="images/faces/joy/open_laugh.jpg" alt="오로라의 기쁨 캐릭터" width="640" height="349">
           </div>
 
           <!-- 그림 바로 아래. form 속성이 왼쪽 기분 선택과 이 버튼을 이어 줍니다. -->
@@ -172,23 +170,23 @@
               <p id="card_caution" class="sentence sentence_caution"></p>
             </div>
 
-            <div id="movie_quote_block" class="verse verse_movie" aria-live="polite" hidden>
-              <p class="verse_label">
-                <svg class="icon" aria-hidden="true"><use href="#icon_screen"/></svg>
-                <span class="label_tarot">영화에서 온 한 줄</span>
-                <span class="label_aurora">화면 속의 한 줄</span>
-              </p>
-              <p id="card_movie_quote" class="sentence sentence_movie"></p>
-              <p id="card_movie_source" class="movie_quote_source"></p>
-            </div>
-
-            <div id="proverb_block" class="verse verse_proverb" aria-live="polite" hidden>
+            <!-- 격언 두 칸. 뽑을 때마다 서로 다른 카테고리에서 하나씩 채웁니다. -->
+            <div id="wise_quote_first" class="verse verse_wise" aria-live="polite" hidden>
               <p class="verse_label">
                 <svg class="icon" aria-hidden="true"><use href="#icon_auto_awesome"/></svg>
-                <span class="label_tarot">오늘의 속담</span>
-                <span class="label_aurora">오래 남은 말</span>
+                <span id="wise_category_first"></span>
               </p>
-              <p id="card_proverb" class="sentence sentence_proverb"></p>
+              <p id="wise_text_first" class="sentence"></p>
+              <p id="wise_person_first" class="wise_person"></p>
+            </div>
+
+            <div id="wise_quote_second" class="verse verse_wise verse_wise_second" aria-live="polite" hidden>
+              <p class="verse_label">
+                <svg class="icon" aria-hidden="true"><use href="#icon_bedtime"/></svg>
+                <span id="wise_category_second"></span>
+              </p>
+              <p id="wise_text_second" class="sentence"></p>
+              <p id="wise_person_second" class="wise_person"></p>
             </div>
 
             <p class="star_divider" aria-hidden="true">✦</p>
@@ -218,39 +216,32 @@
       <section id="relation_mind" class="relation_chapter">
         <h2>제1장. 먼저 지녀야 할 마음가짐 7선</h2>
         <article class="relation_card">
-          <p class="relation_index">01</p>
-          <h3>모든 사람과 잘 지내야 한다는 생각을 버리기</h3>
+          <h3><span class="relation_index">01.</span> 모든 사람과 잘 지내야 한다는 생각을 버리기</h3>
           <p>직장은 친구를 사귀러 온 곳이 아닙니다. 모든 이에게 사랑받고 인정받으려 애쓰지 마세요. 우리에게 필요한 것은 오직 업무상 원만한 협력뿐입니다.</p>
         </article>
         <article class="relation_card">
-          <p class="relation_index">02</p>
-          <h3>상대방의 무례에 내 감정을 맡기지 않기</h3>
+          <h3><span class="relation_index">02.</span> 상대방의 무례에 내 감정을 맡기지 않기</h3>
           <p class="relation_quote">나의 마음은 귀하다. 결코 아무에게나 흔들리도록 문을 열어두지 말자.</p>
           <p>상대의 불쾌한 행동은 그 사람의 인격과 수준을 보여줄 뿐입니다. 그것을 내 탓으로 가져와 상처받을 이유가 전혀 없습니다.</p>
         </article>
         <article class="relation_card">
-          <p class="relation_index">03</p>
-          <h3>이해하되, 억지로 좋아하려 애쓰지 않기</h3>
+          <h3><span class="relation_index">03.</span> 이해하되, 억지로 좋아하려 애쓰지 않기</h3>
           <p>저 사람은 원래 저런 결을 가진 사람이구나 하고 객관적 거리를 두세요. 억지 호감은 더 큰 피로를 낳습니다.</p>
         </article>
         <article class="relation_card">
-          <p class="relation_index">04</p>
-          <h3>사소한 도발에 매번 반응하지 않기</h3>
+          <h3><span class="relation_index">04.</span> 사소한 도발에 매번 반응하지 않기</h3>
           <p>먹이를 주지 않으면 불길은 사그라듭니다. 감정 섞인 언쟁은 단호히 건너뛰고, 오직 서면과 사실만 두고 소통하세요.</p>
         </article>
         <article class="relation_card">
-          <p class="relation_index">05</p>
-          <h3>자존심 싸움 대신 나만의 품격 지키기</h3>
+          <h3><span class="relation_index">05.</span> 자존심 싸움 대신 나만의 품격 지키기</h3>
           <p>목소리를 높이지 않아도 분명함은 전해집니다. 말은 짧고 명료하게, 표정은 담담하게 유지하는 것이 최고의 품격입니다.</p>
         </article>
         <article class="relation_card">
-          <p class="relation_index">06</p>
-          <h3>직장은 내 거대한 삶의 극히 일부일 뿐</h3>
+          <h3><span class="relation_index">06.</span> 직장은 내 거대한 삶의 극히 일부일 뿐</h3>
           <p>퇴근 후의 고요한 차 한 잔, 아끼는 이들과의 온기, 나의 취미가 온전한 진짜 세상입니다. 직장에 인생 전체를 저당 잡히지 마세요.</p>
         </article>
         <article class="relation_card">
-          <p class="relation_index">07</p>
-          <h3>부당함 앞에서는 나 자신을 방어하기</h3>
+          <h3><span class="relation_index">07.</span> 부당함 앞에서는 나 자신을 방어하기</h3>
           <p>선을 넘는 부당한 요구는 정중하고 건조하게 거절하고, 필요하다면 일시와 발언을 담담히 객관적 일지로 기록해 두세요.</p>
         </article>
       </section>
@@ -319,12 +310,6 @@
       <p class="epilogue_tarot">밤하늘의 별처럼 삶의 길을 밝히는 한 줄의 성찰</p>
       <p class="epilogue_aurora">화면을 닫기 전, 깊은 숨을 들이쉬고 내쉬어보세요.</p>
       <p class="epilogue_stars" aria-hidden="true">· · · ✦ · · ·</p>
-      <!-- 속담은 우리말샘 자료라서, 라이선스 조건에 따라 출처를 밝힙니다. -->
-      <p class="epilogue_source">
-        속담 출처:
-        <a href="https://opendict.korean.go.kr/" target="_blank" rel="noopener noreferrer">국립국어원 우리말샘</a>
-        (<a href="https://creativecommons.org/licenses/by-sa/2.0/kr/" target="_blank" rel="noopener noreferrer">CC BY-SA 2.0 KR</a>)
-      </p>
       <!-- 타로 풍경만 커먼즈 사진입니다. 오로라 캐릭터는 이 화면을 위해 만든 그림입니다. -->
       <p class="epilogue_source">
         풍경 사진 출처:
@@ -335,8 +320,7 @@
   </main>
 
   <script src="js/phrases.js"></script>
-  <script src="js/proverbs.js"></script>
-  <script src="js/movie_quotes.js"></script>
+  <script src="js/wise_quotes.js"></script>
   <script src="js/vignettes.js"></script>
   <script src="js/faces.js"></script>
   <script src="js/validate.js"></script>

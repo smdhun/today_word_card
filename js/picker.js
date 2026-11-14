@@ -155,26 +155,65 @@
   }
 
   /**
-   * 기분에 맞는 속담 목록을 꺼냅니다. 없으면 빈 목록을 돌려줍니다.
+   * 격언이 들어 있는 카테고리 이름을 꺼냅니다. 비어 있는 칸은 빼니다.
    */
-  function get_proverb_list(mood) {
+  function get_wise_categories() {
     try {
-      const proverb_list = root.PROVERBS ? root.PROVERBS[mood] : null;
-      return Array.isArray(proverb_list) ? proverb_list : [];
+      const grouped = root.WISE_QUOTES;
+      if (!grouped || typeof grouped !== "object") {
+        return [];
+      }
+      return Object.keys(grouped).filter(function has_quotes(category) {
+        return Array.isArray(grouped[category]) && grouped[category].length > 0;
+      });
     } catch (error) {
-      console.error("속담 목록을 꺼내지 못했습니다.", error);
+      console.error("격언 카테고리를 꺼내지 못했습니다.", error);
       return [];
     }
   }
 
   /**
-   * 영화 문장 목록을 꺼냅니다. 없으면 빈 목록을 돌려줍니다.
+   * 서로 다른 카테고리에서 격언을 하나씩, 두 개 고릅니다.
+   * 순번이 늘면 다음 카테고리 짝으로 넘어가고, 한 바퀴 뒤에는 그 카테고리의 다음 문장이 나옵니다.
    */
-  function get_movie_quote_list() {
+  function pick_wise_quotes(date_key, mood_id, design_key, offset) {
     try {
-      return Array.isArray(root.MOVIE_QUOTES) ? root.MOVIE_QUOTES : [];
+      const categories = get_wise_categories();
+      if (categories.length < 2) {
+        console.error("격언 카테고리가 두 개보다 적습니다.");
+        return [];
+      }
+
+      const category_seed = [date_key, mood_id, design_key, "wise-category"].join("|");
+      const category_order = build_deck_order(category_seed, categories.length);
+      if (category_order.length !== categories.length) {
+        return [];
+      }
+
+      const picked = [];
+      for (let slot_index = 0; slot_index < 2; slot_index += 1) {
+        const slot = offset * 2 + slot_index;
+        const category = categories[category_order[slot % categories.length]];
+        const quote_seed = [date_key, mood_id, design_key, "wise-quote", category].join("|");
+        const quote = pick_from_deck(root.WISE_QUOTES[category], quote_seed, Math.floor(slot / categories.length));
+        if (!quote || !quote.text || !quote.person) {
+          console.error("격언의 모양이 올바르지 않습니다.", category);
+          return [];
+        }
+        picked.push({
+          category: category,
+          text: quote.text,
+          person: quote.person,
+        });
+      }
+
+      if (picked[0].category === picked[1].category) {
+        console.error("두 격언의 카테고리가 같습니다.");
+        return [];
+      }
+      return picked;
     } catch (error) {
-      console.error("영화 문장 목록을 꺼내지 못했습니다.", error);
+      console.error("격언 두 개를 고르지 못했습니다.", error);
       return [];
     }
   }
@@ -274,20 +313,12 @@
         return null;
       }
 
-      // 속담은 덤이므로, 고르지 못해도 카드는 그대로 만듭니다.
-      const proverb_seed_key = [date_key, mood.id, design_key, "proverb"].join("|");
-      const proverb = pick_from_deck(get_proverb_list(mood.id), proverb_seed_key, safe_offset);
-
       // 그림도 디자인마다 다른 덱에서 고릅니다. 타로는 풍경, 오로라는 캐릭터입니다.
       const vignette_seed_key = [date_key, mood.id, design_key, "vignette"].join("|");
       const vignette = pick_vignette(mood.id, vignette_seed_key, safe_offset);
 
-      // 영화 문장도 같은 순번으로 넘깁니다. 299장이라 한참 동안 같은 문장이 나오지 않습니다.
-      const movie_seed_key = [date_key, mood.id, design_key, "movie"].join("|");
-      const movie_quote = pick_from_deck(get_movie_quote_list(), movie_seed_key, safe_offset);
-      const is_movie_quote_ready = Boolean(
-        movie_quote && movie_quote.text && movie_quote.movie && Number.isInteger(movie_quote.year)
-      );
+      // 격언은 서로 다른 카테고리에서 하나씩입니다. 고르지 못해도 위 문장은 그대로 둡니다.
+      const wise_quotes = pick_wise_quotes(date_key, mood.id, design_key, safe_offset);
 
       return {
         date_key: date_key,
@@ -295,8 +326,7 @@
         mood: mood,
         lead_text: phrase.lead,
         caution_text: phrase.caution,
-        proverb_text: typeof proverb === "string" ? proverb : "",
-        movie_quote: is_movie_quote_ready ? movie_quote : null,
+        wise_quotes: wise_quotes,
         vignette: vignette,
         offset: safe_offset,
       };

@@ -37,11 +37,14 @@
     els.card_mood = require_element("card_mood");
     els.card_lead = require_element("card_lead");
     els.card_caution = require_element("card_caution");
-    els.proverb_block = require_element("proverb_block");
-    els.card_proverb = require_element("card_proverb");
-    els.movie_quote_block = require_element("movie_quote_block");
-    els.card_movie_quote = require_element("card_movie_quote");
-    els.card_movie_source = require_element("card_movie_source");
+    els.wise_quote_first = require_element("wise_quote_first");
+    els.wise_category_first = require_element("wise_category_first");
+    els.wise_text_first = require_element("wise_text_first");
+    els.wise_person_first = require_element("wise_person_first");
+    els.wise_quote_second = require_element("wise_quote_second");
+    els.wise_category_second = require_element("wise_category_second");
+    els.wise_text_second = require_element("wise_text_second");
+    els.wise_person_second = require_element("wise_person_second");
     els.card_vignette = require_element("card_vignette");
     els.vignette_image = require_element("vignette_image");
     els.vignette_caption = require_element("vignette_caption");
@@ -149,34 +152,56 @@
   }
 
   /**
-   * 속담 칸을 채웁니다. 속담이 없는 카드라면 칸을 통째로 숨깁니다.
+   * 격언 칸 하나를 채웁니다. 문장이나 인물이 없으면 칸을 숨깁니다.
    */
-  function render_proverb(proverb_text) {
+  function render_wise_quote(block, category_el, text_el, person_el, quote) {
     try {
-      if (!els.proverb_block || !els.card_proverb) {
+      if (!block || !category_el || !text_el || !person_el) {
         return;
       }
-      els.card_proverb.textContent = proverb_text || "";
-      els.proverb_block.hidden = !proverb_text;
+      const is_ready = Boolean(quote && quote.category && quote.text && quote.person);
+      category_el.textContent = is_ready ? quote.category : "";
+      text_el.textContent = is_ready ? quote.text : "";
+      person_el.textContent = is_ready ? quote.person : "";
+      block.hidden = !is_ready;
     } catch (error) {
-      console.error("속담을 보여주지 못했습니다.", error);
+      console.error("격언을 보여주지 못했습니다.", error);
+      if (block) {
+        block.hidden = true;
+      }
     }
   }
 
   /**
-   * 영화 문장 칸을 채웁니다. 문장이 없으면 칸을 통째로 숨깁니다.
+   * 격언 두 칸을 채웁니다. 카테고리가 같으면 둘 다 비워 잘못 보여 주지 않습니다.
    */
-  function render_movie_quote(movie_quote) {
+  function render_wise_quotes(wise_quotes) {
     try {
-      if (!els.movie_quote_block || !els.card_movie_quote || !els.card_movie_source) {
-        return;
+      const quotes = Array.isArray(wise_quotes) ? wise_quotes : [];
+      const first = quotes[0] || null;
+      const second = quotes[1] || null;
+      const is_same_category = Boolean(first && second && first.category === second.category);
+      if (is_same_category) {
+        console.error("두 격언의 카테고리가 같아 칸을 비웁니다. 문장을 다시 뽑아 주세요.");
       }
-      const is_ready = Boolean(movie_quote && movie_quote.text);
-      els.card_movie_quote.textContent = is_ready ? movie_quote.text : "";
-      els.card_movie_source.textContent = is_ready ? movie_quote.movie + " (" + movie_quote.year + ")" : "";
-      els.movie_quote_block.hidden = !is_ready;
+      const visible_first = is_same_category ? null : first;
+      const visible_second = is_same_category ? null : second;
+      render_wise_quote(
+        els.wise_quote_first,
+        els.wise_category_first,
+        els.wise_text_first,
+        els.wise_person_first,
+        visible_first
+      );
+      render_wise_quote(
+        els.wise_quote_second,
+        els.wise_category_second,
+        els.wise_text_second,
+        els.wise_person_second,
+        visible_second
+      );
     } catch (error) {
-      console.error("영화 문장을 보여주지 못했습니다.", error);
+      console.error("격언 두 칸을 보여주지 못했습니다.", error);
     }
   }
 
@@ -261,8 +286,7 @@
       els.card_mood.textContent = card.mood.label;
       els.card_lead.textContent = card.lead_text;
       els.card_caution.textContent = card.caution_text;
-      render_proverb(card.proverb_text);
-      render_movie_quote(card.movie_quote);
+      render_wise_quotes(card.wise_quotes);
       render_vignette(card.vignette);
       els.result_card.dataset.mood = card.mood.id;
       els.card_empty.hidden = true;
@@ -378,29 +402,14 @@
   }
 
   /**
-   * 같은 날이면 저장해 둔 순번을, 날짜가 바뀌었으면 0을 씁니다.
-   * 저장이 없으면 기쁨 카드를 엽니다.
+   * 프로그램을 열면 항상 오로라의 기쁨 카드를 먼저 보여 줍니다.
+   * 예전에 다른 기분이나 다른 화면을 골랐어도, 이번 실행의 첫 그림은 기쁨입니다.
    */
   function restore_saved_card() {
     try {
-      const saved = root.load_card_state();
-      if (!saved) {
-        show_default_card();
-        return;
-      }
-
-      check_radio("mood", saved.mood);
-
-      const validated = root.validate_input({ mood: saved.mood });
-      if (!validated.is_valid) {
-        return;
-      }
-
-      const is_same_day = saved.date_key === root.get_today_key();
-      const offset = is_same_day ? saved.offset : 0;
-      draw_card(validated, offset, true);
+      show_default_card();
     } catch (error) {
-      console.error("저장된 카드를 되돌리지 못했습니다.", error);
+      console.error("첫 화면 카드를 열지 못했습니다. 기쁨을 고른 뒤 다시 뽑아 주세요.", error);
     }
   }
 
@@ -454,7 +463,7 @@
       if (!cache_elements()) {
         return;
       }
-      if (!root.PHRASES || !root.validate_input || !root.pick_today_phrase || !root.save_card_state) {
+      if (!root.PHRASES || !root.WISE_QUOTES || !root.validate_input || !root.pick_today_phrase || !root.save_card_state) {
         console.error("필요한 스크립트를 모두 불러오지 못했습니다.");
         show_error(root.MESSAGES ? root.MESSAGES.data_missing : "페이지를 새로고침해 주세요.");
         return;
