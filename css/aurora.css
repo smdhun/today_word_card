@@ -179,11 +179,17 @@
   border-radius: 8px;
 }
 
-/* 가운데에 나타난 그림입니다. 자리로 돌아갈 때까지 카드 위에 떠 있습니다. */
-:root[data-design="aurora"] .card_vignette.is_aurora_flight {
+/* 가운데에 나타난 그림입니다. 오로라와 타로가 같은 움직임이고, 자리로 돌아갈 때까지 카드 위에 떠 있습니다. */
+:root[data-design="aurora"] .card_vignette.is_aurora_flight,
+:root[data-design="tarot"] .card_vignette.is_aurora_flight {
   border-radius: 16px;
   box-shadow: 0 28px 70px -24px rgba(76, 215, 246, 0.55);
   animation: aurora_image_appear 0.45s ease-out;
+}
+
+/* 타로는 금빛 그림자라 카드 색과 맞춥니다. */
+:root[data-design="tarot"] .card_vignette.is_aurora_flight {
+  box-shadow: 0 28px 70px -24px rgba(232, 193, 118, 0.55);
 }
 
 @keyframes aurora_image_appear {
@@ -199,11 +205,13 @@
 }
 
 /* 그림이 가운데에 있는 동안 문장은 숨겨 두었다가, 그림이 올라갈 때 함께 나타납니다. */
-:root[data-design="aurora"] .result_card.is_aurora_hold .card_body {
+:root[data-design="aurora"] .result_card.is_aurora_hold .card_body,
+:root[data-design="tarot"] .result_card.is_aurora_hold .card_body {
   opacity: 0;
 }
 
-:root[data-design="aurora"] .result_card.is_aurora_arriving .card_body {
+:root[data-design="aurora"] .result_card.is_aurora_arriving .card_body,
+:root[data-design="tarot"] .result_card.is_aurora_arriving .card_body {
   animation: aurora_text_arrive 0.85s ease-out both;
 }
 

@@ -384,13 +384,15 @@
   }
 
   /**
-   * 지금 화면이 오로라인지 확인합니다.
+   * 문장을 뽑을 때 그림이 가운데 나타났다가 올라가는 화면인지 확인합니다.
+   * 오로라와 타로가 같은 움직임입니다. 인간관계는 카드가 없습니다.
    */
-  function is_aurora_design() {
+  function uses_card_arrival() {
     try {
-      return document.documentElement.dataset.design === root.DESIGN_AURORA;
+      const design = document.documentElement.dataset.design;
+      return design === root.DESIGN_AURORA || design === root.DESIGN_TAROT;
     } catch (error) {
-      console.error("화면 종류를 확인하지 못했습니다.", error);
+      console.error("화면 종류를 확인하지 못했습니다. 그림 이동 없이 문장만 바꿉니다.", error);
       return false;
     }
   }
@@ -448,6 +450,7 @@
 
   /**
    * 문장 뽑기 버튼부터 격언 2까지를 한 묶음으로 보고, 그 한가운데가 화면 한가운데에 오게 합니다.
+   * 문장 줄수가 많아 묶음이 길면 버튼을 화면 위에 남기고, 아래 문장만 더 내려갑니다.
    * 격언이 없으면 문장 칸 전체를 기준으로 삼습니다.
    */
   function scroll_top_for_arrival() {
@@ -462,8 +465,10 @@
       const end_rect = end.getBoundingClientRect();
       const top = start_rect.top + window.scrollY;
       const bottom = end_rect.bottom + window.scrollY;
-      const next_top = top + (bottom - top) / 2 - window.innerHeight / 2;
-      return Math.max(0, next_top);
+      const centered = top + (bottom - top) / 2 - window.innerHeight / 2;
+      // 버튼 위 16px은 항상 화면 안에 둡니다. 줄수가 적어도 많아도 같은 한계입니다.
+      const button_limit = Math.max(0, top - 16);
+      return Math.max(0, Math.min(centered, button_limit));
     } catch (error) {
       console.error("문장 묶음의 위치를 계산하지 못했습니다. 문장 칸만 가운데로 맞춥니다.", error);
       return scroll_top_for_center(els.card_body);
@@ -510,8 +515,8 @@
   }
 
   /**
-   * 오로라에서 문장을 뽑으면 그림이 화면 가운데 나타났다가 위로 올라갑니다.
-   * 그림이 올라간 자리에는 밤의 한 줄, 사색의 결, 격언 두 칸이 화면 가운데 옵니다.
+   * 오로라와 타로에서 문장을 뽑으면 그림이 화면 가운데 나타났다가 위로 올라갑니다.
+   * 그 아래 버튼과 문장 네 칸이 화면 가운데로 오되, 버튼은 화면 위를 넘지 않습니다.
    */
   function play_aurora_arrival() {
     try {
@@ -527,8 +532,9 @@
       }
 
       if (prefers_reduced_motion()) {
-        ensure_scroll_room(scroll_top_for_center(text));
-        window.scrollTo(0, scroll_top_for_center(text));
+        const reduced_scroll = scroll_top_for_arrival();
+        ensure_scroll_room(reduced_scroll);
+        window.scrollTo(0, reduced_scroll);
         return;
       }
 
@@ -562,9 +568,9 @@
           if (motion_no !== aurora_motion_no) {
             return;
           }
-          const text_scroll = scroll_top_for_center(text);
+          const text_scroll = scroll_top_for_arrival();
           ensure_scroll_room(text_scroll);
-          const target_scroll = scroll_top_for_center(text);
+          const target_scroll = scroll_top_for_arrival();
           const place = hold.getBoundingClientRect();
           const place_top = place.top + window.scrollY - target_scroll;
           const end_rect = {
@@ -620,8 +626,8 @@
       if (!card) {
         return;
       }
-      // 오로라는 그림이 가운데 나타났다가 문장 쪽으로 올라갑니다. 포커스가 스크롤을 가로채지 않게 합니다.
-      if (is_aurora_design()) {
+      // 오로라와 타로는 그림이 가운데 나타났다가 문장 쪽으로 올라갑니다. 포커스가 스크롤을 가로채지 않게 합니다.
+      if (uses_card_arrival()) {
         els.card_lead.focus({ preventScroll: true });
         play_aurora_arrival();
         return;
