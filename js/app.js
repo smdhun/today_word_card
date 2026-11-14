@@ -449,8 +449,23 @@
   }
 
   /**
+   * 문장 뽑기 버튼이 내려가도 되는 화면 위쪽 한계입니다.
+   * 디자인 버튼 막대는 스크롤해도 위에 붙어 있으므로, 그 막대 아래로 12px을 비웁니다.
+   */
+  function arrival_top_gap() {
+    try {
+      const bar = document.querySelector(".top_bar");
+      const bar_bottom = bar ? bar.getBoundingClientRect().bottom : 0;
+      return Math.max(16, Math.ceil(bar_bottom) + 12);
+    } catch (error) {
+      console.error("위쪽 막대 높이를 읽지 못했습니다. 버튼은 화면 위 16px에 둡니다.", error);
+      return 16;
+    }
+  }
+
+  /**
    * 문장 뽑기 버튼부터 격언 2까지를 한 묶음으로 보고, 그 한가운데가 화면 한가운데에 오게 합니다.
-   * 문장 줄수가 많아 묶음이 길면 버튼을 화면 위에 남기고, 아래 문장만 더 내려갑니다.
+   * 문장 줄수가 많아 묶음이 길면 버튼을 위쪽 막대 아래에 남기고, 아래 문장만 더 내려갑니다.
    * 격언이 없으면 문장 칸 전체를 기준으로 삼습니다.
    */
   function scroll_top_for_arrival() {
@@ -466,8 +481,7 @@
       const top = start_rect.top + window.scrollY;
       const bottom = end_rect.bottom + window.scrollY;
       const centered = top + (bottom - top) / 2 - window.innerHeight / 2;
-      // 버튼 위 16px은 항상 화면 안에 둡니다. 줄수가 적어도 많아도 같은 한계입니다.
-      const button_limit = Math.max(0, top - 16);
+      const button_limit = Math.max(0, top - arrival_top_gap());
       return Math.max(0, Math.min(centered, button_limit));
     } catch (error) {
       console.error("문장 묶음의 위치를 계산하지 못했습니다. 문장 칸만 가운데로 맞춥니다.", error);
@@ -603,6 +617,10 @@
               return;
             }
             release_flying_image();
+            // 그림이 자리로 돌아온 뒤 버튼이 위쪽 막대에 가려지면 한 번 더 맞춥니다.
+            const settled_scroll = scroll_top_for_arrival();
+            ensure_scroll_room(settled_scroll);
+            window.scrollTo(0, settled_scroll);
           }
           window.requestAnimationFrame(step_flight);
         } catch (error) {
