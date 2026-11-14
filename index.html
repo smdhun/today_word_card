@@ -37,9 +37,16 @@
     <symbol id="icon_nights_stay" viewBox="0 -960 960 960"><path d="M504-465Zm20 385H420l20-12.5q20-12.5 43.5-28t43.5-28l20-12.5q81-6 149.5-49T805-325q-86-8-163-43.5T504-465q-61-61-97-138t-43-163q-77 43-120.5 118.5T200-484v12l-12 5.5q-12 5.5-26.5 11.5T135-443.5l-12 5.5q-2-11-2.5-23t-.5-23q0-146 93-257.5T450-880q-18 99 11 193.5T561-521q71 71 165.5 100T920-410q-26 144-138 237T524-80Zm-284-80h180q25 0 42.5-17.5T480-220q0-25-17-42.5T422-280h-52l-20-48q-14-33-44-52.5T240-400q-50 0-85 34.5T120-280q0 50 35 85t85 35Zm0 80q-83 0-141.5-58.5T40-280q0-83 58.5-141.5T240-480q60 0 109.5 32.5T423-360q57 2 97 42.5t40 97.5q0 58-41 99t-99 41H240Z"/></symbol>
     <symbol id="icon_wb_twilight" viewBox="0 -960 960 960"><path d="m734-556-56-58 86-84 56 56-86 86ZM80-160v-80h800v80H80Zm360-520v-120h80v120h-80ZM226-558l-84-86 56-56 86 86-58 56Zm71 158h366q-23-54-72-87t-111-33q-62 0-111 33t-72 87Zm-97 80q0-117 81.5-198.5T480-600q117 0 198.5 81.5T760-320H200Zm280-80Z"/></symbol>
     <symbol id="icon_bedtime" viewBox="0 -960 960 960"><path d="M484-80q-84 0-157.5-32t-128-86.5Q144-253 112-326.5T80-484q0-146 93-257.5T410-880q-18 99 11 193.5T521-521q71 71 165.5 100T880-410q-26 144-138 237T484-80Zm0-80q88 0 163-44t118-121q-86-8-163-43.5T464-465q-61-61-97-138t-43-163q-77 43-120.5 118.5T160-484q0 135 94.5 229.5T484-160Zm-20-305Z"/></symbol>
+    <symbol id="icon_volume_on" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></symbol>
+    <symbol id="icon_volume_off" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"/></symbol>
   </svg>
 
   <header class="top_bar">
+    <!-- 화면 맨 오른쪽. 누를 때마다 소리를 끄거나 다시 켭니다. -->
+    <button id="sound_toggle" class="sound_toggle" type="button" aria-pressed="false" aria-label="음소거">
+      <svg class="icon sound_icon_on" aria-hidden="true"><use href="#icon_volume_on"></use></svg>
+      <svg class="icon sound_icon_off" aria-hidden="true"><use href="#icon_volume_off"></use></svg>
+    </button>
     <div class="top_bar_inner">
       <!-- 처음에는 오로라가 눌려 있고, 그다음이 타로, 인간관계입니다. -->
       <div class="top_actions">
@@ -50,7 +57,16 @@
         </div>
         <!-- 화면 버튼이 아닙니다. 인간관계 오른쪽에서 곡 목록만 엽니다. -->
         <div class="music_box">
-          <button id="music_toggle" class="design_button music_toggle" type="button" aria-expanded="false" aria-controls="music_list">MUSIC</button>
+          <div class="music_head">
+            <button id="music_toggle" class="design_button music_toggle" type="button" aria-expanded="false" aria-controls="music_list">MUSIC</button>
+            <!-- 곡이 나올 때만 보이는 음량 막대입니다. -->
+            <span id="music_level" class="music_meter music_level" hidden aria-hidden="true">
+              <span class="music_bar"></span>
+              <span class="music_bar"></span>
+              <span class="music_bar"></span>
+              <span class="music_bar"></span>
+            </span>
+          </div>
           <div id="music_panel" class="music_panel" hidden>
             <p id="music_message" class="music_message" role="alert" hidden></p>
             <ul id="music_list" class="music_list" aria-label="재생 목록"></ul>
@@ -332,6 +348,18 @@
       </p>
     </footer>
   </main>
+
+  <!-- 처음 버튼을 누를 때 한 번만 묻는 음악 재생 확인입니다. -->
+  <div id="music_offer" class="music_offer" hidden>
+    <div class="music_offer_card" role="dialog" aria-modal="true" aria-labelledby="music_offer_title">
+      <h2 id="music_offer_title" class="music_offer_title">음악을 재생할까요?</h2>
+      <p class="music_offer_text">배경 음악을 틀 수 있습니다. 원하지 않으면 나중에 MUSIC에서 고를 수 있습니다.</p>
+      <div class="music_offer_actions">
+        <button id="music_offer_yes" class="music_offer_yes" type="button">재생</button>
+        <button id="music_offer_no" class="music_offer_no" type="button">나중에</button>
+      </div>
+    </div>
+  </div>
 
   <script src="js/phrases.js"></script>
   <script src="js/wise_quotes.js"></script>

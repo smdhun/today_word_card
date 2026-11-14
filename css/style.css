@@ -93,6 +93,47 @@ h2 {
   backdrop-filter: blur(24px);
 }
 
+/* 화면 맨 오른쪽 스피커. 띠 높이를 밀지 않도록 겹칩니다. */
+.sound_toggle {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--ink_soft);
+  cursor: pointer;
+}
+
+.sound_toggle:hover,
+.sound_toggle:focus-visible {
+  color: var(--ink);
+  outline: 2px solid var(--primary);
+  outline-offset: 0;
+}
+
+.sound_toggle .sound_icon_off {
+  display: none;
+}
+
+.sound_toggle[aria-pressed="true"] {
+  color: var(--primary);
+}
+
+.sound_toggle[aria-pressed="true"] .sound_icon_on {
+  display: none;
+}
+
+.sound_toggle[aria-pressed="true"] .sound_icon_off {
+  display: block;
+}
+
 .top_bar_inner {
   display: flex;
   flex-direction: column;
@@ -149,6 +190,12 @@ h2 {
   position: relative;
 }
 
+.music_head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .music_toggle.is_playing {
   color: var(--primary);
 }
@@ -177,6 +224,10 @@ h2 {
 }
 
 .music_track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
   padding: 8px 10px;
   border: 0;
@@ -189,6 +240,86 @@ h2 {
   line-height: 18px;
   text-align: left;
   cursor: pointer;
+}
+
+.music_title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 재생 중인 제목 오른쪽 막대. 소리 크기에 맞춰 높이가 변합니다. */
+.music_meter {
+  display: none;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 3px;
+  width: 24px;
+  height: 16px;
+  flex: 0 0 24px;
+}
+
+.music_track.is_playing .music_meter,
+.music_level:not([hidden]) {
+  display: flex;
+}
+
+.music_bar {
+  display: block;
+  width: 3px;
+  height: 16px;
+  border-radius: 1px;
+  background: #3a4e9e;
+  transform: scaleY(0.25);
+  transform-origin: center bottom;
+}
+
+/* 소리 분석을 못 할 때도 낮은 음은 푸른색, 높은 음은 따뜻한 색입니다. */
+.music_bar:nth-child(2) {
+  background: #3d6d8a;
+}
+
+.music_bar:nth-child(3) {
+  background: #8a5a3a;
+}
+
+.music_bar:nth-child(4) {
+  background: #a84832;
+}
+
+.music_meter.is_css_beat .music_bar {
+  animation: music_bar_beat 0.72s ease-in-out infinite;
+}
+
+.music_meter.is_css_beat .music_bar:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.music_meter.is_css_beat .music_bar:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+.music_meter.is_css_beat .music_bar:nth-child(4) {
+  animation-delay: 0.36s;
+}
+
+@keyframes music_bar_beat {
+  0%,
+  100% {
+    transform: scaleY(0.28);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .music_meter.is_css_beat .music_bar {
+    animation: none;
+  }
 }
 
 .music_track:hover,
@@ -211,6 +342,76 @@ h2 {
   font-size: 12px;
   font-weight: 600;
   line-height: 18px;
+}
+
+/* 처음 버튼을 누르면 뜨는 재생 확인 창입니다. */
+.music_offer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(8, 10, 16, 0.62);
+}
+
+.music_offer[hidden] {
+  display: none;
+}
+
+.music_offer_card {
+  width: min(360px, 100%);
+  padding: 22px 20px 18px;
+  border-radius: 16px;
+  background: var(--card_result);
+  box-shadow: var(--shadow_result);
+}
+
+.music_offer_title {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-family: var(--font_label);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+}
+
+.music_offer_text {
+  margin: 0;
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.music_offer_actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.music_offer_yes,
+.music_offer_no {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font-family: var(--font_label);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.music_offer_yes {
+  background: var(--primary);
+  color: var(--on_primary);
+}
+
+.music_offer_no {
+  background: var(--chip);
+  color: var(--ink_soft);
 }
 
 /* 처음 방문 안내. 세 버튼 아래의 말풍선입니다. */

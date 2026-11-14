@@ -22,10 +22,27 @@
     { file: "zec53-piano-and-strings-ambient-confident-and-light-full-633882.mp3", title: "Piano and Strings" },
   ];
 
+  const BAR_COUNT = 4;
+  const BAR_RANGES = [
+    [1, 2],
+    [3, 5],
+    [6, 11],
+    [12, 20],
+  ];
+
   const audio = new Audio();
   audio.preload = "none";
   let current_index = -1;
   let is_open = false;
+  let audio_context = null;
+  let analyser = null;
+  let gain_node = null;
+  let frequency_bins = null;
+  let meter_frame_id = 0;
+  let is_reduced_motion = false;
+  let is_muted = false;
+  let has_asked_music = false;
+  let is_offer_open = false;
 
   /**
    * id로 요소를 찾고, 없으면 기록만 남깁니다.
@@ -39,22 +56,201 @@
   }
 
   /**
+   * 제목 오른쪽에 둘 막대 4개를 만듭니다.
+   */
+  function build_meter() {
+    const meter = document.createElement("span");
+    meter.className = "music_meter";
+    meter.setAttribute("aria-hidden", "true");
+    for (let bar_index = 0; bar_index < BAR_COUNT; bar_index += 1) {
+      const bar = document.createElement("span");
+      bar.className = "music_bar";
+      meter.appendChild(bar);
+    }
+    return meter;
+  }
+
+  /**
    * 목록 안에 곡 버튼을 만듭니다.
    */
   function build_list(list) {
     TRACKS.forEach(function add_track(track, index) {
       const item = document.createElement("li");
       const button = document.createElement("button");
+      const title = document.createElement("span");
       button.type = "button";
       button.className = "music_track";
-      button.textContent = track.title;
+      title.className = "music_title";
+      title.textContent = track.title;
       button.dataset.track_index = String(index);
+      button.appendChild(title);
+      button.appendChild(build_meter());
       button.addEventListener("click", function on_track_click() {
         play_track(index);
       });
       item.appendChild(button);
       list.appendChild(item);
     });
+  }
+
+  /**
+   * 재생 소리를 읽어 막대 높이에 씁니다. 스피커 경로는 그대로 둡니다.
+   */
+  function ensure_sound_meter() {
+    if (analyser) {
+      return true;
+    }
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      console.error("이 브라우저에서는 소리 막대를 그릴 수 없습니다.");
+      return false;
+    }
+    try {
+      audio_context = new AudioContextClass();
+      const source_node = audio_context.createMediaElementSource(audio);
+      analyser = audio_context.createAnalyser();
+      gain_node = audio_context.createGain();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.7;
+      gain_node.gain.value = is_muted ? 0 : 1;
+      source_node.connect(gain_node);
+      gain_node.connect(audio_context.destination);
+      source_node.connect(analyser);
+      frequency_bins = new Uint8Array(analyser.frequencyBinCount);
+      return true;
+    } catch (error) {
+      console.error("소리 막대를 연결하지 못했습니다. 곡 재생은 계속됩니다.", error);
+      analyser = null;
+      return false;
+    }
+  }
+
+  /**
+   * 구간 평균으로 막대 하나 높이를 구합니다.
+   */
+  function average_range(start, end) {
+    let sum = 0;
+    let count = 0;
+    const last = Math.min(end, frequency_bins.length - 1);
+    for (let bin_index = start; bin_index <= last; bin_index += 1) {
+      sum += frequency_bins[bin_index];
+      count += 1;
+    }
+    if (count === 0) {
+      return 0;
+    }
+    return sum / count;
+  }
+
+  /**
+   * 구간 안에서 지금 가장 큰 음의 위치를 구합니다.
+   */
+  function pitch_bin(start, end) {
+    let weight = 0;
+    let weighted_sum = 0;
+    const last = Math.min(end, frequency_bins.length - 1);
+    for (let bin_index = start; bin_index <= last; bin_index += 1) {
+      const level = frequency_bins[bin_index];
+      weight += level;
+      weighted_sum += level * bin_index;
+    }
+    if (weight === 0) {
+      return (start + last) / 2;
+    }
+    return weighted_sum / weight;
+  }
+
+  /**
+   * 색 값을 0에서 255 사이로 맞춥니다.
+   */
+  function clamp_channel(value) {
+    return Math.max(0, Math.min(255, Math.round(value)));
+  }
+
+  /**
+   * 낮은 음은 푸른색, 높은 음은 따뜻한 색으로 조금씩 바꿉니다.
+   */
+  function color_for_pitch(bin, level) {
+    const pitch = Math.max(0, Math.min(1, (bin - 1) / 19));
+    const tint = Math.max(0, Math.min(1, pitch + (Math.min(1, level) - 0.5) * 0.1));
+    const brightness = 0.78 + Math.min(1, level) * 0.34;
+    const red = clamp_channel((54 + (186 - 54) * tint) * brightness);
+    const green = clamp_channel((86 + (78 - 86) * tint) * brightness);
+    const blue = clamp_channel((168 + (48 - 168) * tint) * brightness);
+    return "rgb(" + red + ", " + green + ", " + blue + ")";
+  }
+
+  /**
+   * 막대 하나에 지금 소리의 높이와 색을 칠합니다.
+   */
+  function paint_meter(meter) {
+    const bars = meter.querySelectorAll(".music_bar");
+    bars.forEach(function set_bar(bar, index) {
+      const range = BAR_RANGES[index] || BAR_RANGES[0];
+      const level = average_range(range[0], range[1]) / 220;
+      const height_ratio = Math.max(0.18, Math.min(1, 0.18 + level * 0.82));
+      bar.style.transform = "scaleY(" + height_ratio.toFixed(3) + ")";
+      bar.style.backgroundColor = color_for_pitch(pitch_bin(range[0], range[1]), level);
+    });
+  }
+
+  /**
+   * 재생 중인 제목과 MUSIC 옆 음량 막대를 함께 갱신합니다.
+   */
+  function paint_bars() {
+    if (!analyser) {
+      return;
+    }
+    analyser.getByteFrequencyData(frequency_bins);
+    const meters = document.querySelectorAll(".music_track.is_playing .music_meter, .music_level:not([hidden])");
+    meters.forEach(paint_meter);
+  }
+
+  /**
+   * 소리 분석이 없으면 일정한 위아래 움직임으로 대신합니다.
+   */
+  function use_css_beat() {
+    document.querySelectorAll(".music_meter").forEach(function mark_fallback(meter) {
+      meter.classList.add("is_css_beat");
+    });
+  }
+
+  /**
+   * 막대 움직임을 시작합니다.
+   */
+  function start_meter() {
+    if (is_reduced_motion) {
+      return;
+    }
+    const has_meter = ensure_sound_meter();
+    if (!has_meter) {
+      use_css_beat();
+      return;
+    }
+    if (audio_context && audio_context.state === "suspended") {
+      audio_context.resume().catch(function on_resume_failed(error) {
+        console.error("소리 막대를 깨우지 못했습니다. 곡 재생은 계속됩니다.", error);
+        use_css_beat();
+      });
+    }
+    if (meter_frame_id) {
+      return;
+    }
+    meter_frame_id = window.requestAnimationFrame(function step_meter() {
+      paint_bars();
+      meter_frame_id = window.requestAnimationFrame(step_meter);
+    });
+  }
+
+  /**
+   * 멈춘 곡의 막대 움직임을 멈춥니다.
+   */
+  function stop_meter() {
+    if (!meter_frame_id) {
+      return;
+    }
+    window.cancelAnimationFrame(meter_frame_id);
+    meter_frame_id = 0;
   }
 
   /**
@@ -72,6 +268,66 @@
       }
     });
     toggle.classList.toggle("is_playing", is_playing);
+    const level = document.getElementById("music_level");
+    if (level) {
+      level.hidden = !is_playing;
+    }
+  }
+
+  /**
+   * 스피커 출력만 끄거나 다시 켭니다. 곡 재생은 그대로입니다.
+   */
+  function set_muted(next_muted) {
+    is_muted = next_muted;
+    audio.muted = is_muted;
+    if (gain_node) {
+      gain_node.gain.value = is_muted ? 0 : 1;
+    }
+    const sound_button = document.getElementById("sound_toggle");
+    if (!sound_button) {
+      console.error("스피커 버튼을 찾지 못했습니다.");
+      return;
+    }
+    sound_button.setAttribute("aria-pressed", is_muted ? "true" : "false");
+    sound_button.setAttribute("aria-label", is_muted ? "음소거 해제" : "음소거");
+  }
+
+  /**
+   * 재생 확인 창을 엽니다.
+   */
+  function open_music_offer() {
+    const offer = document.getElementById("music_offer");
+    const yes_button = document.getElementById("music_offer_yes");
+    if (!offer || !yes_button) {
+      console.error("음악 재생 확인 창을 찾지 못했습니다.");
+      return;
+    }
+    is_offer_open = true;
+    offer.hidden = false;
+    yes_button.focus();
+  }
+
+  /**
+   * 재생 확인 창을 닫습니다.
+   */
+  function close_music_offer() {
+    const offer = document.getElementById("music_offer");
+    if (!offer) {
+      return;
+    }
+    is_offer_open = false;
+    offer.hidden = true;
+  }
+
+  /**
+   * 확인 창에서 재생을 고르면 첫 곡부터 시작합니다.
+   */
+  function accept_music_offer() {
+    close_music_offer();
+    if (!audio.paused && !audio.ended) {
+      return;
+    }
+    play_track(current_index >= 0 ? current_index : 0);
   }
 
   /**
@@ -146,6 +402,10 @@
       const list = require_element("music_list");
       const message_element = require_element("music_message");
       const music_box = toggle ? toggle.closest(".music_box") : null;
+      const sound_button = require_element("sound_toggle");
+      const offer = require_element("music_offer");
+      const offer_yes = require_element("music_offer_yes");
+      const offer_no = require_element("music_offer_no");
       if (!toggle || !panel || !list || !message_element || !music_box) {
         return;
       }
@@ -181,10 +441,43 @@
       });
       audio.addEventListener("play", function on_play() {
         mark_playing_track(list, toggle);
+        start_meter();
       });
       audio.addEventListener("pause", function on_pause() {
+        stop_meter();
         mark_playing_track(list, toggle);
       });
+      if (sound_button) {
+        sound_button.addEventListener("click", function on_sound_click() {
+          set_muted(!is_muted);
+        });
+      }
+      if (offer && offer_yes && offer_no) {
+        offer_yes.addEventListener("click", accept_music_offer);
+        offer_no.addEventListener("click", close_music_offer);
+        offer.addEventListener("click", function on_offer_backdrop(event) {
+          if (event.target === offer) {
+            close_music_offer();
+          }
+        });
+        document.addEventListener("keydown", function on_offer_escape(event) {
+          if (event.key === "Escape" && is_offer_open) {
+            close_music_offer();
+          }
+        });
+        document.addEventListener("click", function on_first_button(event) {
+          if (has_asked_music || is_offer_open) {
+            return;
+          }
+          const button = event.target.closest("button");
+          if (!button || offer.contains(button)) {
+            return;
+          }
+          has_asked_music = true;
+          open_music_offer();
+        }, true);
+      }
+      is_reduced_motion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     } catch (error) {
       console.error("음악 목록을 열지 못했습니다. 페이지를 새로고침해 주세요.", error);
     }
