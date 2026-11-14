@@ -224,7 +224,7 @@
       }
       els.vignette_image.src = vignette.src;
       els.vignette_caption.textContent = vignette.caption;
-      // 타로는 강아지·고양이 설명, 오로라는 캐릭터 표정을 그림 이름으로 둡니다.
+      // 타로는 은하수 설명, 오로라는 캐릭터 표정을 그림 이름으로 둡니다.
       const is_aurora = document.documentElement.dataset.design === root.DESIGN_AURORA;
       els.vignette_image.alt = is_aurora
         ? "오로라 캐릭터, " + vignette.caption
@@ -444,6 +444,30 @@
     const rect = element.getBoundingClientRect();
     const next_top = rect.top + window.scrollY + rect.height / 2 - window.innerHeight / 2;
     return Math.max(0, next_top);
+  }
+
+  /**
+   * 문장 뽑기 버튼부터 격언 2까지를 한 묶음으로 보고, 그 한가운데가 화면 한가운데에 오게 합니다.
+   * 격언이 없으면 문장 칸 전체를 기준으로 삼습니다.
+   */
+  function scroll_top_for_arrival() {
+    try {
+      const start = els.draw_button;
+      const has_second_quote = els.wise_quote_second && !els.wise_quote_second.hidden;
+      const end = has_second_quote ? els.wise_quote_second : els.card_body;
+      if (!start || !end) {
+        return scroll_top_for_center(els.card_body);
+      }
+      const start_rect = start.getBoundingClientRect();
+      const end_rect = end.getBoundingClientRect();
+      const top = start_rect.top + window.scrollY;
+      const bottom = end_rect.bottom + window.scrollY;
+      const next_top = top + (bottom - top) / 2 - window.innerHeight / 2;
+      return Math.max(0, next_top);
+    } catch (error) {
+      console.error("문장 묶음의 위치를 계산하지 못했습니다. 문장 칸만 가운데로 맞춥니다.", error);
+      return scroll_top_for_center(els.card_body);
+    }
   }
 
   /**
