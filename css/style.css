@@ -679,11 +679,11 @@ fieldset {
 }
 
 .verse_movie .verse_label .icon {
-  animation: icon_twinkle 2.4s ease-in-out infinite;
+  animation: icon_bloom 2.2s ease-in-out infinite;
 }
 
 .verse_proverb .verse_label .icon {
-  animation: icon_twinkle 2.8s ease-in-out 0.7s infinite;
+  animation: icon_nod 2.6s ease-in-out infinite;
 }
 
 @keyframes icon_float {
@@ -698,10 +698,17 @@ fieldset {
   }
 }
 
-@keyframes icon_twinkle {
+/* 영화 문장 아이콘은 커졌다가 살짝 떠오릅니다. 반짝이며 작아지지 않습니다. */
+@keyframes icon_bloom {
   50% {
-    opacity: 0.4;
-    transform: scale(0.82);
+    transform: translateY(-3px) scale(1.22);
+  }
+}
+
+/* 속담 아이콘만 옆으로 기울입니다. 위아래, 회전, 반짝임과 겹치지 않습니다. */
+@keyframes icon_nod {
+  50% {
+    transform: translateX(3px) rotate(8deg);
   }
 }
 
@@ -746,6 +753,11 @@ fieldset {
 .sentence_caution {
   color: var(--ink_soft);
   line-height: 26px;
+}
+
+/* 카드의 문장은 그 위 제목과 같은 글자체를 씁니다. 타로와 오로라가 이 규칙을 함께 씁니다. */
+.sentence {
+  font-family: var(--font_label);
 }
 
 /* 별 하나를 가운데 둔 구분선 */
