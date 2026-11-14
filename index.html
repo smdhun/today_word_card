@@ -137,10 +137,12 @@
           </div>
 
           <!-- 첫 그림은 오로라의 기쁨입니다. 스크립트 전에도, 링크 미리보기에서도 이 얼굴이 먼저입니다. -->
-          <div id="card_vignette" class="card_vignette">
-            <img id="vignette_image" src="images/faces/joy/open_laugh.jpg" alt="오로라의 기쁨 캐릭터" width="640" height="349">
-            <!-- 문장은 그대로 두고 그림만 넘겨 보는 버튼입니다. 그림의 왼쪽·오른쪽 가장자리에 붙습니다. -->
+          <!-- 화살표는 그림 밖에 둡니다. 사진을 가리지 않고 좌우에서 넘깁니다. -->
+          <div class="vignette_frame">
             <button type="button" id="vignette_prev" class="vignette_nav vignette_nav_prev" aria-label="이전 그림">&lt;</button>
+            <div id="card_vignette" class="card_vignette">
+              <img id="vignette_image" src="images/faces/joy/open_laugh.jpg" alt="오로라의 기쁨 캐릭터" width="640" height="349">
+            </div>
             <button type="button" id="vignette_next" class="vignette_nav vignette_nav_next" aria-label="다음 그림">&gt;</button>
           </div>
 

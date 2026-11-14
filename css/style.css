@@ -597,10 +597,19 @@ fieldset {
   }
 }
 
+/* 그림과 좌우 화살표를 한 줄에 둡니다. 화살표는 그림 바깥입니다. */
+.vignette_frame {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* 밤 풍경 그림. 그림을 불러오지 못해도 밤하늘 색이 대신 보입니다. */
 /* 그림이 바뀔 때는 이전 그림을 배경으로 깔아 두므로, 배경도 그림과 같은 방식으로 채웁니다. */
 .card_vignette {
   position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
   height: 144px;
   overflow: hidden;
   border-radius: 8px;
@@ -616,18 +625,17 @@ fieldset {
   object-fit: cover;
 }
 
-/* 그림만 넘겨 보는 화살표. 세로 가운데, 좌우 가장자리에 붙입니다. */
+/* 그림만 넘겨 보는 화살표. 사진과 겹치지 않게 좌우 바깥, 세로 가운데에 둡니다. */
 .vignette_nav {
-  position: absolute;
-  top: 50%;
-  z-index: 2;
+  flex: 0 0 40px;
   display: grid;
   place-items: center;
-  width: 44px;
+  width: 40px;
   height: 72px;
   margin: 0;
   padding: 0;
   border: 0;
+  border-radius: 12px;
   background: rgba(8, 10, 16, 0.42);
   color: #f7f4ee;
   font-family: var(--font_label);
@@ -635,17 +643,6 @@ fieldset {
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
-  transform: translateY(-50%);
-}
-
-.vignette_nav_prev {
-  left: 0;
-  border-radius: 0 12px 12px 0;
-}
-
-.vignette_nav_next {
-  right: 0;
-  border-radius: 12px 0 0 12px;
 }
 
 .vignette_nav:hover,
