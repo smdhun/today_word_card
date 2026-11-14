@@ -204,15 +204,21 @@
   }
 }
 
-/* 그림이 가운데에 있는 동안 문장은 숨겨 두었다가, 그림이 올라갈 때 함께 나타납니다. */
+/* 그림이 가운데에 있거나 위로 가는 동안 버튼과 문장은 비워 둡니다. */
 :root[data-design="aurora"] .result_card.is_aurora_hold .card_body,
-:root[data-design="tarot"] .result_card.is_aurora_hold .card_body {
+:root[data-design="aurora"] .result_card.is_aurora_hold .button_primary,
+:root[data-design="tarot"] .result_card.is_aurora_hold .card_body,
+:root[data-design="tarot"] .result_card.is_aurora_hold .button_primary {
   opacity: 0;
+  pointer-events: none;
 }
 
+/* 그림이 제자리에 도착한 뒤에만 버튼과 문장이 나타납니다. */
 :root[data-design="aurora"] .result_card.is_aurora_arriving .card_body,
-:root[data-design="tarot"] .result_card.is_aurora_arriving .card_body {
-  animation: aurora_text_arrive 0.85s ease-out both;
+:root[data-design="aurora"] .result_card.is_aurora_arriving .button_primary,
+:root[data-design="tarot"] .result_card.is_aurora_arriving .card_body,
+:root[data-design="tarot"] .result_card.is_aurora_arriving .button_primary {
+  animation: aurora_text_arrive 0.45s ease-out both;
 }
 
 @keyframes aurora_text_arrive {

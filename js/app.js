@@ -530,7 +530,8 @@
 
   /**
    * 오로라와 타로에서 문장을 뽑으면 그림이 화면 가운데 나타났다가 위로 올라갑니다.
-   * 그 아래 버튼과 문장 네 칸이 화면 가운데로 오되, 버튼은 화면 위를 넘지 않습니다.
+   * 그림이 움직이는 동안 버튼과 문장은 비워 두고, 그림이 도착한 뒤에 나타납니다.
+   * 버튼은 위쪽 디자인 막대를 넘지 않습니다.
    */
   function play_aurora_arrival() {
     try {
@@ -596,8 +597,6 @@
           const start_scroll = window.scrollY;
           const start_time = performance.now();
           const fly_ms = 850;
-          els.result_card.classList.remove("is_aurora_hold");
-          els.result_card.classList.add("is_aurora_arriving");
 
           function step_flight(now) {
             if (motion_no !== aurora_motion_no) {
@@ -617,6 +616,10 @@
               return;
             }
             release_flying_image();
+            // 그림이 완전히 올라간 뒤에 버튼과 문장을 보여 줍니다.
+            if (els.result_card) {
+              els.result_card.classList.add("is_aurora_arriving");
+            }
             // 그림이 자리로 돌아온 뒤 버튼이 위쪽 막대에 가려지면 한 번 더 맞춥니다.
             const settled_scroll = scroll_top_for_arrival();
             ensure_scroll_room(settled_scroll);
