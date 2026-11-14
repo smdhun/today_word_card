@@ -224,7 +224,7 @@
       }
       els.vignette_image.src = vignette.src;
       els.vignette_caption.textContent = vignette.caption;
-      // 타로는 은하수 설명, 오로라는 캐릭터 표정을 그림 이름으로 둡니다.
+      // 타로는 달빛 설명, 오로라는 캐릭터 표정을 그림 이름으로 둡니다.
       const is_aurora = document.documentElement.dataset.design === root.DESIGN_AURORA;
       els.vignette_image.alt = is_aurora
         ? "오로라 캐릭터, " + vignette.caption
@@ -616,14 +616,13 @@
               return;
             }
             release_flying_image();
-            // 그림이 완전히 올라간 뒤에 버튼과 문장을 보여 줍니다.
-            if (els.result_card) {
-              els.result_card.classList.add("is_aurora_arriving");
-            }
-            // 그림이 자리로 돌아온 뒤 버튼이 위쪽 막대에 가려지면 한 번 더 맞춥니다.
+            // 나타나는 움직임은 버튼을 아래로 밀어 위치를 속입니다. 스크롤을 먼저 맞춘 뒤 보여 줍니다.
             const settled_scroll = scroll_top_for_arrival();
             ensure_scroll_room(settled_scroll);
             window.scrollTo(0, settled_scroll);
+            if (els.result_card) {
+              els.result_card.classList.add("is_aurora_arriving");
+            }
           }
           window.requestAnimationFrame(step_flight);
         } catch (error) {
