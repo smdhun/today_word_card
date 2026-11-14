@@ -320,14 +320,27 @@
   }
 
   /**
-   * 확인 창에서 재생을 고르면 첫 곡부터 시작합니다.
+   * 이번 실행에서 처음 틀 곡을 목록에서 한 번만 뽑습니다.
+   * 그다음 곡은 목록 순서대로 이어집니다.
+   */
+  function random_startup_track_index() {
+    if (TRACKS.length === 0) {
+      console.error("처음 재생할 곡이 없습니다.");
+      return 0;
+    }
+    return Math.floor(Math.random() * TRACKS.length);
+  }
+
+  /**
+   * 확인 창에서 재생을 고르면 이번 실행의 첫 곡을 무작위로 시작합니다.
    */
   function accept_music_offer() {
     close_music_offer();
     if (!audio.paused && !audio.ended) {
       return;
     }
-    play_track(current_index >= 0 ? current_index : 0);
+    const start_index = current_index >= 0 ? current_index : random_startup_track_index();
+    play_track(start_index);
   }
 
   /**

@@ -7,6 +7,8 @@
 
   const els = {};
   let current_card = null;
+  let startup_tarot_vignette = null;
+  let is_startup_tarot_active = true;
   // 그림을 요청할 때마다 1씩 올립니다. 늦게 도착한 예전 그림을 걸러내는 번호표입니다.
   let vignette_request_no = 0;
   // 아직 화면에 안 걸린 그림 주소입니다. 넘기는 동안 이전 그림에서 다시 세지 않게 합니다.
@@ -509,9 +511,55 @@
   }
 
   /**
+   * 이번 실행에서 타로에 처음 보여줄 달빛 사진 한 장을 뽑습니다.
+   * 같은 실행 안에서는 같은 사진을 유지하고, 문장을 뽑으면 그날 순서로 돌아갑니다.
+   */
+  function random_startup_tarot_vignette() {
+    try {
+      if (startup_tarot_vignette) {
+        return startup_tarot_vignette;
+      }
+      if (typeof root.list_vignettes !== "function") {
+        console.error("타로 첫 그림 목록을 열지 못했습니다. 오늘의 그림을 그대로 둡니다.");
+        return null;
+      }
+      const list = root.list_vignettes(root.MOOD_DEFAULT || "joy");
+      if (!list || list.length === 0) {
+        console.error("타로 첫 그림이 없습니다. 오늘의 그림을 그대로 둡니다.");
+        return null;
+      }
+      const index = Math.floor(Math.random() * list.length);
+      startup_tarot_vignette = list[index];
+      return startup_tarot_vignette;
+    } catch (error) {
+      console.error("타로 첫 그림을 고르지 못했습니다. 오늘의 그림을 그대로 둡니다.", error);
+      return null;
+    }
+  }
+
+  /**
+   * 타로를 처음 열었을 때만 그림 칸을 무작위 사진으로 바꿉니다.
+   */
+  function apply_startup_tarot_image(card) {
+    if (!is_startup_tarot_active || !card) {
+      return card;
+    }
+    if (document.documentElement.dataset.design !== root.DESIGN_TAROT) {
+      return card;
+    }
+    const vignette = random_startup_tarot_vignette();
+    if (!vignette) {
+      return card;
+    }
+    card.vignette = vignette;
+    return card;
+  }
+
+  /**
    * 만든 카드를 현재 카드로 삼아 화면에 그리고, 저장하고, 다음 그림을 미리 받아 둡니다.
    */
   function apply_card(validated, card) {
+    apply_startup_tarot_image(card);
     current_card = card;
     render_card(card);
     persist_card(validated, card);
@@ -549,6 +597,9 @@
     }
 
     const next_offset = current_card ? current_card.offset + 1 : 0;
+    if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
+      is_startup_tarot_active = false;
+    }
     const card = root.pick_today_phrase(validated, next_offset);
     if (!card) {
       console.error("다음 문장을 고르지 못했습니다.", next_offset);
