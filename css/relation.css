@@ -1,0 +1,253 @@
+/*
+ * 인간관계 화면입니다. 타로와 오로라의 기분 카드 대신 처방 글을 보여 줍니다.
+ * html에 data-design="relation"이 붙을 때만 이 색과 글이 보입니다.
+ */
+:root[data-design="relation"] {
+  color-scheme: dark;
+  --surface: #141716;
+  --surface_bar: rgba(20, 23, 22, 0.9);
+  --ink: #e3e7e2;
+  --ink_soft: #c5cdc7;
+  --ink_faint: #9aa59f;
+  --primary: #8faf9c;
+  --primary_hover: #a9c4b4;
+  --on_primary: #10211a;
+  --chip: #1c2923;
+}
+
+:root[data-design="relation"] body {
+  background: #141716;
+  font-family: var(--font_label);
+}
+
+/* 처방 글을 읽는 동안 기분 카드와 하단 출처는 치웁니다. */
+:root[data-design="relation"] .intro,
+:root[data-design="relation"] .layout,
+:root[data-design="relation"] .epilogue {
+  display: none;
+}
+
+.relation_guide {
+  display: none;
+}
+
+:root[data-design="relation"] .relation_guide {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.relation_hero h1 {
+  margin: 10px 0 0;
+  font-family: var(--font_label);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 38px;
+}
+
+.relation_chip {
+  display: inline-block;
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px solid rgba(143, 175, 156, 0.35);
+  border-radius: 999px;
+  background: #1c2923;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.relation_core,
+.relation_quote,
+.relation_rule {
+  margin: 16px 0 0;
+  padding: 16px 16px 16px 18px;
+  border-left: 3px solid var(--primary);
+  border-radius: 12px;
+  background: #18201d;
+  line-height: 26px;
+}
+
+.relation_tabs {
+  position: sticky;
+  top: 64px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px 0 12px;
+  background: #141716;
+}
+
+.relation_tab,
+.relation_scenario,
+.relation_copy {
+  min-height: 40px;
+  border: 1px solid #2a3430;
+  border-radius: 10px;
+  background: #1c2220;
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.relation_tab[aria-pressed="true"],
+.relation_scenario[aria-pressed="true"] {
+  border-color: transparent;
+  background: #5a7d6c;
+  color: #f4f7f4;
+  font-weight: 600;
+}
+
+.relation_tab:first-child {
+  grid-column: 1 / -1;
+}
+
+.relation_chapter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-margin-top: 230px;
+}
+
+.relation_chapter h2,
+.relation_card h3 {
+  margin: 0;
+  font-family: var(--font_label);
+  font-weight: 600;
+}
+
+.relation_chapter h2 {
+  font-size: 18px;
+  line-height: 26px;
+}
+
+.relation_card h3 {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.relation_card {
+  padding: 16px;
+  border: 1px solid #26332c;
+  border-radius: 16px;
+  background: #1a211e;
+}
+
+.relation_index {
+  margin: 0 0 6px;
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.relation_card p,
+.relation_note,
+.relation_list,
+.relation_steps,
+.relation_lines {
+  margin: 8px 0 0;
+  color: var(--ink_soft);
+  font-size: 15px;
+  line-height: 24px;
+}
+
+.relation_quote {
+  color: var(--ink);
+}
+
+.relation_scenarios {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.relation_speech_head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.relation_copy {
+  flex: none;
+  padding: 0 12px;
+}
+
+.relation_list,
+.relation_steps,
+.relation_lines {
+  padding-left: 1.2em;
+}
+
+.relation_list li,
+.relation_steps li,
+.relation_lines li {
+  margin: 8px 0;
+}
+
+.relation_lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 0;
+  list-style: none;
+  counter-reset: relation_line;
+}
+
+.relation_lines li {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #26332c;
+  border-radius: 14px;
+  background: #18211e;
+  color: var(--ink);
+}
+
+.relation_lines li::before {
+  counter-increment: relation_line;
+  content: counter(relation_line);
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #202c26;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
+}
+
+.relation_status {
+  min-height: 20px;
+  margin: 0;
+  color: var(--primary);
+  font-size: 13px;
+}
+
+.relation_tab:focus-visible,
+.relation_scenario:focus-visible,
+.relation_copy:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* 인간관계 화면의 위 막대는 한 줄입니다. 장 버튼은 그 바로 아래에 붙습니다. */
+@media (max-width: 480px) {
+  .relation_tabs {
+    top: 64px;
+  }
+
+  .relation_chapter {
+    scroll-margin-top: 240px;
+  }
+}

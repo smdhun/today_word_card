@@ -29,8 +29,6 @@
     els.form_message = require_element("form_message");
     els.status_message = require_element("status_message");
     els.draw_button = require_element("draw_button");
-    els.redraw_button = require_element("redraw_button");
-    els.copy_button = require_element("copy_button");
     els.result_card = require_element("result_card");
     els.card_empty = require_element("card_empty");
     els.card_head = require_element("card_head");
@@ -53,8 +51,6 @@
       els.form_message &&
       els.status_message &&
       els.draw_button &&
-      els.redraw_button &&
-      els.copy_button &&
       els.result_card &&
       els.card_empty &&
       els.card_head &&
@@ -244,7 +240,7 @@
 
   /**
    * 다음 순번의 그림을 미리 받아 둡니다.
-   * 덕분에 문장뽑기를 눌렀을 때 그림이 문장과 거의 동시에 바뀝니다.
+   * 덕분에 문장 뽑기를 눌렀을 때 그림이 문장과 거의 동시에 바뀝니다.
    */
   function preload_next_vignette(validated, card) {
     try {
@@ -272,76 +268,10 @@
       els.card_empty.hidden = true;
       els.card_head.hidden = false;
       els.card_body.hidden = false;
-      els.redraw_button.disabled = false;
-      els.copy_button.disabled = false;
       play_reveal();
     } catch (error) {
       console.error("카드를 그리지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed);
-    }
-  }
-
-  /**
-   * 카드 내용을 복사할 문자열로 만듭니다.
-   * 속담과 영화 문장이 있으면 맨 아래에 차례로 덧붙입니다.
-   */
-  function build_copy_text(card) {
-    const is_aurora = document.documentElement.dataset.design === root.DESIGN_AURORA;
-    const proverb_label = is_aurora ? "오래 남은 말" : "오늘의 속담";
-    const movie_label = is_aurora ? "화면 속의 한 줄" : "영화에서 온 한 줄";
-    const lines = [
-      card.mood.label,
-      "",
-      card.lead_text,
-      card.caution_text,
-    ];
-    if (card.vignette && card.vignette.caption) {
-      lines.unshift(card.vignette.caption);
-    }
-    if (card.proverb_text) {
-      lines.push("", proverb_label + ": " + card.proverb_text);
-    }
-    if (card.movie_quote && card.movie_quote.text) {
-      lines.push("", movie_label + ": " + card.movie_quote.text);
-      lines.push(card.movie_quote.movie + " (" + card.movie_quote.year + ")");
-    }
-    return lines.join("\n");
-  }
-
-  /**
-   * 보안 정책 때문에 클립보드를 바로 쓰지 못할 때 쓰는 예비 복사입니다.
-   */
-  function copy_with_textarea(text) {
-    try {
-      const helper = document.createElement("textarea");
-      helper.value = text;
-      helper.setAttribute("readonly", "readonly");
-      helper.style.position = "fixed";
-      helper.style.left = "-9999px";
-      document.body.appendChild(helper);
-      helper.select();
-      const is_copied = document.execCommand("copy");
-      document.body.removeChild(helper);
-      return is_copied;
-    } catch (error) {
-      console.error("예비 복사도 실패했습니다.", error);
-      return false;
-    }
-  }
-
-  /**
-   * 문장을 클립보드에 넣습니다.
-   */
-  async function copy_card_text(text) {
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      }
-      return copy_with_textarea(text);
-    } catch (error) {
-      console.error("문장을 복사하지 못했습니다.", error);
-      return copy_with_textarea(text);
     }
   }
 
@@ -391,7 +321,7 @@
   /**
    * 고른 기분의 다음 문장과 그림을 보여줍니다.
    * 카드가 없으면 그날의 첫 장을, 있으면 섞어 둔 다음 장을 엽니다.
-   * 위쪽 문장뽑기와 아래쪽 문장 뽑기가 이 길을 함께 씁니다.
+   * 그림 아래의 문장 뽑기 버튼이 이 길을 씁니다.
    */
   function show_next_card(focus_id) {
     clear_messages();
@@ -414,7 +344,7 @@
   }
 
   /**
-   * 오늘의 문장 뽑기. 위쪽 문장뽑기와 같이 다음 문장을 보여줍니다.
+   * 그림 아래의 문장 뽑기. 다음 문장과 다음 그림을 보여줍니다.
    */
   function on_submit(event) {
     try {
@@ -426,40 +356,6 @@
     } catch (error) {
       console.error("문장 뽑기를 끝내지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed, "draw_button");
-    }
-  }
-
-  /**
-   * 위쪽 문장뽑기. 같은 기분 안에서 다음 문장과 다음 그림으로 바꿉니다.
-   * 덱을 한 바퀴 돌기 전에는 같은 문장도 같은 그림도 나오지 않습니다.
-   */
-  function on_redraw() {
-    try {
-      show_next_card("redraw_button");
-    } catch (error) {
-      console.error("다른 문장으로 바꾸지 못했습니다.", error);
-      show_error(root.MESSAGES.draw_failed, "redraw_button");
-    }
-  }
-
-  /**
-   * 카드 문장을 복사합니다.
-   */
-  async function on_copy() {
-    try {
-      if (!current_card) {
-        show_error(root.MESSAGES.draw_failed, "draw_button");
-        return;
-      }
-      const is_copied = await copy_card_text(build_copy_text(current_card));
-      if (is_copied) {
-        show_status(root.MESSAGES.copy_done);
-        return;
-      }
-      show_status(root.MESSAGES.copy_failed, true);
-    } catch (error) {
-      console.error("복사 버튼을 처리하지 못했습니다.", error);
-      show_status(root.MESSAGES.copy_failed, true);
     }
   }
 
@@ -566,8 +462,6 @@
 
       warn_if_options_mismatch();
       els.form.addEventListener("submit", on_submit);
-      els.redraw_button.addEventListener("click", on_redraw);
-      els.copy_button.addEventListener("click", on_copy);
       document.addEventListener("today_word_design_change", on_design_change);
       restore_saved_card();
     } catch (error) {

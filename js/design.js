@@ -1,15 +1,19 @@
 /**
- * 타로와 오로라 디자인을 바꾸고, 고른 디자인을 브라우저에 기억합니다.
+ * 타로, 오로라, 인간관계 화면을 바꾸고, 고른 화면을 브라우저에 기억합니다.
  * 화면이 그려지기 전에 정해야 색이 깜빡이지 않으므로 head에서 불러옵니다.
  */
 (function init_design() {
   const root = (window.TodayWordCard = window.TodayWordCard || {});
 
   /**
-   * 타로 또는 오로라 중 하나인지 확인합니다.
+   * 타로, 오로라, 인간관계 중 하나인지 확인합니다.
    */
   function is_known_design(design) {
-    return design === root.DESIGN_TAROT || design === root.DESIGN_AURORA;
+    return (
+      design === root.DESIGN_TAROT ||
+      design === root.DESIGN_AURORA ||
+      design === root.DESIGN_RELATION
+    );
   }
 
   /**
@@ -56,14 +60,10 @@
    */
   function mark_pressed_button(design) {
     try {
-      const tarot_button = document.getElementById("design_tarot");
-      const aurora_button = document.getElementById("design_aurora");
-      if (tarot_button) {
-        tarot_button.setAttribute("aria-pressed", design === root.DESIGN_TAROT ? "true" : "false");
-      }
-      if (aurora_button) {
-        aurora_button.setAttribute("aria-pressed", design === root.DESIGN_AURORA ? "true" : "false");
-      }
+      document.querySelectorAll("[data-design-button]").forEach(function mark_button(button) {
+        const is_pressed = button.dataset.design === design;
+        button.setAttribute("aria-pressed", is_pressed ? "true" : "false");
+      });
     } catch (error) {
       console.error("디자인 버튼 표시를 바꾸지 못했습니다.", error);
     }

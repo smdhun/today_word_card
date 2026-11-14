@@ -1,7 +1,6 @@
 /*
  * 밤의 타로 디자인 (stitch_card_design/타로 시안 기준).
- * 색은 모두 아래 변수로 씁니다. 다크 모드가 기본이고,
- * html 태그에 data-theme="light"가 붙으면 화이트 모드 색으로 바뀝니다.
+ * 색은 모두 아래 변수로 씁니다. 화면은 다크 모드 한 가지만 씁니다.
  */
 :root {
   color-scheme: dark;
@@ -36,33 +35,6 @@
   /* 밤 풍경 그림 아래쪽을 카드 색으로 녹이는 색과, 그 위 글자색 */
   --vignette_fade: #222016;
   --vignette_ink: #e8c176;
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-
-  --surface: #f5f0e4;
-  --surface_bar: rgba(245, 240, 228, 0.85);
-  --card_form: #fdfaf2;
-  --card_result: #fffdf7;
-  --verse_bg: #f5f0e4;
-  --chip: #ece5d5;
-  --field: #efe8d9;
-  --shadow_form: 0 10px 15px -3px rgba(88, 70, 30, 0.12), 0 4px 6px -4px rgba(88, 70, 30, 0.1);
-  --shadow_result: 0 20px 25px -5px rgba(88, 70, 30, 0.14), 0 8px 10px -6px rgba(88, 70, 30, 0.1);
-
-  --ink: #1f1c13;
-  --ink_soft: #4e4639;
-  --ink_faint: #6b6253;
-
-  --primary: #775a19;
-  --primary_hover: #5d4200;
-  --on_primary: #ffffff;
-  --secondary: #3a4666;
-  --error: #ba1a1a;
-
-  --vignette_fade: rgba(22, 19, 10, 0.85);
-  --vignette_ink: #ffdea4;
 }
 
 * {
@@ -110,7 +82,7 @@ h2 {
   fill: currentColor;
 }
 
-/* ───────── 위쪽 띠: 문장 버튼과 화면 모드 버튼 ───────── */
+/* ───────── 위쪽 띠: 문장 버튼과 디자인 버튼 ───────── */
 
 .top_bar {
   position: sticky;
@@ -124,35 +96,26 @@ h2 {
 .top_bar_inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 8px;
   width: min(840px, calc(100% - 24px));
   min-height: 64px;
   margin: 0 auto;
 }
 
-/* 왼쪽: 문장뽑기, 문장 복사 */
+/* 오로라, 타로, 인간관계는 위쪽 띠의 가운데에 둡니다. */
 .top_actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   min-width: 0;
 }
 
-.top_action {
-  --icon_size: 16px;
-  min-height: 36px;
-  padding: 0 10px;
-  white-space: nowrap;
-  letter-spacing: 0;
-}
-
-/* 문장 복사와 조금 띄운 디자인 전환 버튼 */
 .design_switch {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-left: 12px;
 }
 
 .design_button {
@@ -180,44 +143,6 @@ h2 {
   font-weight: 600;
 }
 
-.theme_toggle {
-  flex: none;
-  min-height: 40px;
-  padding: 0 14px;
-  white-space: nowrap;
-  border: 0;
-  border-radius: 999px;
-  background: var(--chip);
-  color: var(--primary);
-  font-family: var(--font_label);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 18px;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-}
-
-.theme_toggle:hover {
-  color: var(--primary_hover);
-}
-
-/* 버튼에는 지금 모드의 반대쪽으로 가는 문구 하나만 보입니다. */
-.theme_label {
-  --icon_size: 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.theme_label_to_dark,
-:root[data-theme="light"] .theme_label_to_light {
-  display: none;
-}
-
-:root[data-theme="light"] .theme_label_to_dark {
-  display: inline-flex;
-}
-
 /* ───────── 본문 틀 ───────── */
 
 .stage {
@@ -241,6 +166,11 @@ h2 {
   font-weight: 400;
   line-height: 34px;
   letter-spacing: -0.025em;
+}
+
+/* 타로의 오늘의 한마디는 명조 대신 고딕으로 보여 줍니다. */
+:root[data-design="tarot"] .intro h1 {
+  font-family: var(--font_label);
 }
 
 .layout {
@@ -425,7 +355,7 @@ fieldset {
 
 .button_primary {
   width: 100%;
-  margin-top: 8px;
+  margin-top: 0;
   padding: 14px 16px;
   border-radius: 12px;
   background: var(--primary);
@@ -451,28 +381,7 @@ fieldset {
   gap: 12px;
 }
 
-.button_ghost {
-  min-height: 44px;
-  padding: 4px 12px;
-  border-radius: 8px;
-  background: var(--chip);
-  color: var(--ink_soft);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 18px;
-  letter-spacing: 0.04em;
-}
-
-.button_ghost:hover:not(:disabled) {
-  color: var(--ink);
-}
-
-.button_ghost:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
 .button:focus-visible,
-.theme_toggle:focus-visible,
 .epilogue_source a:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
@@ -533,6 +442,11 @@ fieldset {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+/* 타로 그림 위의 이름과 기분 표기는 보여 주지 않습니다. */
+:root[data-design="tarot"] .card_head {
+  display: none;
 }
 
 .card_caption {
@@ -824,15 +738,7 @@ fieldset {
 
 /* ───────── 넓은 화면: 입력과 결과를 나란히 ───────── */
 
-/* 좁은 화면에서는 아이콘을 빼서 세 버튼이 한 줄에 들어가게 합니다. */
 @media (max-width: 480px) {
-  .top_action .icon,
-  .theme_toggle .icon {
-    display: none;
-  }
-
-  .top_action,
-  .theme_toggle,
   .design_button {
     padding-right: 8px;
     padding-left: 8px;
@@ -841,7 +747,6 @@ fieldset {
 
   .design_switch {
     gap: 4px;
-    margin-left: 8px;
   }
 }
 
