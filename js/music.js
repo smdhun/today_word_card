@@ -360,6 +360,25 @@
   }
 
   /**
+   * 목록 위에서 휠을 굴리면 목록만 움직이고, 뒤 화면은 그대로 둡니다.
+   */
+  function keep_page_still_while_list_scrolls(panel) {
+    panel.addEventListener("wheel", function on_list_wheel(event) {
+      if (!is_open) {
+        return;
+      }
+      event.preventDefault();
+      let distance = event.deltaY;
+      if (event.deltaMode === 1) {
+        distance = event.deltaY * 16;
+      } else if (event.deltaMode === 2) {
+        distance = event.deltaY * panel.clientHeight;
+      }
+      panel.scrollTop += distance;
+    }, { passive: false });
+  }
+
+  /**
    * 목록을 열거나 닫습니다. 음악을 멈추지는 않습니다.
    */
   function set_panel_open(panel, toggle, next_open) {
@@ -429,6 +448,7 @@
       }
 
       build_list(list);
+      keep_page_still_while_list_scrolls(panel);
       toggle.addEventListener("click", function on_toggle_click() {
         set_panel_open(panel, toggle, !is_open);
       });

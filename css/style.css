@@ -209,6 +209,8 @@ h2 {
   max-height: min(360px, 60vh);
   padding: 8px;
   overflow: auto;
+  /* 목록 끝에서도 뒤 화면으로 스크롤이 넘어가지 않게 합니다. */
+  overscroll-behavior: contain;
   border-radius: 12px;
   background: var(--card_result);
   box-shadow: var(--shadow_result);
