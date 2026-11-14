@@ -200,6 +200,20 @@ h2 {
   color: var(--primary);
 }
 
+/* 음악 목록이 열린 동안 오로라, 타로, 인간관계 화면은 스크롤되지 않습니다. */
+html.is_music_list_open,
+html.is_music_list_open body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.is_music_list_open .top_bar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+}
+
 .music_panel {
   position: absolute;
   top: calc(100% + 8px);
@@ -210,7 +224,7 @@ h2 {
   padding: 8px;
   overflow: auto;
   /* 목록 끝에서도 뒤 화면으로 스크롤이 넘어가지 않게 합니다. */
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   border-radius: 12px;
   background: var(--card_result);
   box-shadow: var(--shadow_result);

@@ -359,12 +359,55 @@
     message_element.textContent = "";
   }
 
+  let locked_scroll_y = 0;
+
   /**
-   * 목록 위에서 휠을 굴리면 목록만 움직이고, 뒤 화면은 그대로 둡니다.
+   * 목록이 열려 있는 동안 뒤 화면을 지금 위치에 붙여 둡니다.
+   */
+  function lock_background_scroll() {
+    try {
+      locked_scroll_y = window.scrollY || document.documentElement.scrollTop || 0;
+      const bar = document.querySelector(".top_bar");
+      const bar_height = bar ? bar.getBoundingClientRect().height : 0;
+      const scrollbar_width = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.position = "fixed";
+      document.body.style.top = "-" + locked_scroll_y + "px";
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+      document.body.style.paddingTop = bar_height + "px";
+      document.body.style.paddingRight = scrollbar_width > 0 ? scrollbar_width + "px" : "";
+      document.documentElement.classList.add("is_music_list_open");
+    } catch (error) {
+      console.error("뒤 화면을 고정하지 못했습니다. 목록은 그대로 열어둡니다.", error);
+    }
+  }
+
+  /**
+   * 목록을 닫으면 뒤 화면을 다시 스크롤할 수 있게 합니다.
+   */
+  function unlock_background_scroll() {
+    try {
+      document.documentElement.classList.remove("is_music_list_open");
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      document.body.style.paddingTop = "";
+      document.body.style.paddingRight = "";
+      window.scrollTo(0, locked_scroll_y);
+    } catch (error) {
+      console.error("뒤 화면 고정을 풀지 못했습니다. 목록을 닫은 뒤 화면을 다시 움직여 보세요.", error);
+    }
+  }
+
+  /**
+   * 목록 위에서 휠을 굴리면 목록만 움직입니다.
    */
   function keep_page_still_while_list_scrolls(panel) {
-    panel.addEventListener("wheel", function on_list_wheel(event) {
-      if (!is_open) {
+    window.addEventListener("wheel", function on_list_wheel(event) {
+      if (!is_open || !panel.contains(event.target) || !event.cancelable) {
         return;
       }
       event.preventDefault();
@@ -375,7 +418,7 @@
         distance = event.deltaY * panel.clientHeight;
       }
       panel.scrollTop += distance;
-    }, { passive: false });
+    }, { capture: true, passive: false });
   }
 
   /**
@@ -385,6 +428,11 @@
     is_open = next_open;
     panel.hidden = !is_open;
     toggle.setAttribute("aria-expanded", is_open ? "true" : "false");
+    if (is_open) {
+      lock_background_scroll();
+      return;
+    }
+    unlock_background_scroll();
   }
 
   /**
