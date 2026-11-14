@@ -14,6 +14,10 @@
   // 오로라 등장을 다시 누르면 이전 움직임을 멈추는 번호입니다.
   let aurora_motion_no = 0;
   let aurora_hold_timer = 0;
+  // 타로 사진이 가득 찬 모습을 0.5초 유지한 뒤 전체를 보여주는 타이머입니다.
+  let tarot_reveal_timer = 0;
+  // 사진을 빨리 넘기면 이전 확대 계산을 무시하는 번호입니다.
+  let tarot_reveal_no = 0;
 
   /**
    * id로 요소를 찾고, 없으면 기록만 남깁니다.
@@ -225,8 +229,12 @@
   function show_vignette(vignette) {
     try {
       const is_previous_loaded = els.vignette_image.naturalWidth > 0;
-      if (is_previous_loaded && els.vignette_image.currentSrc) {
+      const is_tarot = document.documentElement.dataset.design === root.DESIGN_TAROT;
+      // 타로는 여백에 이전 사진이 비치면 안 되므로, 카드 색만 남깁니다.
+      if (!is_tarot && is_previous_loaded && els.vignette_image.currentSrc) {
         els.card_vignette.style.backgroundImage = 'url("' + els.vignette_image.currentSrc + '")';
+      } else if (is_tarot) {
+        els.card_vignette.style.backgroundImage = "";
       }
       els.vignette_image.src = vignette.src;
       els.vignette_caption.textContent = vignette.caption;
@@ -242,8 +250,90 @@
       void els.card_vignette.offsetWidth;
       els.card_vignette.classList.add("is_changing");
       els.card_caption.classList.add("is_changing");
+      start_tarot_reveal();
     } catch (error) {
       console.error("그림을 바꾸지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 액자를 가득 채우는 확대 배율입니다. 1이면 이미 원본 전체가 들어옵니다.
+   * 가로로 넓은 액자면 위아래가 잘리고, 세로로 긴 액자면 좌우가 잘립니다.
+   */
+  function tarot_cover_scale(frame_width, frame_height) {
+    try {
+      const natural_width = els.vignette_image.naturalWidth;
+      const natural_height = els.vignette_image.naturalHeight;
+      if (!natural_width || !natural_height || frame_width <= 0 || frame_height <= 0) {
+        return 1;
+      }
+      const image_ratio = natural_width / natural_height;
+      const frame_ratio = frame_width / frame_height;
+      const scale = image_ratio > frame_ratio
+        ? image_ratio / frame_ratio
+        : frame_ratio / image_ratio;
+      return Math.max(1, scale);
+    } catch (error) {
+      console.error("사진 확대 배율을 계산하지 못했습니다. 원본 전체를 보여 줍니다.", error);
+      return 1;
+    }
+  }
+
+  /**
+   * 타로 사진을 지금 액자처럼 보여 준 뒤, 0.5초 후에 원본 전체로 줄입니다.
+   * 오로라 캐릭터는 이 움직임을 쓰지 않습니다.
+   */
+  function start_tarot_reveal() {
+    try {
+      window.clearTimeout(tarot_reveal_timer);
+      tarot_reveal_timer = 0;
+      tarot_reveal_no += 1;
+      const reveal_no = tarot_reveal_no;
+      if (!els.card_vignette) {
+        return;
+      }
+      const is_tarot = document.documentElement.dataset.design === root.DESIGN_TAROT;
+      if (!is_tarot) {
+        els.card_vignette.classList.remove("is_tarot_full", "is_tarot_snap");
+        els.card_vignette.style.removeProperty("--tarot_cover_scale");
+        return;
+      }
+      if (prefers_reduced_motion()) {
+        els.card_vignette.style.setProperty("--tarot_cover_scale", "1");
+        els.card_vignette.classList.add("is_tarot_full");
+        return;
+      }
+
+      const apply_cover = function apply_cover() {
+        if (reveal_no !== tarot_reveal_no || !els.card_vignette) {
+          return;
+        }
+        if (document.documentElement.dataset.design !== root.DESIGN_TAROT) {
+          return;
+        }
+        if (!els.vignette_image.naturalWidth) {
+          els.vignette_image.addEventListener("load", apply_cover, { once: true });
+          return;
+        }
+        const scale = tarot_cover_scale(els.card_vignette.clientWidth, els.card_vignette.clientHeight);
+        els.card_vignette.classList.add("is_tarot_snap");
+        els.card_vignette.classList.remove("is_tarot_full");
+        els.card_vignette.style.setProperty("--tarot_cover_scale", String(Math.round(scale * 1000) / 1000));
+        void els.card_vignette.offsetWidth;
+        els.card_vignette.classList.remove("is_tarot_snap");
+        tarot_reveal_timer = window.setTimeout(function show_full_tarot_photo() {
+          if (reveal_no !== tarot_reveal_no || !els.card_vignette) {
+            return;
+          }
+          if (document.documentElement.dataset.design !== root.DESIGN_TAROT) {
+            return;
+          }
+          els.card_vignette.classList.add("is_tarot_full");
+        }, 500);
+      };
+      window.requestAnimationFrame(apply_cover);
+    } catch (error) {
+      console.error("사진 전체 보기를 시작하지 못했습니다. 새로고침 후 다시 뽑아 주세요.", error);
     }
   }
 

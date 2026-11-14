@@ -264,8 +264,10 @@ h2 {
 }
 
 /* 타로 그림 높이를 오로라에서 문장을 뽑은 뒤의 그림 높이(258px)와 같게 둡니다. */
+/* 전체가 드러날 때 남는 여백은 카드와 같은 색입니다. */
 :root[data-design="tarot"] .card_vignette {
   height: 258px;
+  background: var(--card_result);
 }
 
 .layout {
@@ -660,15 +662,48 @@ fieldset {
   color: #f3e2bc;
 }
 
+/* 타로는 먼저 액자를 가득 채운 뒤, 0.5초 후에 원본 전체가 보이도록 작아집니다. */
+:root[data-design="tarot"] .card_vignette img {
+  object-fit: contain;
+  scale: var(--tarot_cover_scale, 1);
+  transition: scale 0.7s ease;
+}
+
+:root[data-design="tarot"] .card_vignette.is_tarot_snap img {
+  transition: none;
+}
+
+:root[data-design="tarot"] .card_vignette.is_tarot_full img {
+  scale: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-design="tarot"] .card_vignette img {
+    scale: 1;
+    transition: none;
+  }
+}
+
 /* 새 그림은 이전 그림 위에서 서서히 나타나고, 캡션은 살짝 떠오릅니다. */
 .card_vignette.is_changing img {
   animation: vignette_fade_in 0.6s ease-out;
+}
+
+/* 타로의 확대 축소는 scale 속성이 맡으므로, 등장 효과는 투명도만 바꿉니다. */
+:root[data-design="tarot"] .card_vignette.is_changing img {
+  animation: tarot_vignette_fade 0.6s ease-out;
 }
 
 @keyframes vignette_fade_in {
   from {
     opacity: 0;
     transform: scale(1.04);
+  }
+}
+
+@keyframes tarot_vignette_fade {
+  from {
+    opacity: 0;
   }
 }
 
