@@ -474,10 +474,120 @@
   }
 
   /**
+   * 얼굴로 고른 칸을 끄고, 밤의 한 줄과 사색의 결을 다시 보여 줍니다.
+   */
+  function reset_face_reading() {
+    const lead = document.querySelector(".verse_lead");
+    const caution = document.querySelector(".verse_caution");
+    const face = document.getElementById("face_reading");
+    if (lead) {
+      lead.hidden = false;
+    }
+    if (caution) {
+      caution.hidden = false;
+    }
+    if (face) {
+      face.hidden = true;
+    }
+  }
+
+  /**
+   * 형태가 고른 두 칸만 남기고 나머지는 숨깁니다.
+   */
+  function show_face_slots(reading) {
+    const lead = document.querySelector(".verse_lead");
+    const caution = document.querySelector(".verse_caution");
+    const face = document.getElementById("face_reading");
+    if (lead) {
+      lead.hidden = !reading.is_lead_visible;
+    }
+    if (caution) {
+      caution.hidden = !reading.is_caution_visible;
+    }
+    if (face) {
+      face.hidden = false;
+    }
+    render_wise_quotes(reading.quotes);
+  }
+
+  /**
+   * 읽은 기분의 그림과, 형태가 고른 두 칸을 카드에 올립니다.
+   */
+  function show_face_reading(reading) {
+    try {
+      const quotes = reading && Array.isArray(reading.quotes) ? reading.quotes : [];
+      const has_slot = Boolean(
+        reading &&
+        (reading.is_lead_visible || reading.is_caution_visible || quotes.length > 0)
+      );
+      if (!reading || !reading.mood_id || !reading.label || !reading.link_text || !has_slot) {
+        console.error("얼굴 추천 글이 비어 있습니다. 다시 찍어 주세요.");
+        return false;
+      }
+      if (reading.is_lead_visible && !reading.lead_text) {
+        console.error("밤의 한 줄이 비어 있습니다. 다시 찍어 주세요.");
+        return false;
+      }
+      if (reading.is_caution_visible && !reading.caution_text) {
+        console.error("사색의 결이 비어 있습니다. 다시 찍어 주세요.");
+        return false;
+      }
+      check_radio("mood", reading.mood_id);
+      const label = document.getElementById("face_reading_label");
+      const link = document.getElementById("face_reading_text");
+      const face = document.getElementById("face_reading");
+      if (!label || !link || !face) {
+        console.error("얼굴 추천 글 칸을 찾지 못했습니다.");
+        return false;
+      }
+      label.textContent = reading.label;
+      link.textContent = reading.link_text;
+      if (els.card_lead) {
+        els.card_lead.textContent = reading.lead_text || "";
+      }
+      if (els.card_caution) {
+        els.card_caution.textContent = reading.caution_text || "";
+      }
+      if (typeof root.list_vignettes === "function") {
+        const list = root.list_vignettes(reading.mood_id);
+        if (list && list.length > 0) {
+          const index = Math.floor(Math.random() * list.length);
+          render_vignette(list[index]);
+        }
+      }
+      const mood = root.MOODS.find(function match_mood(item) {
+        return item.id === reading.mood_id;
+      });
+      if (els.card_mood && mood) {
+        els.card_mood.textContent = mood.label;
+      }
+      if (els.result_card) {
+        els.result_card.dataset.mood = reading.mood_id;
+      }
+      els.card_empty.hidden = true;
+      els.card_head.hidden = false;
+      els.card_body.hidden = false;
+      show_face_slots(reading);
+      clear_messages();
+      play_reveal();
+      if (uses_card_arrival()) {
+        face.focus({ preventScroll: true });
+        play_aurora_arrival();
+      }
+      return true;
+    } catch (error) {
+      console.error("얼굴 추천 글을 보여주지 못했습니다. 감정을 직접 고른 뒤 뽑아 주세요.", error);
+      show_error(root.MESSAGES.draw_failed);
+      return false;
+    }
+  }
+
+  /**
    * 고른 카드를 화면에 그립니다.
    */
   function render_card(card) {
     try {
+      reset_face_reading();
       els.card_mood.textContent = card.mood.label;
       els.card_lead.textContent = card.lead_text;
       els.card_caution.textContent = card.caution_text;
@@ -991,6 +1101,8 @@
       console.error("화면을 시작하지 못했습니다.", error);
     }
   }
+
+  root.show_face_reading = show_face_reading;
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start_app);

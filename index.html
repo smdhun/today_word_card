@@ -59,7 +59,8 @@
         <div class="music_box">
           <div class="music_head">
             <button id="music_toggle" class="design_button music_toggle" type="button" aria-expanded="false" aria-controls="music_list">MUSIC</button>
-            <!-- 곡이 나올 때만 보이는 음량 막대입니다. -->
+            <!-- 곡이 나올 때만, 음량 막대 왼쪽에 남은 시간을 보여 줍니다. -->
+            <span id="music_remain" class="music_remain" hidden>00:00</span>
             <span id="music_level" class="music_meter music_level" hidden aria-hidden="true">
               <span class="music_bar"></span>
               <span class="music_bar"></span>
@@ -188,6 +189,11 @@
           </div>
 
           <!-- 첫 그림은 오로라의 기쁨입니다. 스크립트 전에도, 링크 미리보기에서도 이 얼굴이 먼저입니다. -->
+          <!-- 오로라에서만 보입니다. 그림 바로 위, 사진과 겹치지 않습니다. -->
+          <div class="camera_row">
+            <button id="camera_open" class="camera_open" type="button">카메라로 찍기</button>
+          </div>
+
           <!-- 화살표는 그림 밖에 둡니다. 사진을 가리지 않고 좌우에서 넘깁니다. -->
           <div class="vignette_frame">
             <button type="button" id="vignette_prev" class="vignette_nav vignette_nav_prev" aria-label="이전 그림">&lt;</button>
@@ -210,6 +216,15 @@
           </p>
 
           <div id="card_body" class="card_body" hidden>
+            <!-- 방금 본 얼굴을 향해 하는 말입니다. 아래는 그 얼굴에 맞춰 고른 글입니다. -->
+            <div id="face_reading" class="verse face_reading" tabindex="-1" hidden>
+              <p class="verse_label">
+                <svg class="icon" aria-hidden="true"><use href="#icon_nights_stay"/></svg>
+                <span id="face_reading_label"></span>
+              </p>
+              <p id="face_reading_text" class="sentence sentence_lead"></p>
+            </div>
+
             <div class="verse verse_lead" aria-live="polite">
               <p class="verse_label">
                 <svg class="icon" aria-hidden="true"><use href="#icon_nights_stay"/></svg>
@@ -376,6 +391,20 @@
     </footer>
   </main>
 
+  <!-- 오로라에서 얼굴 표정과 윤곽을 읽는 창입니다. 사진은 이 창을 닫으면 지웁니다. -->
+  <div id="camera_sheet" class="camera_sheet" hidden>
+    <div class="camera_sheet_card" role="dialog" aria-modal="true" aria-labelledby="camera_sheet_title">
+      <h2 id="camera_sheet_title" class="camera_sheet_title">카메라로 찍기</h2>
+      <p class="camera_sheet_text">안심하세요! 카메라로 촬영한 얼굴은 이 기기 안에서만 사용되고, 저장하거나 다른 곳으로 전송되지 않습니다.</p>
+      <video id="camera_video" class="camera_video" autoplay playsinline muted></video>
+      <p id="camera_message" class="camera_message" role="alert" hidden></p>
+      <div class="camera_sheet_actions">
+        <button id="camera_shutter" class="camera_shutter" type="button">촬영</button>
+        <button id="camera_close" class="camera_close" type="button">닫기</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 처음 버튼을 누를 때 한 번만 묻는 음악 재생 확인입니다. -->
   <div id="music_offer" class="music_offer" hidden>
     <div class="music_offer_card" role="dialog" aria-modal="true" aria-labelledby="music_offer_title">
@@ -398,5 +427,6 @@
   <script src="js/app.js"></script>
   <script src="js/relation.js"></script>
   <script src="js/music.js"></script>
+  <script src="js/face_read.js"></script>
 </body>
 </html>

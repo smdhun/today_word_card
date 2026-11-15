@@ -260,6 +260,34 @@
   }
 
   /**
+   * 초를 남은 시간 00:00으로 바꿉니다.
+   */
+  function format_remain(total_seconds) {
+    const safe_seconds = Number.isFinite(total_seconds) ? Math.max(0, Math.ceil(total_seconds)) : 0;
+    const minutes = Math.floor(safe_seconds / 60);
+    const seconds = safe_seconds % 60;
+    return String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+  }
+
+  /**
+   * 재생 중이면 막대 왼쪽에 남은 시간을 줄여 보여 줍니다.
+   */
+  function update_remain() {
+    const remain = document.getElementById("music_remain");
+    if (!remain) {
+      console.error("남은 시간 칸을 찾지 못했습니다.");
+      return;
+    }
+    const is_playing = !audio.paused && !audio.ended;
+    remain.hidden = !is_playing;
+    if (!is_playing || !Number.isFinite(audio.duration)) {
+      remain.textContent = "00:00";
+      return;
+    }
+    remain.textContent = format_remain(audio.duration - audio.currentTime);
+  }
+
+  /**
    * 재생 중인 곡만 금색으로 표시합니다.
    */
   function mark_playing_track(list, toggle) {
@@ -278,6 +306,7 @@
     if (level) {
       level.hidden = !is_playing;
     }
+    update_remain();
   }
 
   /**
@@ -673,6 +702,9 @@
         mark_playing_track(list, toggle);
         start_meter();
       });
+      audio.addEventListener("timeupdate", update_remain);
+      audio.addEventListener("loadedmetadata", update_remain);
+      audio.addEventListener("durationchange", update_remain);
       audio.addEventListener("pause", function on_pause() {
         stop_meter();
         mark_playing_track(list, toggle);
