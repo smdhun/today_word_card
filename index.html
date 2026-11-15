@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261115l">
+  <link rel="stylesheet" href="css/style.css?v=20261115r">
   <link rel="stylesheet" href="css/aurora.css">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
@@ -48,12 +48,12 @@
       <svg class="icon sound_icon_off" aria-hidden="true"><use href="#icon_volume_off"></use></svg>
     </button>
     <div class="top_bar_inner">
-      <!-- 처음에는 오로라가 눌려 있고, 그다음이 타로, 인간관계입니다. -->
+      <!-- 처음에는 오로라가 눌려 있고, 그다음이 타로입니다. 인간관계는 글을 남겨 두고 태그만 숨깁니다. -->
       <div class="top_actions">
         <div class="design_switch" role="group" aria-label="화면 디자인">
           <button id="design_aurora" class="design_button" type="button" data-design-button data-design="aurora" aria-pressed="true">오로라</button>
           <button id="design_tarot" class="design_button" type="button" data-design-button data-design="tarot" aria-pressed="false">타로</button>
-          <button id="design_relation" class="design_button" type="button" data-design-button data-design="relation" aria-pressed="false">인간관계</button>
+          <button id="design_relation" class="design_button" type="button" data-design-button data-design="relation" aria-pressed="false" hidden>인간관계</button>
         </div>
         <!-- 화면 버튼이 아닙니다. 인간관계 오른쪽에서 곡 목록만 엽니다. -->
         <div class="music_box">
@@ -105,7 +105,7 @@
       <div id="design_hint" class="design_hint" role="note" hidden>
         <p class="design_hint_text">
           <span class="design_hint_title">화면을 고를 수 있어요</span>
-          오로라는 밤의 문장, 타로는 오늘의 카드, 인간관계는 직장 이야기입니다.
+          오로라는 밤의 문장, 타로는 오늘의 카드입니다.
         </p>
         <button id="design_hint_close" class="design_hint_close" type="button">닫기</button>
       </div>
@@ -120,6 +120,7 @@
         <span class="title_aurora">마음의 결을 고르는 시간</span>
       </h1>
       <p class="aurora_lead">오늘 당신의 밤에 머물고 있는 감정을 가만히 짚어보세요.</p>
+      <p class="tarot_lead">덮인 카드 한 장을 뒤집으면, 오늘 붙들 질문이 나옵니다.</p>
     </section>
 
     <div class="layout">
@@ -204,10 +205,24 @@
             <button type="button" id="vignette_next" class="vignette_nav vignette_nav_next" aria-label="다음 그림">&gt;</button>
           </div>
 
+          <!-- 타로에서만 보입니다. 처음에는 뒷면이고, 뒤집으면 앞면과 질문이 나옵니다. -->
+          <div id="tarot_stage" class="tarot_stage">
+            <div class="tarot_frame">
+              <img id="tarot_image" class="tarot_image" src="images/tarot/back.jpg" alt="덮인 타로 카드" width="768" height="1024">
+            </div>
+            <div id="tarot_reading" class="tarot_reading" hidden>
+              <p id="tarot_name" class="tarot_name"></p>
+              <p class="tarot_label">오늘의 한 줄</p>
+              <p id="tarot_insight" class="tarot_insight"></p>
+              <p class="tarot_label">오늘의 질문</p>
+              <p id="tarot_question" class="tarot_question"></p>
+            </div>
+          </div>
+
           <!-- 그림 바로 아래. form 속성이 왼쪽 기분 선택과 이 버튼을 이어 줍니다. -->
           <button id="draw_button" class="button button_primary" type="submit" form="fortune_form">
             <svg class="icon" aria-hidden="true"><use href="#icon_auto_awesome"/></svg>
-            <span class="label_tarot">오늘의 문장 뽑기</span>
+            <span class="label_tarot">카드 뒤집기</span>
             <span class="label_aurora">새로운 문장 뽑기</span>
           </button>
 
@@ -435,10 +450,12 @@
   <script src="js/wise_quotes.js"></script>
   <script src="js/vignettes.js"></script>
   <script src="js/faces.js"></script>
+  <script src="js/tarot_cards.js?v=20261115r"></script>
+  <script src="js/tarot.js?v=20261115q"></script>
   <script src="js/validate.js"></script>
   <script src="js/picker.js?v=20261115k"></script>
   <script src="js/storage.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20261115o"></script>
   <script src="js/relation.js"></script>
   <script src="js/music.js"></script>
   <script src="js/face_read.js?v=20261115n"></script>

@@ -826,6 +826,85 @@ html.is_music_list_open .top_bar {
   display: none;
 }
 
+:root[data-design="tarot"] .tarot_lead {
+  display: block;
+  max-width: 28em;
+  margin: 8px 0 0;
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+/* 타로는 문장 카드 대신 세로 카드 한 장만 보여 줍니다. */
+:root[data-design="tarot"] .vignette_frame,
+:root[data-design="tarot"] .card_empty,
+:root[data-design="tarot"] .card_body {
+  display: none !important;
+}
+
+.tarot_stage {
+  display: none;
+}
+
+:root[data-design="tarot"] .tarot_stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: min(280px, 100%);
+  margin: 0 auto;
+}
+
+.tarot_frame {
+  width: 100%;
+  border: 2px solid #e2c27a;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #141824;
+  box-shadow: 0 18px 36px -18px rgba(0, 0, 0, 0.55);
+}
+
+.tarot_image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.tarot_reading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(420px, 100%);
+  text-align: center;
+}
+
+/* 카드 이름(여황제, 죽음 등)은 그림 아래에 보이지 않습니다. */
+.tarot_name {
+  display: none;
+}
+
+.tarot_label {
+  margin: 8px 0 0;
+  color: var(--ink_faint);
+  font-family: var(--font_label);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.tarot_insight,
+.tarot_question {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 26px;
+}
+
+.tarot_question {
+  color: var(--ink_soft);
+}
+
 @media (min-width: 760px) {
   :root[data-design="tarot"] .layout {
     grid-template-columns: minmax(0, 1fr);
@@ -926,8 +1005,9 @@ fieldset {
   cursor: pointer;
 }
 
-/* 사진 출처는 타로에서만 보여 줍니다. */
+/* 달빛 사진은 이제 화면에 나오지 않습니다. 출처 줄은 숨깁니다. */
 :root[data-design="aurora"] .epilogue_source,
+:root[data-design="tarot"] .epilogue_source,
 :root[data-design="relation"] .epilogue_source {
   display: none;
 }
@@ -937,6 +1017,7 @@ fieldset {
 .choice_dot,
 .aurora_kicker,
 .aurora_lead,
+.tarot_lead,
 .title_aurora,
 .epilogue_aurora,
 .label_aurora {

@@ -414,6 +414,40 @@
   }
 
   /**
+   * 오로라에서 감정을 고르면, 그 감정의 캐릭터 그림으로 바로 바꿉니다.
+   * 문장은 새로운 문장 뽑기를 누를 때까지 그대로 둡니다.
+   */
+  function on_mood_change() {
+    try {
+      if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
+        return;
+      }
+      const validated = root.validate_input(collect_input());
+      if (!validated || !validated.is_valid) {
+        console.error("고른 감정을 확인하지 못했습니다.");
+        show_status("감정을 확인하지 못했습니다. 다시 골라 주세요.", true);
+        return;
+      }
+      const offset = current_card && Number.isInteger(current_card.offset) ? current_card.offset : 0;
+      const picked = root.pick_today_phrase(validated, offset);
+      if (!picked || !picked.vignette || !picked.mood) {
+        console.error("고른 감정의 그림이 없습니다.", validated.mood);
+        show_status("이 감정의 그림을 열지 못했습니다. 페이지를 새로고침한 뒤 다시 골라 주세요.", true);
+        return;
+      }
+      render_vignette(picked.vignette);
+      if (current_card) {
+        current_card.vignette = picked.vignette;
+      }
+      els.card_mood.textContent = picked.mood.label;
+      els.result_card.dataset.mood = picked.mood.id;
+    } catch (error) {
+      console.error("고른 감정의 그림으로 바꾸지 못했습니다. 감정을 다시 골라 주세요.", error);
+      show_status("그림을 바꾸지 못했습니다. 감정을 다시 골라 주세요.", true);
+    }
+  }
+
+  /**
    * 왼쪽·오른쪽 화살표로 그림만 바꿉니다. 문장과 순번은 그대로 둡니다.
    * step이 1이면 다음 그림, -1이면 이전 그림입니다. 끝에서는 처음으로 돌아갑니다.
    */
@@ -723,12 +757,12 @@
 
   /**
    * 문장을 뽑을 때 그림이 가운데 나타났다가 올라가는 화면인지 확인합니다.
-   * 오로라와 타로가 같은 움직임입니다. 인간관계는 카드가 없습니다.
+   * 오로라만 이 움직임을 씁니다. 타로는 카드를 뒤집습니다.
    */
   function uses_card_arrival() {
     try {
       const design = document.documentElement.dataset.design;
-      return design === root.DESIGN_AURORA || design === root.DESIGN_TAROT;
+      return design === root.DESIGN_AURORA;
     } catch (error) {
       console.error("화면 종류를 확인하지 못했습니다. 그림 이동 없이 문장만 바꿉니다.", error);
       return false;
@@ -980,6 +1014,15 @@
   function on_submit(event) {
     try {
       event.preventDefault();
+      if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
+        if (typeof root.flip_tarot_card !== "function") {
+          console.error("타로 카드를 뒤집는 기능을 찾지 못했습니다.");
+          show_error("카드를 열지 못했습니다. 페이지를 새로고침한 뒤 다시 뒤집어 주세요.", "draw_button");
+          return;
+        }
+        root.flip_tarot_card();
+        return;
+      }
       const card = show_next_card("draw_button");
       if (!card) {
         return;
@@ -1054,6 +1097,12 @@
       window.clearTimeout(aurora_hold_timer);
       release_flying_image();
       document.documentElement.style.paddingBottom = "";
+      if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
+        if (typeof root.show_tarot_back === "function") {
+          root.show_tarot_back();
+        }
+        return;
+      }
       if (!current_card) {
         return;
       }
@@ -1089,6 +1138,9 @@
 
       warn_if_options_mismatch();
       els.form.addEventListener("submit", on_submit);
+      document.querySelectorAll('input[name="mood"]').forEach(function watch_mood(input) {
+        input.addEventListener("change", on_mood_change);
+      });
       els.vignette_prev.addEventListener("click", function on_prev_vignette() {
         on_browse_vignette(-1);
       });
