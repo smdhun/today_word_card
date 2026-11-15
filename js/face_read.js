@@ -1075,6 +1075,97 @@
   }
 
   /**
+   * 셀카처럼 좌우를 뒤집어 그립니다. 미리보기와 점이 같은 방향을 씁니다.
+   */
+  function draw_mirrored(context, width, draw) {
+    context.save();
+    context.translate(width, 0);
+    context.scale(-1, 1);
+    try {
+      draw();
+    } finally {
+      context.restore();
+    }
+  }
+
+  /**
+   * 점이 기준으로 삼은 그림을 미리보기에 올립니다.
+   * 영상 태그 위에 겹쳐 그리면 휴대폰에서 점이 왼쪽 아래로 밀립니다.
+   */
+  function present_view(source) {
+    const preview = document.getElementById("camera_preview");
+    if (!preview || !source || !source.width || !source.height) {
+      return;
+    }
+    const width = preview.clientWidth;
+    const height = preview.clientHeight;
+    if (!width || !height) {
+      return;
+    }
+    if (preview.width !== width || preview.height !== height) {
+      preview.width = width;
+      preview.height = height;
+    }
+    const context = preview.getContext("2d");
+    if (!context) {
+      console.error("촬영 미리보기를 그리지 못했습니다.");
+      return;
+    }
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, width, height);
+    draw_mirrored(context, width, function paint_preview() {
+      context.drawImage(source, 0, 0, width, height);
+    });
+  }
+
+  /**
+   * 이번 실행에서 고른 방향으로, 화면에 보이는 조각만 미리보기에 그립니다.
+   */
+  function present_camera(video) {
+    try {
+      if (!video || !video.videoWidth || !video.videoHeight) {
+        return;
+      }
+      const turn = has_frame_turn ? frame_turn : 0;
+      let painted = null;
+      if (turn === 0) {
+        const view_width = video.clientWidth || video.videoWidth;
+        const view_height = video.clientHeight || video.videoHeight;
+        const crop = cover_rect(video.videoWidth, video.videoHeight, view_width, view_height);
+        painted = crop ? paint_crop(video, crop) : null;
+      } else {
+        painted = paint_visible(video, turn);
+      }
+      if (!painted) {
+        return;
+      }
+      present_view(painted.canvas);
+      wipe_canvas(painted);
+    } catch (error) {
+      console.error("촬영 미리보기를 맞추지 못했습니다. 창을 닫았다가 다시 열어 주세요.", error);
+    }
+  }
+
+  /**
+   * 미리보기 그림을 지웁니다.
+   */
+  function clear_preview() {
+    const preview = document.getElementById("camera_preview");
+    if (!preview) {
+      return;
+    }
+    const context = preview.getContext("2d");
+    if (!context) {
+      console.error("촬영 미리보기를 지우지 못했습니다.");
+      return;
+    }
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, preview.width, preview.height);
+    preview.width = 0;
+    preview.height = 0;
+  }
+
+  /**
    * 미리보기 위의 점과 선을 지웁니다.
    */
   function clear_trace() {
@@ -1114,32 +1205,35 @@
         console.error("판독 선을 그릴 화면을 만들지 못했습니다.");
         return;
       }
+      context.setTransform(1, 0, 0, 1, 0, 0);
       context.clearRect(0, 0, width, height);
-      context.lineWidth = 1.5;
-      context.lineJoin = "round";
-      context.strokeStyle = "rgba(247, 241, 230, 0.95)";
-      context.fillStyle = "#3dff6a";
-      const dots = {};
-      face_connectors.forEach(function draw_group(group) {
-        context.beginPath();
-        group.forEach(function draw_link(link) {
-          const start = landmarks[link.start];
-          const end = landmarks[link.end];
-          if (!start || !end) {
-            return;
-          }
-          context.moveTo(start.x * width, start.y * height);
-          context.lineTo(end.x * width, end.y * height);
-          dots[link.start] = start;
-          dots[link.end] = end;
+      draw_mirrored(context, width, function paint_trace() {
+        context.lineWidth = 1.5;
+        context.lineJoin = "round";
+        context.strokeStyle = "rgba(247, 241, 230, 0.95)";
+        context.fillStyle = "#3dff6a";
+        const dots = {};
+        face_connectors.forEach(function draw_group(group) {
+          context.beginPath();
+          group.forEach(function draw_link(link) {
+            const start = landmarks[link.start];
+            const end = landmarks[link.end];
+            if (!start || !end) {
+              return;
+            }
+            context.moveTo(start.x * width, start.y * height);
+            context.lineTo(end.x * width, end.y * height);
+            dots[link.start] = start;
+            dots[link.end] = end;
+          });
+          context.stroke();
         });
-        context.stroke();
-      });
-      Object.keys(dots).forEach(function draw_dot(key) {
-        const point = dots[key];
-        context.beginPath();
-        context.arc(point.x * width, point.y * height, 1.7, 0, Math.PI * 2);
-        context.fill();
+        Object.keys(dots).forEach(function draw_dot(key) {
+          const point = dots[key];
+          context.beginPath();
+          context.arc(point.x * width, point.y * height, 1.7, 0, Math.PI * 2);
+          context.fill();
+        });
       });
     } catch (error) {
       console.error("판독 선을 그리지 못했습니다. 판독 안보기로 바꾼 뒤 다시 열어 주세요.", error);
@@ -1185,6 +1279,7 @@
     watch_timer = 0;
     set_frame_ready(false);
     clear_trace();
+    clear_preview();
   }
 
   /**
@@ -1203,6 +1298,7 @@
           if (is_sheet_open && !is_reading) {
             const found = look_at_video(video, true);
             if (is_sheet_open && !is_reading) {
+              present_camera(video);
               set_frame_ready(Boolean(found && found.is_in_frame));
               if (is_trace_visible && found) {
                 draw_trace(found.landmarks);

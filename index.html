@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261115i">
+  <link rel="stylesheet" href="css/style.css?v=20261115l">
   <link rel="stylesheet" href="css/aurora.css">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
@@ -400,7 +400,9 @@
       <div class="camera_stage">
         <div class="camera_mirror">
           <video id="camera_video" class="camera_video" autoplay playsinline webkit-playsinline muted></video>
-          <!-- 판독보기일 때만 점과 선을 그립니다. 영상과 같이 좌우가 뒤집히고, 닫으면 지웁니다. -->
+          <!-- 점과 같은 그림을 다시 그립니다. 휴대폰은 영상 태그 위치와 점이 어긋납니다. -->
+          <canvas id="camera_preview" class="camera_preview" aria-hidden="true"></canvas>
+          <!-- 판독보기일 때만 점과 선을 그립니다. 미리보기와 같이 좌우가 뒤집히고, 닫으면 지웁니다. -->
           <canvas id="camera_trace" class="camera_trace" aria-hidden="true"></canvas>
         </div>
         <!-- 얼굴이 들어가야 하는 자리입니다. 영상 위에는 보이기만 하고 촬영을 막지 않습니다. -->
@@ -439,6 +441,6 @@
   <script src="js/app.js"></script>
   <script src="js/relation.js"></script>
   <script src="js/music.js"></script>
-  <script src="js/face_read.js?v=20261115j"></script>
+  <script src="js/face_read.js?v=20261115l"></script>
 </body>
 </html>
