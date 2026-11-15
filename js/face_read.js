@@ -906,22 +906,17 @@
   }
 
   /**
-   * 영상 자체를 읽어 타원 안의 얼굴인지 확인합니다. 캔버스에 다시 그리지 않습니다.
+   * 화면에 올릴 그림만 만듭니다. 점은 이 그림 기준으로 읽습니다.
+   * 영상 태그에서 바로 읽으면 휴대폰에서 점이 왼쪽 아래로 밀립니다.
    */
-  function look_direct(video, is_quiet) {
-    const found = read_detection(video);
-    if (!found) {
-      return null;
+  function open_painted(video, turn) {
+    if (turn === 0) {
+      const view_width = video.clientWidth || video.videoWidth;
+      const view_height = video.clientHeight || video.videoHeight;
+      const crop = cover_rect(video.videoWidth, video.videoHeight, view_width, view_height);
+      return crop ? paint_crop(video, crop) : null;
     }
-    const view_width = video.clientWidth || video.videoWidth;
-    const view_height = video.clientHeight || video.videoHeight;
-    const crop = cover_rect(video.videoWidth, video.videoHeight, view_width, view_height);
-    if (!crop) {
-      return null;
-    }
-    const mapped = map_into_crop(found, video.videoWidth, video.videoHeight, crop);
-    mapped.is_in_frame = is_face_in_frame(mapped.landmarks, is_quiet);
-    return mapped;
+    return paint_visible(video, turn);
   }
 
   /**
@@ -980,11 +975,10 @@
   }
 
   /**
-   * 잘라 둔 그림에서 얼굴을 읽고 바로 지웁니다.
+   * 잘라 둔 그림에서 얼굴을 읽습니다. 그림은 호출하는 쪽이 지웁니다.
    */
-  function read_painted(painted, is_quiet) {
+  function inspect_painted(painted, is_quiet) {
     if (!painted || is_blank(painted)) {
-      wipe_canvas(painted);
       return null;
     }
     let found = read_detection(painted.canvas);
@@ -998,7 +992,6 @@
     } else {
       found = detect_padded(painted);
     }
-    wipe_canvas(painted);
     if (!found) {
       return null;
     }
@@ -1008,6 +1001,7 @@
 
   /**
    * 지금 화면에 분석 가능한 얼굴이 있는지 봅니다.
+   * 미리보기는 얼굴을 읽은 바로 그 그림입니다.
    */
   function look_at_video(video, is_quiet) {
     if (!video.videoWidth || !video.videoHeight) {
@@ -1016,24 +1010,26 @@
     const turns = turns_for();
     for (let index = 0; index < turns.length; index += 1) {
       const turn = turns[index];
-      if (turn === 0) {
-        const direct = look_direct(video, is_quiet);
-        if (direct) {
-          frame_turn = 0;
-          has_frame_turn = true;
-          return direct;
-        }
-        if (has_frame_turn && frame_turn === 0) {
-          return null;
-        }
-      }
-      const painted = paint_visible(video, turn);
-      const found = read_painted(painted, is_quiet);
-      if (found) {
+      const painted = open_painted(video, turn);
+      const found = inspect_painted(painted, is_quiet);
+      if (found && painted) {
         frame_turn = turn;
         has_frame_turn = true;
+        present_view(painted.canvas, is_trace_visible ? found.landmarks : null);
+        wipe_canvas(painted);
         return found;
       }
+      if (turn === 0 && has_frame_turn && frame_turn === 0 && painted) {
+        present_view(painted.canvas, null);
+        wipe_canvas(painted);
+        return null;
+      }
+      wipe_canvas(painted);
+    }
+    const fallback = open_painted(video, has_frame_turn ? frame_turn : 0);
+    if (fallback) {
+      present_view(fallback.canvas, null);
+      wipe_canvas(fallback);
     }
     return null;
   }
@@ -1109,7 +1105,7 @@
    * 점이 기준으로 삼은 그림을 미리보기에 올립니다.
    * 영상 태그 위에 겹쳐 그리면 휴대폰에서 점이 왼쪽 아래로 밀립니다.
    */
-  function present_view(source) {
+  function present_view(source, landmarks) {
     const preview = document.getElementById("camera_preview");
     if (!preview || !source || !source.width || !source.height) {
       return;
@@ -1132,35 +1128,11 @@
     context.clearRect(0, 0, width, height);
     draw_mirrored(context, width, function paint_preview() {
       context.drawImage(source, 0, 0, width, height);
+      if (landmarks && landmarks.length) {
+        paint_trace_lines(context, landmarks, width, height);
+      }
     });
-  }
-
-  /**
-   * 이번 실행에서 고른 방향으로, 화면에 보이는 조각만 미리보기에 그립니다.
-   */
-  function present_camera(video) {
-    try {
-      if (!video || !video.videoWidth || !video.videoHeight) {
-        return;
-      }
-      const turn = has_frame_turn ? frame_turn : 0;
-      let painted = null;
-      if (turn === 0) {
-        const view_width = video.clientWidth || video.videoWidth;
-        const view_height = video.clientHeight || video.videoHeight;
-        const crop = cover_rect(video.videoWidth, video.videoHeight, view_width, view_height);
-        painted = crop ? paint_crop(video, crop) : null;
-      } else {
-        painted = paint_visible(video, turn);
-      }
-      if (!painted) {
-        return;
-      }
-      present_view(painted.canvas);
-      wipe_canvas(painted);
-    } catch (error) {
-      console.error("촬영 미리보기를 맞추지 못했습니다. 창을 닫았다가 다시 열어 주세요.", error);
-    }
+    clear_trace();
   }
 
   /**
@@ -1199,63 +1171,36 @@
   }
 
   /**
-   * 보이는 얼굴 위에 윤곽과 눈, 코, 입의 점과 선을 그립니다.
+   * 지금 그림 위에 윤곽과 눈, 코, 입의 점과 선을 그립니다.
+   * 따로 있는 캔버스에 그리면 휴대폰에서 얼굴과 점이 어긋납니다.
    */
-  function draw_trace(landmarks) {
-    const canvas = document.getElementById("camera_trace");
-    if (!canvas || !landmarks) {
-      clear_trace();
-      return;
-    }
-    try {
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
-      if (!width || !height) {
-        return;
-      }
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-      }
-      const context = canvas.getContext("2d");
-      if (!context) {
-        console.error("판독 선을 그릴 화면을 만들지 못했습니다.");
-        return;
-      }
-      context.setTransform(1, 0, 0, 1, 0, 0);
-      context.clearRect(0, 0, width, height);
-      draw_mirrored(context, width, function paint_trace() {
-        context.lineWidth = 1.5;
-        context.lineJoin = "round";
-        context.strokeStyle = "rgba(247, 241, 230, 0.95)";
-        context.fillStyle = "#3dff6a";
-        const dots = {};
-        face_connectors.forEach(function draw_group(group) {
-          context.beginPath();
-          group.forEach(function draw_link(link) {
-            const start = landmarks[link.start];
-            const end = landmarks[link.end];
-            if (!start || !end) {
-              return;
-            }
-            context.moveTo(start.x * width, start.y * height);
-            context.lineTo(end.x * width, end.y * height);
-            dots[link.start] = start;
-            dots[link.end] = end;
-          });
-          context.stroke();
-        });
-        Object.keys(dots).forEach(function draw_dot(key) {
-          const point = dots[key];
-          context.beginPath();
-          context.arc(point.x * width, point.y * height, 1.7, 0, Math.PI * 2);
-          context.fill();
-        });
+  function paint_trace_lines(context, landmarks, width, height) {
+    context.lineWidth = 1.5;
+    context.lineJoin = "round";
+    context.strokeStyle = "rgba(247, 241, 230, 0.95)";
+    context.fillStyle = "#3dff6a";
+    const dots = {};
+    face_connectors.forEach(function draw_group(group) {
+      context.beginPath();
+      group.forEach(function draw_link(link) {
+        const start = landmarks[link.start];
+        const end = landmarks[link.end];
+        if (!start || !end) {
+          return;
+        }
+        context.moveTo(start.x * width, start.y * height);
+        context.lineTo(end.x * width, end.y * height);
+        dots[link.start] = start;
+        dots[link.end] = end;
       });
-    } catch (error) {
-      console.error("판독 선을 그리지 못했습니다. 판독 안보기로 바꾼 뒤 다시 열어 주세요.", error);
-      clear_trace();
-    }
+      context.stroke();
+    });
+    Object.keys(dots).forEach(function draw_dot(key) {
+      const point = dots[key];
+      context.beginPath();
+      context.arc(point.x * width, point.y * height, 1.7, 0, Math.PI * 2);
+      context.fill();
+    });
   }
 
   /**
@@ -1315,13 +1260,7 @@
           if (is_sheet_open && !is_reading) {
             const found = look_at_video(video, true);
             if (is_sheet_open && !is_reading) {
-              present_camera(video);
               set_frame_ready(Boolean(found && found.is_in_frame));
-              if (is_trace_visible && found) {
-                draw_trace(found.landmarks);
-              } else {
-                clear_trace();
-              }
             }
           }
         } catch (error) {
