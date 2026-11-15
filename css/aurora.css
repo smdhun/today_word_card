@@ -168,6 +168,9 @@
 :root[data-design="aurora"] .camera_row {
   display: flex;
   justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin: 0 0 -14px;
 }
 

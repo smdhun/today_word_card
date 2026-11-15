@@ -531,7 +531,8 @@ html.is_music_list_open .top_bar {
   display: none;
 }
 
-.camera_open {
+.camera_open,
+.camera_trace_toggle {
   min-height: 40px;
   padding: 0 16px;
   border: 1px solid rgba(209, 197, 180, 0.45);
@@ -544,9 +545,18 @@ html.is_music_list_open .top_bar {
   cursor: pointer;
 }
 
-.camera_open:focus-visible {
+.camera_open:focus-visible,
+.camera_trace_toggle:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* 판독보기와 판독 안보기가 같은 폭을 유지합니다. 테두리 색은 바꾸지 않습니다. */
+.camera_trace_toggle {
+  width: 124px;
+  padding-right: 0;
+  padding-left: 0;
+  text-align: center;
 }
 
 .camera_sheet {
@@ -599,11 +609,20 @@ html.is_music_list_open .top_bar {
 }
 
 .camera_mirror {
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
   border-radius: 24px;
   transform: scaleX(-1);
+}
+
+.camera_trace {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .camera_video {
