@@ -64,6 +64,10 @@
   let landmarker = null;
   let camera_stream = null;
   let is_sheet_open = false;
+  let watch_timer = 0;
+  let is_watching = false;
+  let frame_turn = 0;
+  let has_frame_turn = false;
   let is_waiting_music = false;
   let is_reading = false;
   const pair_offsets = {};
@@ -130,6 +134,7 @@
     is_sheet_open = false;
     is_waiting_music = false;
     is_reading = false;
+    stop_watch();
     stop_camera();
     if (sheet) {
       sheet.hidden = true;
@@ -208,13 +213,15 @@
    * 이마와 턱, 양쪽 볼이 화면의 타원 안에 있는지 봅니다.
    * 얼굴 바깥으로 삐져나온 점 하나 때문에 거절하지 않습니다.
    */
-  function is_face_in_frame(landmarks) {
+  function is_face_in_frame(landmarks, is_quiet) {
     const forehead = landmarks[10];
     const chin = landmarks[152];
     const left_cheek = landmarks[234];
     const right_cheek = landmarks[454];
     if (!forehead || !chin || !left_cheek || !right_cheek) {
-      console.error("얼굴의 기준점을 찾지 못했습니다.");
+      if (!is_quiet) {
+        console.error("얼굴의 기준점을 찾지 못했습니다.");
+      }
       return false;
     }
     const face_width = Math.abs(right_cheek.x - left_cheek.x);
@@ -223,7 +230,7 @@
     const center_y = (forehead.y + chin.y) / 2;
     const is_large_enough = face_width >= 0.08 && face_height >= 0.1;
     const is_centered = center_x >= 0.06 && center_x <= 0.94 && center_y >= 0.04 && center_y <= 0.96;
-    if (!is_large_enough || !is_centered) {
+    if (!is_quiet && (!is_large_enough || !is_centered)) {
       console.error("얼굴이 프레임 기준에 맞지 않습니다.", {
         face_width: face_width,
         face_height: face_height,
@@ -435,11 +442,26 @@
       return false;
     }
     camera_stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
+      video: {
+        facingMode: { ideal: "user" },
+        width: { ideal: 720 },
+        height: { ideal: 960 },
+      },
       audio: false,
     });
+    video.playsInline = true;
+    video.muted = true;
     video.srcObject = camera_stream;
     await video.play();
+    if (!video.videoWidth) {
+      await new Promise(function wait_size(resolve) {
+        const timer = window.setTimeout(resolve, 1500);
+        video.addEventListener("loadedmetadata", function on_meta() {
+          window.clearTimeout(timer);
+          resolve();
+        }, { once: true });
+      });
+    }
     return true;
   }
 
@@ -474,6 +496,7 @@
       show_camera_message(message_element, "");
       shutter.disabled = false;
       shutter.focus();
+      start_watch(video);
     } catch (error) {
       console.error("카메라 촬영을 열지 못했습니다.", error);
       const is_camera_denied = error && (error.name === "NotAllowedError" || error.name === "NotFoundError");
@@ -502,31 +525,6 @@
       }
       window.setTimeout(resolve, 80);
     });
-  }
-
-  /**
-   * 미리보기가 아니라 카메라 원본을 가져옵니다. 안 되면 화면에 보이는 영상을 씁니다.
-   */
-  async function grab_source(video) {
-    const track = camera_stream && camera_stream.getVideoTracks()[0];
-    if (track && typeof ImageCapture === "function") {
-      try {
-        return await new ImageCapture(track).grabFrame();
-      } catch (error) {
-        console.error("카메라 원본을 읽지 못했습니다. 화면에 보이는 영상으로 다시 시도합니다.", error);
-      }
-    }
-    await wait_frame(video);
-    return video;
-  }
-
-  /**
-   * 원본 이미지는 판독이 끝나면 바로 버립니다.
-   */
-  function release_source(source, video) {
-    if (source && source !== video && typeof source.close === "function") {
-      source.close();
-    }
   }
 
   /**
@@ -633,39 +631,159 @@
   }
 
   /**
-   * 보이는 얼굴만 최대 두 번 읽습니다. 사진은 함수 안에서 지웁니다.
+   * 휴대폰을 세우면 카메라 원본만 가로인 경우가 있습니다. 그때 돌릴 각도를 고릅니다.
    */
-  async function find_face(video) {
+  function turns_for(video) {
+    const is_portrait_screen = window.innerHeight > window.innerWidth + 40;
+    const is_landscape_buffer = video.videoWidth > video.videoHeight;
+    if (!is_portrait_screen || !is_landscape_buffer) {
+      return [0];
+    }
+    if (has_frame_turn) {
+      return [frame_turn];
+    }
+    return [0, -90, 90];
+  }
+
+  /**
+   * 화면에 보이는 방향과 같게 자릅니다. 사진은 호출한 쪽에서 지웁니다.
+   */
+  function paint_visible(video, turn) {
     const view_width = video.clientWidth || video.videoWidth;
     const view_height = video.clientHeight || video.videoHeight;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      const source = await grab_source(video);
-      const source_width = source.videoWidth || source.width || 0;
-      const source_height = source.videoHeight || source.height || 0;
-      const crop = cover_rect(source_width, source_height, view_width, view_height);
-      const painted = crop ? paint_crop(source, crop) : null;
-      let found = painted ? read_detection(painted.canvas) : null;
-      if (found && painted) {
+    if (!turn) {
+      const crop = cover_rect(video.videoWidth, video.videoHeight, view_width, view_height);
+      return crop ? paint_crop(video, crop) : null;
+    }
+    const upright_width = video.videoHeight;
+    const upright_height = video.videoWidth;
+    const upright = document.createElement("canvas");
+    upright.width = upright_width;
+    upright.height = upright_height;
+    const context = upright.getContext("2d", { alpha: false });
+    if (!context) {
+      console.error("휴대폰 화면을 돌리지 못했습니다.");
+      return null;
+    }
+    if (turn === 90) {
+      context.translate(upright_width, 0);
+      context.rotate(Math.PI / 2);
+    } else {
+      context.translate(0, upright_height);
+      context.rotate(-Math.PI / 2);
+    }
+    context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+    const crop = cover_rect(upright_width, upright_height, view_width, view_height);
+    const painted = crop ? paint_crop(upright, crop) : null;
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, upright_width, upright_height);
+    upright.width = 0;
+    upright.height = 0;
+    return painted;
+  }
+
+  /**
+   * 지금 화면에 분석 가능한 얼굴이 있는지 봅니다.
+   */
+  function look_at_video(video, is_quiet) {
+    if (!video.videoWidth || !video.videoHeight) {
+      return null;
+    }
+    const turns = turns_for(video);
+    for (let index = 0; index < turns.length; index += 1) {
+      const turn = turns[index];
+      const painted = paint_visible(video, turn);
+      if (!painted) {
+        continue;
+      }
+      let found = read_detection(painted.canvas);
+      if (found) {
         found = {
           landmarks: found.landmarks,
           blendshapes: found.blendshapes,
           width: painted.canvas.width,
           height: painted.canvas.height,
         };
-      } else if (painted) {
+      } else {
         found = detect_padded(painted);
       }
       wipe_canvas(painted);
-      release_source(source, video);
-      if (found && is_face_in_frame(found.landmarks)) {
+      if (found && is_face_in_frame(found.landmarks, is_quiet)) {
+        frame_turn = turn;
+        has_frame_turn = true;
         return found;
       }
-      if (!found) {
-        console.error("영상에서 얼굴을 찾지 못했습니다.");
+    }
+    return null;
+  }
+
+  /**
+   * 타원 테두리를 분석 가능 여부에 맞춰 바꿉니다.
+   */
+  function set_frame_ready(is_ready) {
+    const frame = document.querySelector(".camera_guide_frame");
+    if (!frame) {
+      return;
+    }
+    frame.classList.toggle("is_face_ready", Boolean(is_ready));
+  }
+
+  /**
+   * 미리보기 확인을 멈춥니다.
+   */
+  function stop_watch() {
+    is_watching = false;
+    has_frame_turn = false;
+    frame_turn = 0;
+    window.clearTimeout(watch_timer);
+    watch_timer = 0;
+    set_frame_ready(false);
+  }
+
+  /**
+   * 타원 안에 얼굴이 들어오면 테두리를 녹색으로 바꿉니다.
+   */
+  function start_watch(video) {
+    stop_watch();
+    const tick = async function tick() {
+      if (!is_sheet_open) {
+        return;
       }
-      if (attempt === 0) {
-        await wait_frame(video);
+      if (!is_reading && !is_watching && video.videoWidth) {
+        is_watching = true;
+        try {
+          await wait_frame(video);
+          if (is_sheet_open && !is_reading) {
+            const found = look_at_video(video, true);
+            if (is_sheet_open && !is_reading) {
+              set_frame_ready(Boolean(found));
+            }
+          }
+        } catch (error) {
+          console.error("얼굴 위치를 확인하지 못했습니다.", error);
+          set_frame_ready(false);
+        } finally {
+          is_watching = false;
+        }
       }
+      if (is_sheet_open) {
+        watch_timer = window.setTimeout(tick, 500);
+      }
+    };
+    watch_timer = window.setTimeout(tick, 300);
+  }
+
+  /**
+   * 보이는 얼굴만 최대 두 번 읽습니다. 사진은 함수 안에서 지웁니다.
+   */
+  async function find_face(video) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await wait_frame(video);
+      const found = look_at_video(video, false);
+      if (found) {
+        return found;
+      }
+      console.error("영상에서 얼굴을 찾지 못했습니다.");
     }
     return null;
   }
@@ -687,6 +805,12 @@
     is_reading = true;
     shutter.disabled = true;
     try {
+      const wait_started = Date.now();
+      while (is_watching && Date.now() - wait_started < 2000) {
+        await new Promise(function wait_watch(resolve) {
+          window.setTimeout(resolve, 40);
+        });
+      }
       const found = await find_face(video);
       if (!found) {
         show_camera_message(message_element, REFRAME_MESSAGE);

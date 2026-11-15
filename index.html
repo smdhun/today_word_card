@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20261115d">
   <link rel="stylesheet" href="css/aurora.css">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
@@ -397,7 +397,9 @@
       <h2 id="camera_sheet_title" class="camera_sheet_title">카메라로 찍기</h2>
       <p class="camera_sheet_text">안심하세요! 카메라로 촬영한 얼굴은 이 기기 안에서만 사용되고, 저장하거나 다른 곳으로 전송되지 않습니다.</p>
       <div class="camera_stage">
-        <video id="camera_video" class="camera_video" autoplay playsinline muted></video>
+        <div class="camera_mirror">
+          <video id="camera_video" class="camera_video" autoplay playsinline muted></video>
+        </div>
         <!-- 얼굴이 들어가야 하는 자리입니다. 영상 위에는 보이기만 하고 촬영을 막지 않습니다. -->
         <div class="camera_guide">
           <span class="camera_guide_frame" aria-hidden="true"></span>
@@ -434,6 +436,6 @@
   <script src="js/app.js"></script>
   <script src="js/relation.js"></script>
   <script src="js/music.js"></script>
-  <script src="js/face_read.js?v=20261115c"></script>
+  <script src="js/face_read.js?v=20261115d"></script>
 </body>
 </html>
