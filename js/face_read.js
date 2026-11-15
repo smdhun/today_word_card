@@ -397,6 +397,17 @@
   }
 
   /**
+   * 휴대폰은 그래픽 가속이 얼굴을 비우는 경우가 있어 기본 방식으로 읽습니다.
+   */
+  function is_phone() {
+    const agent = navigator.userAgent || "";
+    if (/iPhone|iPad|iPod|Android/i.test(agent)) {
+      return true;
+    }
+    return navigator.maxTouchPoints > 1 && Math.min(window.innerWidth, window.innerHeight) < 820;
+  }
+
+  /**
    * 얼굴 읽기 모델을 한 번만 받습니다. 그래픽 가속이 안 되면 기본 방식으로 다시 엽니다.
    */
   async function ensure_landmarker() {
@@ -407,7 +418,7 @@
     const fileset = await vision.FilesetResolver.forVisionTasks(WASM_URL);
     const base_options = {
       modelAssetPath: MODEL_URL,
-      delegate: "GPU",
+      delegate: is_phone() ? "CPU" : "GPU",
     };
     const options = {
       runningMode: "IMAGE",
@@ -513,17 +524,29 @@
   }
 
   /**
-   * 다음 카메라 화면이 그려질 때까지 기다립니다.
+   * 다음 카메라 화면을 잠시 기다립니다. 휴대폰은 신호가 안 올 수 있어 시간을 넘기면 진행합니다.
    */
   function wait_frame(video) {
     return new Promise(function settle(resolve) {
-      if (video && typeof video.requestVideoFrameCallback === "function") {
-        video.requestVideoFrameCallback(function on_frame() {
-          resolve();
-        });
-        return;
+      let is_done = false;
+      function finish() {
+        if (is_done) {
+          return;
+        }
+        is_done = true;
+        resolve();
       }
-      window.setTimeout(resolve, 80);
+      window.setTimeout(finish, 240);
+      if (video && typeof video.requestVideoFrameCallback === "function") {
+        try {
+          video.requestVideoFrameCallback(function on_frame() {
+            finish();
+          });
+        } catch (error) {
+          console.error("다음 화면 신호를 받지 못했습니다.", error);
+          finish();
+        }
+      }
     });
   }
 
@@ -536,7 +559,7 @@
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(crop.width * scale));
     canvas.height = Math.max(1, Math.round(crop.height * scale));
-    const context = canvas.getContext("2d", { alpha: false });
+    const context = canvas.getContext("2d", { alpha: false }) || canvas.getContext("2d");
     if (!context) {
       console.error("촬영 화면을 만들지 못했습니다.");
       return null;
@@ -631,55 +654,150 @@
   }
 
   /**
-   * 휴대폰을 세우면 카메라 원본만 가로인 경우가 있습니다. 그때 돌릴 각도를 고릅니다.
+   * 그림이 거의 검으면 카메라 프레임이 아직 안 들어온 것입니다.
    */
-  function turns_for(video) {
-    const is_portrait_screen = window.innerHeight > window.innerWidth + 40;
-    const is_landscape_buffer = video.videoWidth > video.videoHeight;
-    if (!is_portrait_screen || !is_landscape_buffer) {
+  function is_blank(painted) {
+    if (!painted || !painted.context || !painted.canvas.width) {
+      return true;
+    }
+    try {
+      const sample_width = Math.min(12, painted.canvas.width);
+      const sample_height = Math.min(12, painted.canvas.height);
+      const sample = painted.context.getImageData(
+        Math.floor((painted.canvas.width - sample_width) / 2),
+        Math.floor((painted.canvas.height - sample_height) / 2),
+        sample_width,
+        sample_height
+      );
+      let sum = 0;
+      for (let index = 0; index < sample.data.length; index += 4) {
+        sum += sample.data[index] + sample.data[index + 1] + sample.data[index + 2];
+      }
+      return sum / (sample.data.length / 4) < 12;
+    } catch (error) {
+      console.error("촬영 화면의 밝기를 확인하지 못했습니다.", error);
+      return false;
+    }
+  }
+
+  /**
+   * 얼굴 점을 화면에 보이는 조각 기준으로 옮깁니다.
+   */
+  function map_into_crop(found, source_width, source_height, crop) {
+    return {
+      landmarks: found.landmarks.map(function map_point(point) {
+        return {
+          x: (point.x * source_width - crop.x) / crop.width,
+          y: (point.y * source_height - crop.y) / crop.height,
+          z: point.z,
+        };
+      }),
+      blendshapes: found.blendshapes,
+      width: Math.max(1, Math.round(crop.width)),
+      height: Math.max(1, Math.round(crop.height)),
+    };
+  }
+
+  /**
+   * 영상 자체를 읽어 타원 안의 얼굴인지 확인합니다. 캔버스에 다시 그리지 않습니다.
+   */
+  function look_direct(video, is_quiet) {
+    const found = read_detection(video);
+    if (!found) {
+      return null;
+    }
+    const view_width = video.clientWidth || video.videoWidth;
+    const view_height = video.clientHeight || video.videoHeight;
+    const crop = cover_rect(video.videoWidth, video.videoHeight, view_width, view_height);
+    if (!crop) {
+      return null;
+    }
+    const mapped = map_into_crop(found, video.videoWidth, video.videoHeight, crop);
+    if (!is_face_in_frame(mapped.landmarks, is_quiet)) {
+      return null;
+    }
+    return mapped;
+  }
+
+  /**
+   * 휴대폰은 화면과 원본 방향이 다를 수 있어 맞는 각도를 찾을 때까지 여러 방향을 봅니다.
+   */
+  function turns_for() {
+    if (!is_phone()) {
       return [0];
     }
     if (has_frame_turn) {
       return [frame_turn];
     }
-    return [0, -90, 90];
+    return [0, -90, 90, 180];
   }
 
   /**
-   * 화면에 보이는 방향과 같게 자릅니다. 사진은 호출한 쪽에서 지웁니다.
+   * 긴 변을 줄인 뒤 필요하면 돌려서, 화면에 보이는 조각만 남깁니다.
    */
   function paint_visible(video, turn) {
-    const view_width = video.clientWidth || video.videoWidth;
-    const view_height = video.clientHeight || video.videoHeight;
-    if (!turn) {
-      const crop = cover_rect(video.videoWidth, video.videoHeight, view_width, view_height);
-      return crop ? paint_crop(video, crop) : null;
-    }
-    const upright_width = video.videoHeight;
-    const upright_height = video.videoWidth;
-    const upright = document.createElement("canvas");
-    upright.width = upright_width;
-    upright.height = upright_height;
-    const context = upright.getContext("2d", { alpha: false });
+    const max_edge = 720;
+    const scale = Math.min(1, max_edge / Math.max(video.videoWidth, video.videoHeight));
+    const drawn_width = Math.max(1, Math.round(video.videoWidth * scale));
+    const drawn_height = Math.max(1, Math.round(video.videoHeight * scale));
+    const is_quarter = turn === 90 || turn === -90;
+    const canvas_width = is_quarter ? drawn_height : drawn_width;
+    const canvas_height = is_quarter ? drawn_width : drawn_height;
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas_width;
+    canvas.height = canvas_height;
+    const context = canvas.getContext("2d", { alpha: false }) || canvas.getContext("2d");
     if (!context) {
       console.error("휴대폰 화면을 돌리지 못했습니다.");
       return null;
     }
+    context.save();
     if (turn === 90) {
-      context.translate(upright_width, 0);
+      context.translate(canvas_width, 0);
       context.rotate(Math.PI / 2);
-    } else {
-      context.translate(0, upright_height);
+    } else if (turn === -90) {
+      context.translate(0, canvas_height);
       context.rotate(-Math.PI / 2);
+    } else if (turn === 180) {
+      context.translate(canvas_width, canvas_height);
+      context.rotate(Math.PI);
     }
-    context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-    const crop = cover_rect(upright_width, upright_height, view_width, view_height);
-    const painted = crop ? paint_crop(upright, crop) : null;
-    context.setTransform(1, 0, 0, 1, 0, 0);
-    context.clearRect(0, 0, upright_width, upright_height);
-    upright.width = 0;
-    upright.height = 0;
+    context.drawImage(video, 0, 0, drawn_width, drawn_height);
+    context.restore();
+    const view_width = video.clientWidth || canvas_width;
+    const view_height = video.clientHeight || canvas_height;
+    const crop = cover_rect(canvas_width, canvas_height, view_width, view_height);
+    const painted = crop ? paint_crop(canvas, crop) : null;
+    context.clearRect(0, 0, canvas_width, canvas_height);
+    canvas.width = 0;
+    canvas.height = 0;
     return painted;
+  }
+
+  /**
+   * 잘라 둔 그림에서 얼굴을 읽고 바로 지웁니다.
+   */
+  function read_painted(painted, is_quiet) {
+    if (!painted || is_blank(painted)) {
+      wipe_canvas(painted);
+      return null;
+    }
+    let found = read_detection(painted.canvas);
+    if (found) {
+      found = {
+        landmarks: found.landmarks,
+        blendshapes: found.blendshapes,
+        width: painted.canvas.width,
+        height: painted.canvas.height,
+      };
+    } else {
+      found = detect_padded(painted);
+    }
+    wipe_canvas(painted);
+    if (!found || !is_face_in_frame(found.landmarks, is_quiet)) {
+      return null;
+    }
+    return found;
   }
 
   /**
@@ -689,26 +807,23 @@
     if (!video.videoWidth || !video.videoHeight) {
       return null;
     }
-    const turns = turns_for(video);
+    const turns = turns_for();
     for (let index = 0; index < turns.length; index += 1) {
       const turn = turns[index];
+      if (turn === 0) {
+        const direct = look_direct(video, is_quiet);
+        if (direct) {
+          frame_turn = 0;
+          has_frame_turn = true;
+          return direct;
+        }
+        if (has_frame_turn && frame_turn === 0) {
+          return null;
+        }
+      }
       const painted = paint_visible(video, turn);
-      if (!painted) {
-        continue;
-      }
-      let found = read_detection(painted.canvas);
+      const found = read_painted(painted, is_quiet);
       if (found) {
-        found = {
-          landmarks: found.landmarks,
-          blendshapes: found.blendshapes,
-          width: painted.canvas.width,
-          height: painted.canvas.height,
-        };
-      } else {
-        found = detect_padded(painted);
-      }
-      wipe_canvas(painted);
-      if (found && is_face_in_frame(found.landmarks, is_quiet)) {
         frame_turn = turn;
         has_frame_turn = true;
         return found;

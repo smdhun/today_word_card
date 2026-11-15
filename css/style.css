@@ -639,6 +639,8 @@ html.is_music_list_open .top_bar {
 /* 분석이 가능한 얼굴이 타원 안에 들어오면 테두리를 밝은 녹색으로 바꿉니다. */
 .camera_guide_frame.is_face_ready {
   border-color: #3dff6a;
+  border-width: 3px;
+  box-shadow: 0 0 0 999px rgba(8, 10, 16, 0.42), 0 0 14px #3dff6a;
 }
 
 .camera_guide_hint {
