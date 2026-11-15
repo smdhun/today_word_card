@@ -219,23 +219,107 @@ html.is_music_list_open .top_bar {
   top: calc(100% + 8px);
   right: 0;
   z-index: 15;
+  display: flex;
+  flex-direction: column;
   width: min(280px, 70vw);
   max-height: min(360px, 60vh);
   padding: 8px;
-  overflow: auto;
-  /* 목록 끝에서도 뒤 화면으로 스크롤이 넘어가지 않게 합니다. */
-  overscroll-behavior: none;
+  overflow: hidden;
   border-radius: 12px;
   background: var(--card_result);
   box-shadow: var(--shadow_result);
 }
 
-.music_list {
+/* 반복 표시는 목록 위에 고정하고, 곡 제목만 위아래로 움직입니다. */
+.music_modes {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 6px 8px;
+}
+
+.music_mode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink_soft);
+  font-family: var(--font_label);
+  cursor: pointer;
+}
+
+/* 선택된 반복 표시는 화면 색과 상관없이 금색입니다. */
+.music_mode[aria-pressed="true"] {
+  color: #e8c176;
+}
+
+.music_mode:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.music_mode_one {
+  display: block;
+  width: 30.8px;
+  height: 30.8px;
+}
+
+.music_mode_all {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.music_mode_all_word {
+  font-size: 12.9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.music_mode_all_row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.music_mode_all_row svg {
+  display: block;
+  width: 33.7px;
+  height: 11.9px;
+}
+
+.music_mode_all_one {
+  font-size: 11.9px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.music_mode_random {
+  font-size: 14.4px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.music_list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
   gap: 4px;
+  min-height: 0;
   margin: 0;
   padding: 0;
+  overflow: auto;
+  /* 목록 끝에서도 뒤 화면으로 스크롤이 넘어가지 않게 합니다. */
+  overscroll-behavior: none;
   list-style: none;
 }
 

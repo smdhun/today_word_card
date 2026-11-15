@@ -1,6 +1,6 @@
 /**
  * 인간관계 오른쪽 MUSIC 목록입니다.
- * 곡을 누르면 그 곡만 받고, 끝나면 다음 곡으로 이어집니다.
+ * 곡을 누르면 그 곡이 바로 나오고, 곡이 끝나면 고른 반복 방식대로 다음 곡을 정합니다.
  */
 (function init_music() {
   const MUSIC_FOLDER = "music/";
@@ -43,6 +43,12 @@
   let is_muted = false;
   let has_asked_music = false;
   let is_offer_open = false;
+  const PLAY_MODE_ONE = "one";
+  const PLAY_MODE_ONCE = "once";
+  const PLAY_MODE_SHUFFLE = "shuffle";
+  let play_mode = PLAY_MODE_ONCE;
+  let once_origin_index = -1;
+  let shuffle_deck = [];
 
   /**
    * id로 요소를 찾고, 없으면 기록만 남깁니다.
@@ -86,7 +92,7 @@
       button.appendChild(title);
       button.appendChild(build_meter());
       button.addEventListener("click", function on_track_click() {
-        play_track(index);
+        play_track(index, true);
       });
       item.appendChild(button);
       list.appendChild(item);
@@ -321,7 +327,7 @@
 
   /**
    * 이번 실행에서 처음 틀 곡을 목록에서 한 번만 뽑습니다.
-   * 그다음 곡은 목록 순서대로 이어집니다.
+   * 그 곡이 끝나면 그때 선택된 반복 방식을 따릅니다.
    */
   function random_startup_track_index() {
     if (TRACKS.length === 0) {
@@ -340,7 +346,7 @@
       return;
     }
     const start_index = current_index >= 0 ? current_index : random_startup_track_index();
-    play_track(start_index);
+    play_track(start_index, true);
   }
 
   /**
@@ -405,7 +411,7 @@
   /**
    * 목록 위에서 휠을 굴리면 목록만 움직입니다.
    */
-  function keep_page_still_while_list_scrolls(panel) {
+  function keep_page_still_while_list_scrolls(panel, list) {
     window.addEventListener("wheel", function on_list_wheel(event) {
       if (!is_open || !panel.contains(event.target) || !event.cancelable) {
         return;
@@ -415,9 +421,9 @@
       if (event.deltaMode === 1) {
         distance = event.deltaY * 16;
       } else if (event.deltaMode === 2) {
-        distance = event.deltaY * panel.clientHeight;
+        distance = event.deltaY * list.clientHeight;
       }
-      panel.scrollTop += distance;
+      list.scrollTop += distance;
     }, { capture: true, passive: false });
   }
 
@@ -436,9 +442,127 @@
   }
 
   /**
-   * 고른 곡을 재생합니다. 이미 재생 중이면 잠시 멈춥니다.
+   * 선택된 반복 버튼만 눌린 상태로 바꿉니다.
    */
-  function play_track(index) {
+  function update_mode_buttons() {
+    document.querySelectorAll(".music_mode").forEach(function mark_mode(button) {
+      const is_selected = button.getAttribute("data-play-mode") === play_mode;
+      button.setAttribute("aria-pressed", is_selected ? "true" : "false");
+    });
+  }
+
+  /**
+   * 방금 나온 곡을 빼고 남은 곡 순서를 섞습니다.
+   */
+  function refill_shuffle_deck(exclude_index) {
+    const deck = [];
+    for (let index = 0; index < TRACKS.length; index += 1) {
+      if (index !== exclude_index) {
+        deck.push(index);
+      }
+    }
+    for (let index = deck.length - 1; index > 0; index -= 1) {
+      const swap_index = Math.floor(Math.random() * (index + 1));
+      const held = deck[index];
+      deck[index] = deck[swap_index];
+      deck[swap_index] = held;
+    }
+    shuffle_deck = deck;
+  }
+
+  /**
+   * 직접 고른 곡을 이번 반복의 기준으로 삼습니다.
+   * 전체 1회는 그 곡이 한 바퀴의 시작이 되고, Random은 그 곡을 남은 순서에서 뺍니다.
+   */
+  function note_user_choice(index) {
+    try {
+      if (play_mode === PLAY_MODE_ONCE) {
+        once_origin_index = index;
+        return;
+      }
+      if (play_mode !== PLAY_MODE_SHUFFLE) {
+        return;
+      }
+      if (shuffle_deck.length === 0) {
+        refill_shuffle_deck(index);
+        return;
+      }
+      shuffle_deck = shuffle_deck.filter(function keep_remaining(item) {
+        return item !== index;
+      });
+    } catch (error) {
+      console.error("반복 순서를 맞추지 못했습니다. 고른 곡만 재생합니다.", error);
+    }
+  }
+
+  /**
+   * 반복 방식을 바꿉니다. 지금 곡은 멈추거나 다시 시작하지 않습니다.
+   */
+  function set_play_mode(next_mode) {
+    try {
+      const is_known_mode = next_mode === PLAY_MODE_ONE || next_mode === PLAY_MODE_ONCE || next_mode === PLAY_MODE_SHUFFLE;
+      if (!is_known_mode) {
+        console.error("알 수 없는 반복 방식입니다. 표시를 다시 눌러 주세요.", next_mode);
+        return;
+      }
+      if (next_mode === play_mode) {
+        return;
+      }
+      play_mode = next_mode;
+      if (play_mode === PLAY_MODE_ONCE && current_index >= 0) {
+        once_origin_index = current_index;
+      }
+      if (play_mode === PLAY_MODE_SHUFFLE) {
+        shuffle_deck = [];
+        if (current_index >= 0) {
+          refill_shuffle_deck(current_index);
+        }
+      }
+      update_mode_buttons();
+    } catch (error) {
+      console.error("반복 방식을 바꾸지 못했습니다. 표시를 다시 눌러 주세요.", error);
+    }
+  }
+
+  /**
+   * 곡이 끝난 뒤 다음에 틀 번호를 정합니다. 멈출 때는 -1을 돌려줍니다.
+   */
+  function next_index_after_end() {
+    if (TRACKS.length === 0 || current_index < 0) {
+      console.error("끝난 곡의 다음을 정하지 못했습니다.");
+      return -1;
+    }
+    if (play_mode === PLAY_MODE_ONE) {
+      return current_index;
+    }
+    if (play_mode === PLAY_MODE_ONCE) {
+      if (once_origin_index < 0) {
+        once_origin_index = current_index;
+      }
+      const next_index = (current_index + 1) % TRACKS.length;
+      if (next_index === once_origin_index) {
+        return -1;
+      }
+      return next_index;
+    }
+    if (play_mode === PLAY_MODE_SHUFFLE) {
+      if (shuffle_deck.length === 0) {
+        refill_shuffle_deck(current_index);
+      }
+      if (shuffle_deck.length === 0) {
+        return current_index;
+      }
+      return shuffle_deck.shift();
+    }
+    console.error("반복 방식을 읽지 못했습니다. 재생을 멈춥니다.", play_mode);
+    return -1;
+  }
+
+  /**
+   * 고른 곡을 재생합니다. 이미 재생 중이면 잠시 멈춥니다.
+   * is_user_choice가 참이면 그 곡을 반복 순서의 새 기준으로 기록합니다.
+   */
+  function play_track(index, is_user_choice) {
     const list = document.getElementById("music_list");
     const toggle = document.getElementById("music_toggle");
     const message_element = document.getElementById("music_message");
@@ -454,6 +578,16 @@
       audio.pause();
       mark_playing_track(list, toggle);
       return;
+    }
+    if (is_user_choice) {
+      note_user_choice(index);
+    }
+    if (is_same_track && audio.ended) {
+      try {
+        audio.currentTime = 0;
+      } catch (error) {
+        console.error("곡을 처음부터 다시 열지 못했습니다.", error);
+      }
     }
 
     current_index = index;
@@ -496,7 +630,12 @@
       }
 
       build_list(list);
-      keep_page_still_while_list_scrolls(panel);
+      keep_page_still_while_list_scrolls(panel, list);
+      panel.querySelectorAll(".music_mode").forEach(function bind_mode(button) {
+        button.addEventListener("click", function on_mode_click() {
+          set_play_mode(button.getAttribute("data-play-mode"));
+        });
+      });
       toggle.addEventListener("click", function on_toggle_click() {
         set_panel_open(panel, toggle, !is_open);
       });
@@ -512,8 +651,18 @@
         }
       });
       audio.addEventListener("ended", function on_track_ended() {
-        const next_index = (current_index + 1) % TRACKS.length;
-        play_track(next_index);
+        try {
+          const next_index = next_index_after_end();
+          if (next_index < 0) {
+            mark_playing_track(list, toggle);
+            return;
+          }
+          play_track(next_index, false);
+        } catch (error) {
+          console.error("다음 곡을 정하지 못했습니다. 다른 곡을 눌러 주세요.", error);
+          show_music_error(message_element);
+          mark_playing_track(list, toggle);
+        }
       });
       audio.addEventListener("error", function on_audio_error() {
         console.error("곡 파일을 열지 못했습니다.", audio.src);
