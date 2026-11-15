@@ -396,7 +396,14 @@
     <div class="camera_sheet_card" role="dialog" aria-modal="true" aria-labelledby="camera_sheet_title">
       <h2 id="camera_sheet_title" class="camera_sheet_title">카메라로 찍기</h2>
       <p class="camera_sheet_text">안심하세요! 카메라로 촬영한 얼굴은 이 기기 안에서만 사용되고, 저장하거나 다른 곳으로 전송되지 않습니다.</p>
-      <video id="camera_video" class="camera_video" autoplay playsinline muted></video>
+      <div class="camera_stage">
+        <video id="camera_video" class="camera_video" autoplay playsinline muted></video>
+        <!-- 얼굴이 들어가야 하는 자리입니다. 영상 위에는 보이기만 하고 촬영을 막지 않습니다. -->
+        <div class="camera_guide">
+          <span class="camera_guide_frame" aria-hidden="true"></span>
+          <p class="camera_guide_hint">얼굴을 이 프레임 안에 맞춰 주세요.</p>
+        </div>
+      </div>
       <p id="camera_message" class="camera_message" role="alert" hidden></p>
       <div class="camera_sheet_actions">
         <button id="camera_shutter" class="camera_shutter" type="button">촬영</button>
