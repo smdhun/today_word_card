@@ -292,6 +292,15 @@
   }
 
   /**
+   * 입술이 동그랗게 모인 모양인지 봅니다. 설렘의 오 모양 입입니다.
+   */
+  function is_round_open_mouth(scores) {
+    const funnel = scores.mouthFunnel || 0;
+    const jaw_open = scores.jawOpen || 0;
+    return funnel >= 0.3 || (funnel >= 0.18 && jaw_open >= 0.2);
+  }
+
+  /**
    * 표정 점수를 기분 하나로 바꿉니다. 신호가 약하면 평온입니다.
    */
   function read_mood(categories) {
@@ -303,9 +312,13 @@
     const eye_wide = average_score(scores, "eyeWideLeft", "eyeWideRight");
     const blink = average_score(scores, "eyeBlinkLeft", "eyeBlinkRight");
     const squint = average_score(scores, "eyeSquintLeft", "eyeSquintRight");
+    const is_awake = blink < 0.45 && squint < 0.4;
 
     if (smile >= 0.35 && smile >= frown) {
       return "joy";
+    }
+    if (is_awake && frown < 0.28 && is_round_open_mouth(scores)) {
+      return "excited";
     }
     if (eye_wide >= 0.3 && brow_up >= 0.25 && smile < 0.35) {
       return "excited";
@@ -359,6 +372,8 @@
         lines.push("입꼬리가 기분 좋게 올라가 있습니다.");
       } else if (frown >= 0.28) {
         lines.push("입꼬리가 살짝 내려가 있습니다.");
+      } else if (is_round_open_mouth(scores)) {
+        lines.push("입이 둥글게 열려 있습니다.");
       } else {
         lines.push("입꼬리는 크게 움직이지 않고 차분합니다.");
       }
@@ -405,17 +420,19 @@
       const eye_wide = average_score(scores, "eyeWideLeft", "eyeWideRight");
       const blink = average_score(scores, "eyeBlinkLeft", "eyeBlinkRight");
       const squint = average_score(scores, "eyeSquintLeft", "eyeSquintRight");
-      const activation = Math.max(smile, frown, brow_up, brow_down, eye_wide, blink, squint);
+      const funnel = scores.mouthFunnel || 0;
+      const is_round_mouth = is_round_open_mouth(scores);
+      const activation = Math.max(smile, frown, brow_up, brow_down, eye_wide, blink, squint, funnel);
       let energy = "보통";
-      if (smile >= 0.55 || eye_wide >= 0.45) {
+      if (smile >= 0.55 || eye_wide >= 0.45 || funnel >= 0.45) {
         energy = "높음";
-      } else if (activation < 0.22 || ((blink >= 0.4 || squint >= 0.35) && smile < 0.25)) {
+      } else if (activation < 0.22 || ((blink >= 0.4 || squint >= 0.35) && smile < 0.25 && !is_round_mouth)) {
         energy = "낮음";
       }
       let direction = "나";
       const is_open_smile = smile >= 0.3 && blink < 0.4 && squint < 0.35;
       const is_wide_look = eye_wide >= 0.3 && frown < 0.25;
-      if (is_open_smile || is_wide_look) {
+      if (is_open_smile || is_wide_look || (is_round_mouth && blink < 0.45)) {
         direction = "곁";
       }
       let pace = "한 걸음";
