@@ -175,27 +175,64 @@
   }
 
   /**
-   * 얼굴이 프레임 안에 충분히 들어왔는지 확인합니다.
+   * 화면에 실제로 보이는 영상 조각입니다. 가로로 넓은 카메라는 좌우가 잘립니다.
+   */
+  function visible_source_rect(video) {
+    const source_width = video.videoWidth;
+    const source_height = video.videoHeight;
+    const view_width = video.clientWidth || source_width;
+    const view_height = video.clientHeight || source_height;
+    if (!source_width || !source_height || !view_width || !view_height) {
+      return null;
+    }
+    const source_ratio = source_width / source_height;
+    const view_ratio = view_width / view_height;
+    if (source_ratio > view_ratio) {
+      const crop_width = source_height * view_ratio;
+      return {
+        x: (source_width - crop_width) / 2,
+        y: 0,
+        width: crop_width,
+        height: source_height,
+      };
+    }
+    const crop_height = source_width / view_ratio;
+    return {
+      x: 0,
+      y: (source_height - crop_height) / 2,
+      width: source_width,
+      height: crop_height,
+    };
+  }
+
+  /**
+   * 이마와 턱, 양쪽 볼이 화면의 타원 안에 있는지 봅니다.
+   * 얼굴 바깥으로 삐져나온 점 하나 때문에 거절하지 않습니다.
    */
   function is_face_in_frame(landmarks) {
-    let min_x = 1;
-    let max_x = 0;
-    let min_y = 1;
-    let max_y = 0;
-    landmarks.forEach(function grow_box(point) {
-      min_x = Math.min(min_x, point.x);
-      max_x = Math.max(max_x, point.x);
-      min_y = Math.min(min_y, point.y);
-      max_y = Math.max(max_y, point.y);
-    });
-    const box_width = max_x - min_x;
-    const box_height = max_y - min_y;
-    const center_x = (min_x + max_x) / 2;
-    const center_y = (min_y + max_y) / 2;
-    const is_large_enough = box_width >= 0.22 && box_height >= 0.28;
-    const is_centered = center_x >= 0.2 && center_x <= 0.8 && center_y >= 0.15 && center_y <= 0.88;
-    const is_inside = min_x >= 0.01 && max_x <= 0.99 && min_y >= 0.01 && max_y <= 0.99;
-    return is_large_enough && is_centered && is_inside;
+    const forehead = landmarks[10];
+    const chin = landmarks[152];
+    const left_cheek = landmarks[234];
+    const right_cheek = landmarks[454];
+    if (!forehead || !chin || !left_cheek || !right_cheek) {
+      console.error("얼굴의 기준점을 찾지 못했습니다.");
+      return false;
+    }
+    const face_width = Math.abs(right_cheek.x - left_cheek.x);
+    const face_height = Math.abs(chin.y - forehead.y);
+    const center_x = (left_cheek.x + right_cheek.x) / 2;
+    const center_y = (forehead.y + chin.y) / 2;
+    const is_large_enough = face_width >= 0.16 && face_height >= 0.2;
+    const is_centered = center_x >= 0.12 && center_x <= 0.88 && center_y >= 0.08 && center_y <= 0.9;
+    if (!is_large_enough || !is_centered) {
+      console.error("얼굴이 프레임 기준에 맞지 않습니다.", {
+        face_width: face_width,
+        face_height: face_height,
+        center_x: center_x,
+        center_y: center_y,
+      });
+    }
+    return is_large_enough && is_centered;
   }
 
   /**
@@ -464,18 +501,44 @@
       show_camera_message(message_element, REFRAME_MESSAGE);
       return;
     }
+    const crop = visible_source_rect(video);
+    if (!crop) {
+      console.error("보이는 영상 영역을 계산하지 못했습니다.");
+      show_camera_message(message_element, REFRAME_MESSAGE);
+      return;
+    }
     is_reading = true;
     shutter.disabled = true;
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = Math.max(1, Math.round(crop.width));
+    canvas.height = Math.max(1, Math.round(crop.height));
     const context = canvas.getContext("2d", { willReadFrequently: true });
     try {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (!context) {
+        console.error("촬영 화면을 만들지 못했습니다.");
+        show_camera_message(message_element, REFRAME_MESSAGE);
+        return;
+      }
+      context.drawImage(
+        video,
+        crop.x,
+        crop.y,
+        crop.width,
+        crop.height,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
       const result = landmarker.detect(canvas);
       const landmarks = result && result.faceLandmarks ? result.faceLandmarks[0] : null;
       const blendshapes = result && result.faceBlendshapes ? result.faceBlendshapes[0] : null;
-      if (!landmarks || landmarks.length < 468 || !is_face_in_frame(landmarks)) {
+      if (!landmarks || landmarks.length < 468) {
+        console.error("영상에서 얼굴을 찾지 못했습니다.");
+        show_camera_message(message_element, REFRAME_MESSAGE);
+        return;
+      }
+      if (!is_face_in_frame(landmarks)) {
         show_camera_message(message_element, REFRAME_MESSAGE);
         return;
       }
@@ -504,7 +567,9 @@
       console.error("얼굴을 읽지 못했습니다. 다시 찍어 주세요.", error);
       show_camera_message(message_element, REFRAME_MESSAGE);
     } finally {
-      context.clearRect(0, 0, canvas.width, canvas.height);
+      if (context) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+      }
       canvas.width = 0;
       canvas.height = 0;
       is_reading = false;
