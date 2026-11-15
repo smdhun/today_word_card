@@ -1,15 +1,35 @@
 /**
- * 오늘 날짜와 고른 기분으로 문장 덱에서 카드 한 장을 고릅니다.
- * 같은 날, 같은 기분, 같은 순번이면 항상 같은 문장이 나옵니다.
- * 덱은 하루에 한 번 섞어 두고 차례로 넘기므로, 한 바퀴를 도는 동안은 문장이 겹치지 않습니다.
+ * 고른 기분으로 문장 덱에서 카드 한 장을 고릅니다.
+ * 페이지를 열 때 한 번 섞고, 그 실행 동안은 그 순서로 넘깁니다.
+ * 다시 열면 새로 섞이므로 첫 문장이 달라집니다.
  * 타로 그림은 세로 달빛 사진 100장이라, 100번까지는 겹치지 않고 그다음부터 다시 돌아옵니다.
  */
 (function init_picker() {
   const root = (window.TodayWordCard = window.TodayWordCard || {});
+  // 이번 실행의 섞기 번호입니다. 저장하지 않으므로 새로고침하면 바뀝니다.
+  const session_seed = create_session_seed();
+
+  /**
+   * 이번 페이지를 열 때 쓸 섞기 번호를 하나 만듭니다.
+   * 번호가 같으면 덱 순서도 같고, 페이지를 다시 열면 번호가 바뀝니다.
+   */
+  function create_session_seed() {
+    try {
+      if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+        const bytes = new Uint32Array(1);
+        window.crypto.getRandomValues(bytes);
+        return bytes[0] >>> 0;
+      }
+      return Math.floor(Math.random() * 4294967296) >>> 0;
+    } catch (error) {
+      console.error("카드 섞기 번호를 만들지 못했습니다. 임의 번호로 이어 갑니다.", error);
+      return Math.floor(Math.random() * 4294967296) >>> 0;
+    }
+  }
 
   /**
    * 문자열을 항상 같은 숫자로 바꿉니다.
-   * 날짜와 기분을 주사위 눈금처럼 고정하는 역할입니다.
+   * 섞기 번호와 기분을 주사위 눈금처럼 고정하는 역할입니다.
    */
   function hash_string(value) {
     try {
@@ -176,7 +196,7 @@
    * 서로 다른 카테고리에서 격언을 하나씩, 두 개 고릅니다.
    * 순번이 늘면 다음 카테고리 짝으로 넘어가고, 한 바퀴 뒤에는 그 카테고리의 다음 문장이 나옵니다.
    */
-  function pick_wise_quotes(date_key, mood_id, design_key, offset) {
+  function pick_wise_quotes(mood_id, design_key, offset) {
     try {
       const categories = get_wise_categories();
       if (categories.length < 2) {
@@ -184,7 +204,7 @@
         return [];
       }
 
-      const category_seed = [date_key, mood_id, design_key, "wise-category"].join("|");
+      const category_seed = [session_seed, mood_id, design_key, "wise-category"].join("|");
       const category_order = build_deck_order(category_seed, categories.length);
       if (category_order.length !== categories.length) {
         return [];
@@ -194,7 +214,7 @@
       for (let slot_index = 0; slot_index < 2; slot_index += 1) {
         const slot = offset * 2 + slot_index;
         const category = categories[category_order[slot % categories.length]];
-        const quote_seed = [date_key, mood_id, design_key, "wise-quote", category].join("|");
+        const quote_seed = [session_seed, mood_id, design_key, "wise-quote", category].join("|");
         const quote = pick_from_deck(root.WISE_QUOTES[category], quote_seed, Math.floor(slot / categories.length));
         if (!quote || !quote.text || !quote.person) {
           console.error("격언의 모양이 올바르지 않습니다.", category);
@@ -309,7 +329,7 @@
 
   /**
    * 고른 기분과 순번으로 카드 한 장을 만듭니다.
-   * offset이 0이면 그 날의 첫 장이고, 1씩 늘리면 섞어 둔 덱의 다음 장이 나옵니다.
+   * offset이 0이면 이번 실행의 첫 장이고, 1씩 늘리면 섞어 둔 덱의 다음 장이 나옵니다.
    */
   root.pick_today_phrase = function pick_today_phrase(input, offset) {
     try {
@@ -325,11 +345,11 @@
       const safe_offset = Number.isInteger(offset) && offset >= 0 ? offset : 0;
       const date_key = root.get_today_key();
 
-      // 덱을 섞는 기준에 디자인도 넣습니다. 타로와 오로라는 같은 날이어도 다른 문장이 나옵니다.
+      // 덱을 섞는 기준에 디자인도 넣습니다. 타로와 오로라는 이번 실행에서도 다른 문장이 나옵니다.
       const design_key = document.documentElement.dataset.design === root.DESIGN_AURORA
         ? root.DESIGN_AURORA
         : root.DESIGN_TAROT;
-      const phrase_seed_key = [date_key, mood.id, design_key, "phrase"].join("|");
+      const phrase_seed_key = [session_seed, mood.id, design_key, "phrase"].join("|");
       const phrase = pick_from_deck(phrase_list, phrase_seed_key, safe_offset);
 
       if (!is_phrase_ready(phrase)) {
@@ -338,11 +358,11 @@
       }
 
       // 그림도 디자인마다 다른 덱에서 고릅니다. 타로는 풍경, 오로라는 캐릭터입니다.
-      const vignette_seed_key = [date_key, mood.id, design_key, "vignette"].join("|");
+      const vignette_seed_key = [session_seed, mood.id, design_key, "vignette"].join("|");
       const vignette = pick_vignette(mood.id, vignette_seed_key, safe_offset);
 
       // 격언은 서로 다른 카테고리에서 하나씩입니다. 고르지 못해도 위 문장은 그대로 둡니다.
-      const wise_quotes = pick_wise_quotes(date_key, mood.id, design_key, safe_offset);
+      const wise_quotes = pick_wise_quotes(mood.id, design_key, safe_offset);
 
       return {
         date_key: date_key,
