@@ -1009,24 +1009,26 @@ html.is_slide_to_aurora::view-transition-new(design_stage) {
   inset: 0;
   background: url("../images/tarot/moon.png?v=20261117e") center / 100% 100% no-repeat;
   transform-origin: 50% 50%;
-  animation: tarot_moon_tilt 12s ease-in-out infinite;
+  animation: tarot_moon_tilt 8s ease-in-out infinite;
 }
 
 @keyframes tarot_moon_tilt {
   0%,
   100% {
     transform: rotate(0deg);
+    filter: brightness(0.9);
   }
 
   50% {
-    transform: rotate(-12deg);
+    transform: rotate(-18deg);
+    filter: brightness(1.35);
   }
 }
 
 /* 원 주변의 작은 별. 서로 다른 간격으로 잠깐만 밝아집니다. */
 .tarot_stars span {
   position: absolute;
-  width: 1.5%;
+  width: 3.4%;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
@@ -1046,25 +1048,27 @@ html.is_slide_to_aurora::view-transition-new(design_stage) {
 
 @keyframes tarot_star_twinkle {
   0%,
-  78%,
+  42%,
   100% {
     opacity: 0;
   }
 
-  88% {
-    opacity: 0.8;
+  58%,
+  78% {
+    opacity: 1;
   }
 }
 
 @keyframes tarot_star_twinkle_soft {
   0%,
-  84%,
+  58%,
   100% {
     opacity: 0;
   }
 
-  92% {
-    opacity: 0.4;
+  72%,
+  88% {
+    opacity: 0.65;
   }
 }
 
