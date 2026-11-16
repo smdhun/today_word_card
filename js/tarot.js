@@ -70,7 +70,7 @@
         return;
       }
       image.alt = "덮인 타로 카드";
-      image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261115q";
+      image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";
       reading.hidden = true;
       show_tarot_status("");
     } catch (error) {
