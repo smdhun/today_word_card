@@ -128,6 +128,7 @@
       question.textContent = card.question;
       reading.hidden = false;
       show_tarot_status("");
+      window.scrollTo(0, 0);
     } catch (error) {
       console.error("타로 카드를 뒤집지 못했습니다. 다시 눌러 주세요.", error);
       show_tarot_status("카드를 뒤집지 못했습니다. 잠시 후 다시 눌러 주세요.");

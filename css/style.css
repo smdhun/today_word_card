@@ -1016,6 +1016,58 @@ html.is_slide_to_aurora::view-transition-new(design_stage) {
   color: var(--ink_soft);
 }
 
+/*
+  카드를 연 뒤에는 제목을 접고, 그림부터 오늘의 질문까지를
+  위쪽 띠 아래 남은 화면의 한가운데에 둡니다.
+  그림 너비는 화면 높이에 맞춰, 글을 보려 스크롤하지 않게 합니다.
+*/
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .stage {
+  flex: 1;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 0 12px;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .intro {
+  display: none;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .result_card {
+  padding: 16px 16px 12px;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .card_inner {
+  gap: 12px;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .tarot_stage {
+  width: min(230px, calc((100svh - 390px) * 0.72));
+}
+
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .tarot_reading {
+  gap: 2px;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .tarot_label {
+  margin-top: 6px;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .tarot_insight,
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .tarot_question {
+  font-size: 15px;
+  line-height: 22px;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .epilogue {
+  padding-top: 0;
+}
+
 @media (min-width: 760px) {
   :root[data-design="tarot"] .layout {
     grid-template-columns: minmax(0, 1fr);
