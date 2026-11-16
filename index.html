@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261116i">
+  <link rel="stylesheet" href="css/style.css?v=20261116l">
   <link rel="stylesheet" href="css/aurora.css">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
@@ -210,21 +210,23 @@
             <div class="tarot_frame">
               <img id="tarot_image" class="tarot_image" src="images/tarot/back.jpg" alt="덮인 타로 카드" width="768" height="1024">
             </div>
-            <div id="tarot_reading" class="tarot_reading" hidden>
-              <p id="tarot_name" class="tarot_name"></p>
-              <p class="tarot_label">오늘의 한 줄</p>
-              <p id="tarot_insight" class="tarot_insight"></p>
-              <p class="tarot_label">오늘의 질문</p>
-              <p id="tarot_question" class="tarot_question"></p>
-            </div>
           </div>
 
-          <!-- 그림 바로 아래. form 속성이 왼쪽 기분 선택과 이 버튼을 이어 줍니다. -->
+          <!-- 그림 바로 아래. 타로에서는 글을 열어도 이 자리가 내려가지 않습니다. -->
           <button id="draw_button" class="button button_primary" type="submit" form="fortune_form">
             <svg class="icon" aria-hidden="true"><use href="#icon_auto_awesome"/></svg>
             <span class="label_tarot">카드 뒤집기</span>
             <span class="label_aurora">새로운 문장 뽑기</span>
           </button>
+
+          <!-- 카드 글은 뒤집기 버튼 아래에 둡니다. 버튼을 이미지 아래에서 밀어내지 않습니다. -->
+          <div id="tarot_reading" class="tarot_reading" hidden>
+            <p id="tarot_name" class="tarot_name"></p>
+            <p class="tarot_label">오늘의 한 줄</p>
+            <p id="tarot_insight" class="tarot_insight"></p>
+            <p class="tarot_label">오늘의 질문</p>
+            <p id="tarot_question" class="tarot_question"></p>
+          </div>
 
           <p id="card_empty" class="card_empty">
             <span class="label_tarot">오늘의 문장을 뽑으면 짧은 문장이 여기에 나타납니다.</span>

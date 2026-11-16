@@ -976,12 +976,18 @@ html.is_slide_to_aurora::view-transition-new(design_stage) {
   height: auto;
 }
 
+/* 글은 타로에서, 버튼 아래에만 보입니다. 오로라로 바꿔도 카드 글이 남지 않습니다. */
 .tarot_reading {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 8px;
   width: min(420px, 100%);
+  margin: 0 auto;
   text-align: center;
+}
+
+:root[data-design="tarot"] .tarot_reading:not([hidden]) {
+  display: flex;
 }
 
 /* 카드 이름(여황제, 죽음 등)은 그림 아래에 보이지 않습니다. */
