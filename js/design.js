@@ -1,5 +1,6 @@
 /**
  * 타로, 오로라, 인간관계 화면을 바꾸고, 고른 화면을 브라우저에 기억합니다.
+ * 휴대폰에서는 손가락을 가로로 밀어도 오로라와 타로가 바뀝니다.
  * 화면이 그려지기 전에 정해야 색이 깜빡이지 않으므로 head에서 불러옵니다.
  */
 (function init_design() {
@@ -152,14 +153,19 @@
     }
   }
 
+  const SWIPE_MIN_X = 70;
+  const SWIPE_MAX_MS = 400;
+  let swipe_start_x = 0;
+  let swipe_start_y = 0;
+  let swipe_start_at = 0;
+  let is_swipe_tracking = false;
+
   /**
-   * 버튼을 누르면 그 디자인으로 바꾸고 선택을 기억합니다.
-   * 이미 선택된 버튼을 다시 눌러도 안내는 치웁니다.
+   * 버튼과 밀기가 같은 길로 화면을 바꿉니다.
+   * 이미 그 화면이어도 안내는 치웁니다.
    */
-  function on_pick_design(event) {
+  function commit_design(next_design) {
     try {
-      const button = event.currentTarget;
-      const next_design = button && button.dataset ? button.dataset.design : "";
       if (!is_known_design(next_design)) {
         console.error("알 수 없는 디자인입니다.", next_design);
         return;
@@ -173,6 +179,148 @@
     } catch (error) {
       console.error("디자인을 바꾸지 못했습니다.", error);
     }
+  }
+
+  /**
+   * 버튼을 누르면 그 디자인으로 바꾸고 선택을 기억합니다.
+   */
+  function on_pick_design(event) {
+    const button = event.currentTarget;
+    const next_design = button && button.dataset ? button.dataset.design : "";
+    commit_design(next_design);
+  }
+
+  /**
+   * 카메라나 음악 질문이 열려 있으면 밀기로 화면을 바꾸지 않습니다.
+   */
+  function is_overlay_open(element_id) {
+    const element = document.getElementById(element_id);
+    return Boolean(element && !element.hidden);
+  }
+
+  /**
+   * 버튼, 입력, 음악 목록에서 시작한 터치는 화면 넘기기가 아닙니다.
+   */
+  function is_swipe_blocked(target) {
+    try {
+      if (is_overlay_open("camera_sheet") || is_overlay_open("music_offer")) {
+        return true;
+      }
+      if (!target || typeof target.closest !== "function") {
+        return false;
+      }
+      return Boolean(target.closest("button, a, input, textarea, select, label, #music_panel"));
+    } catch (error) {
+      console.error("밀기 시작 위치를 확인하지 못했습니다.", error);
+      return true;
+    }
+  }
+
+  /**
+   * 손가락이 움직인 방향으로 다음 화면을 고릅니다.
+   * 왼쪽은 타로, 오른쪽은 오로라입니다. 더 갈 화면이 없으면 빈 문자열입니다.
+   */
+  function design_for_swipe(delta_x) {
+    const current_design = document.documentElement.dataset.design;
+    if (delta_x <= -SWIPE_MIN_X && current_design === root.DESIGN_AURORA) {
+      return root.DESIGN_TAROT;
+    }
+    if (delta_x >= SWIPE_MIN_X && current_design === root.DESIGN_TAROT) {
+      return root.DESIGN_AURORA;
+    }
+    return "";
+  }
+
+  /**
+   * 손가락이 닿은 자리를 기억합니다. 손가락이 둘 이상이면 넘기지 않습니다.
+   */
+  function on_swipe_start(event) {
+    try {
+      if (!event.touches || event.touches.length !== 1) {
+        is_swipe_tracking = false;
+        return;
+      }
+      if (is_swipe_blocked(event.target)) {
+        is_swipe_tracking = false;
+        return;
+      }
+      const touch = event.touches[0];
+      swipe_start_x = touch.clientX;
+      swipe_start_y = touch.clientY;
+      swipe_start_at = Date.now();
+      is_swipe_tracking = true;
+    } catch (error) {
+      is_swipe_tracking = false;
+      console.error("화면 밀기를 시작하지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 가로 밀기가 분명하면 브라우저가 페이지를 옆으로 당기지 않게 합니다.
+   * 세로가 더 크면 글을 읽는 스크롤이므로 그대로 둡니다.
+   */
+  function on_swipe_move(event) {
+    try {
+      if (!is_swipe_tracking || !event.touches || event.touches.length !== 1) {
+        return;
+      }
+      const touch = event.touches[0];
+      const delta_x = touch.clientX - swipe_start_x;
+      const delta_y = touch.clientY - swipe_start_y;
+      if (Math.abs(delta_x) > 12 && Math.abs(delta_x) > Math.abs(delta_y)) {
+        event.preventDefault();
+      }
+    } catch (error) {
+      console.error("화면 밀기를 따라가지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 손을 뗐을 때 가로 70px 이상, 세로보다 크고, 0.4초 안이면 화면을 바꿉니다.
+   */
+  function on_swipe_end(event) {
+    try {
+      if (!is_swipe_tracking) {
+        return;
+      }
+      is_swipe_tracking = false;
+      const touch = event.changedTouches && event.changedTouches[0];
+      if (!touch) {
+        return;
+      }
+      const delta_x = touch.clientX - swipe_start_x;
+      const delta_y = touch.clientY - swipe_start_y;
+      const elapsed_ms = Date.now() - swipe_start_at;
+      if (elapsed_ms > SWIPE_MAX_MS || Math.abs(delta_x) <= Math.abs(delta_y)) {
+        return;
+      }
+      const next_design = design_for_swipe(delta_x);
+      if (!next_design) {
+        return;
+      }
+      commit_design(next_design);
+    } catch (error) {
+      is_swipe_tracking = false;
+      console.error("화면을 밀어서 바꾸지 못했습니다. 위쪽 버튼을 눌러 주세요.", error);
+    }
+  }
+
+  /**
+   * 터치가 끊기면 진행 중인 밀기를 버립니다.
+   */
+  function on_swipe_cancel() {
+    is_swipe_tracking = false;
+  }
+
+  /**
+   * 휴대폰 터치로 오로라와 타로를 넘깁니다. 마우스는 버튼을 그대로 씁니다.
+   */
+  function bind_design_swipe() {
+    const listen_options = { passive: false };
+    document.addEventListener("touchstart", on_swipe_start, listen_options);
+    document.addEventListener("touchmove", on_swipe_move, listen_options);
+    document.addEventListener("touchend", on_swipe_end);
+    document.addEventListener("touchcancel", on_swipe_cancel);
   }
 
   /**
@@ -197,6 +345,7 @@
       const current_design = document.documentElement.dataset.design;
       mark_pressed_button(is_known_design(current_design) ? current_design : root.DESIGN_DEFAULT);
       show_design_hint();
+      bind_design_swipe();
     } catch (error) {
       console.error("디자인 버튼을 연결하지 못했습니다.", error);
     }
