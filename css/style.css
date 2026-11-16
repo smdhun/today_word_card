@@ -214,17 +214,6 @@ h2 {
   text-align: right;
 }
 
-/* 음악이 꺼져도 시간과 막대 자리는 남겨, 오로라와 타로가 움직이지 않게 합니다. */
-.music_head .music_remain,
-.music_head .music_level {
-  visibility: hidden;
-}
-
-.music_head .music_remain.is_on,
-.music_head .music_level.is_on {
-  visibility: visible;
-}
-
 /* 음악 목록이 열린 동안 오로라, 타로, 인간관계 화면은 스크롤되지 않습니다. */
 html.is_music_list_open,
 html.is_music_list_open body {
@@ -828,8 +817,94 @@ html.is_design_sliding {
   overflow-x: hidden;
 }
 
-.stage.is_design_sliding {
-  transition: transform 280ms cubic-bezier(0.22, 0.9, 0.28, 1);
+.stage.is_design_sliding,
+.stage_ghost_frame.is_design_sliding {
+  transition: transform 540ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* 위쪽 버튼은 넘김 그림에 섞이지 않고 제자리에 둡니다. */
+.top_bar {
+  view-transition-name: top_bar;
+}
+
+.stage {
+  view-transition-name: design_stage;
+}
+
+/* 옛 화면과 새 화면이 이어진 채 함께 이동합니다. */
+html.is_design_sliding::view-transition-group(design_stage) {
+  overflow: visible;
+  animation: none;
+}
+
+html.is_design_sliding::view-transition-group(top_bar),
+html.is_design_sliding::view-transition-old(top_bar),
+html.is_design_sliding::view-transition-new(top_bar),
+html.is_design_sliding::view-transition-old(root),
+html.is_design_sliding::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* 넘기는 동안 유리 카드가 뒤 화면에 비치지 않도록 바탕을 채웁니다. */
+html.is_slide_to_tarot[data-design="aurora"] .stage,
+html.is_slide_to_aurora[data-design="aurora"] .stage {
+  background:
+    radial-gradient(circle at 12% -8%, rgba(3, 181, 211, 0.22), transparent 34%),
+    radial-gradient(circle at 100% 18%, rgba(160, 120, 255, 0.28), transparent 36%),
+    radial-gradient(circle at 30% 100%, rgba(247, 81, 161, 0.14), transparent 32%),
+    #0f131d;
+}
+
+html.is_slide_to_tarot[data-design="tarot"] .stage,
+html.is_slide_to_aurora[data-design="tarot"] .stage {
+  background: var(--surface);
+}
+
+html.is_slide_to_tarot::view-transition-old(design_stage) {
+  animation: design_leave_left 540ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+html.is_slide_to_tarot::view-transition-new(design_stage) {
+  animation: design_enter_from_right 540ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+html.is_slide_to_aurora::view-transition-old(design_stage) {
+  animation: design_leave_right 540ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+html.is_slide_to_aurora::view-transition-new(design_stage) {
+  animation: design_enter_from_left 540ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes design_leave_left {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(calc(-100% - 24px - var(--slide_from, 0px)), 0, 0); }
+}
+
+@keyframes design_enter_from_right {
+  from { transform: translate3d(calc(100% + 24px + var(--slide_from, 0px)), 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes design_leave_right {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(calc(100% + 24px - var(--slide_from, 0px)), 0, 0); }
+}
+
+@keyframes design_enter_from_left {
+  from { transform: translate3d(calc(-100% - 24px + var(--slide_from, 0px)), 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+/* 옛 화면을 붙여 두는 창. 다음 화면과 나란히 밀립니다. */
+.stage_ghost_frame {
+  position: fixed;
+  z-index: 4;
+  border: 0;
+  pointer-events: none;
+  background: transparent;
+  overflow: hidden;
 }
 
 .intro {

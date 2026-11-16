@@ -249,14 +249,30 @@
   }
 
   /**
-   * 멈춘 곡의 막대 움직임을 멈춥니다.
+   * MUSIC 옆 막대를 낮은 정지 모습으로 되돌립니다.
    */
-  function stop_meter() {
-    if (!meter_frame_id) {
+  function rest_header_meter() {
+    const level = document.getElementById("music_level");
+    if (!level) {
+      console.error("음량 막대를 찾지 못했습니다.");
       return;
     }
-    window.cancelAnimationFrame(meter_frame_id);
-    meter_frame_id = 0;
+    level.classList.remove("is_css_beat");
+    level.querySelectorAll(".music_bar").forEach(function rest_bar(bar) {
+      bar.style.transform = "";
+      bar.style.backgroundColor = "";
+    });
+  }
+
+  /**
+   * 멈춘 곡의 막대 움직임을 멈추고, MUSIC 옆 막대는 낮은 채로 둡니다.
+   */
+  function stop_meter() {
+    if (meter_frame_id) {
+      window.cancelAnimationFrame(meter_frame_id);
+      meter_frame_id = 0;
+    }
+    rest_header_meter();
   }
 
   /**
@@ -279,10 +295,7 @@
       return;
     }
     const is_playing = !audio.paused && !audio.ended;
-    /* 숨김 속성은 자리를 없애므로, 보이기만 끄고 칸은 유지합니다. */
     remain.hidden = false;
-    remain.classList.toggle("is_on", is_playing);
-    remain.setAttribute("aria-hidden", is_playing ? "false" : "true");
     if (!is_playing || !Number.isFinite(audio.duration)) {
       remain.textContent = "00:00";
       return;
@@ -309,6 +322,9 @@
     if (level) {
       level.hidden = false;
       level.classList.toggle("is_on", is_playing);
+      if (!is_playing) {
+        rest_header_meter();
+      }
     }
     update_remain();
   }

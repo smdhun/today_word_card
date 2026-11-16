@@ -155,7 +155,7 @@
 
   const SWIPE_MIN_X = 70;
   const SWIPE_MAX_MS = 400;
-  const SLIDE_FOLLOW_MAX = 56;
+  const SLIDE_FOLLOW_MAX = 140;
   let swipe_start_x = 0;
   let swipe_start_y = 0;
   let swipe_start_at = 0;
@@ -263,8 +263,8 @@
       (delta_x < 0 && current_design === root.DESIGN_AURORA) ||
       (delta_x > 0 && current_design === root.DESIGN_TAROT)
     );
-    const gain = can_leave ? 0.42 : 0.12;
-    const max_shift = can_leave ? SLIDE_FOLLOW_MAX : 22;
+    const gain = can_leave ? 0.78 : 0.16;
+    const max_shift = can_leave ? SLIDE_FOLLOW_MAX : 24;
     const shifted = delta_x * gain;
     return Math.max(-max_shift, Math.min(max_shift, shifted));
   }
@@ -288,7 +288,8 @@
    */
   function release_stage() {
     const stage = stage_element();
-    document.documentElement.classList.remove("is_design_sliding");
+    document.documentElement.classList.remove("is_design_sliding", "is_slide_to_tarot", "is_slide_to_aurora");
+    document.documentElement.style.removeProperty("--slide_from");
     if (!stage) {
       return;
     }
@@ -309,11 +310,117 @@
         return;
       }
       release_stage();
-    }, 300);
+    }, 580);
   }
 
   /**
-   * 지금 화면이 손가락 방향으로 빠지고, 다음 화면이 반대쪽에서 들어옵니다.
+   * 본문에 걸려 있는 가로 이동 거리를 읽습니다.
+   */
+  function read_stage_shift(stage) {
+    const matched = /translate3d\((-?\d+(?:\.\d+)?)px/.exec(stage.style.transform || "");
+    return matched ? Number(matched[1]) : 0;
+  }
+
+  /**
+   * 지금 화면의 모양을 다른 문서에 붙여, 디자인을 바꿔도 옛 모습이 남게 합니다.
+   */
+  function build_slide_ghost(stage, design_name, from_x) {
+    try {
+      const rect = stage.getBoundingClientRect();
+      const frame = document.createElement("iframe");
+      const css_parts = [];
+      frame.className = "stage_ghost_frame";
+      frame.setAttribute("aria-hidden", "true");
+      frame.tabIndex = -1;
+      frame.style.top = rect.top + "px";
+      frame.style.left = (rect.left - from_x) + "px";
+      frame.style.width = rect.width + "px";
+      frame.style.height = rect.height + "px";
+      frame.style.transform = "translate3d(" + from_x + "px, 0, 0)";
+      document.body.appendChild(frame);
+      Array.prototype.forEach.call(document.styleSheets, function copy_sheet(sheet) {
+        try {
+          Array.prototype.forEach.call(sheet.cssRules, function copy_rule(rule) {
+            css_parts.push(rule.cssText);
+          });
+        } catch (error) {
+          /* 다른 주소의 글꼴 파일은 규칙으로 복사되지 않습니다. */
+        }
+      });
+      const font_links = [];
+      document.querySelectorAll("link[rel='stylesheet']").forEach(function copy_font(link) {
+        if (link.href && link.href.indexOf("fonts.googleapis.com") !== -1) {
+          font_links.push("<link rel=\"stylesheet\" href=\"" + link.href + "\">");
+        }
+      });
+      const ghost_document = frame.contentDocument;
+      if (!ghost_document) {
+        frame.remove();
+        return null;
+      }
+      ghost_document.open();
+      ghost_document.write(
+        "<!DOCTYPE html><html data-design=\"" + design_name + "\"><head>" +
+        font_links.join("") +
+        "<style>" + css_parts.join("\n") +
+        "html,body{margin:0;background:transparent;overflow:hidden;}" +
+        ".stage{width:100%!important;max-width:none!important;margin:0!important;transform:none!important;}" +
+        "</style></head><body>" + stage.outerHTML + "</body></html>"
+      );
+      ghost_document.close();
+      return frame;
+    } catch (error) {
+      console.error("넘기는 화면을 붙이지 못했습니다. 새 화면만 들입니다.", error);
+      return null;
+    }
+  }
+
+  /**
+   * 옛 화면과 새 화면을 나란히 두고 같은 속도로 밀어서 이어 줍니다.
+   */
+  function play_joined_slide(next_design, delta_x) {
+    const stage = stage_element();
+    const token = ++slide_token;
+    is_slide_playing = true;
+    const from_x = read_stage_shift(stage);
+    const direction = delta_x < 0 ? -1 : 1;
+    const width = Math.round(stage.getBoundingClientRect().width) || 320;
+    const travel = width + 24;
+    const current_design = document.documentElement.dataset.design || "";
+    const ghost = build_slide_ghost(stage, current_design, from_x);
+    const stage_start = from_x - direction * travel;
+    document.documentElement.classList.add("is_design_sliding");
+    stage.classList.remove("is_design_sliding");
+    stage.style.transform = "translate3d(" + stage_start + "px, 0, 0)";
+    commit_design(next_design);
+    window.requestAnimationFrame(function start_join() {
+      if (token !== slide_token) {
+        if (ghost) {
+          ghost.remove();
+        }
+        return;
+      }
+      if (ghost) {
+        ghost.classList.add("is_design_sliding");
+        ghost.style.transform = "translate3d(" + (from_x - stage_start) + "px, 0, 0)";
+      }
+      stage.classList.add("is_design_sliding");
+      stage.style.transform = "translate3d(0, 0, 0)";
+      window.setTimeout(function clear_join() {
+        if (token !== slide_token) {
+          return;
+        }
+        if (ghost) {
+          ghost.remove();
+        }
+        is_slide_playing = false;
+        release_stage();
+      }, 600);
+    });
+  }
+
+  /**
+   * 손가락을 뗀 자리에서 옛 화면과 새 화면이 이어져 넘어갑니다.
    */
   function play_design_slide(next_design, delta_x) {
     const stage = stage_element();
@@ -322,47 +429,41 @@
       commit_design(next_design);
       return;
     }
+    if (typeof document.startViewTransition !== "function") {
+      play_joined_slide(next_design, delta_x);
+      return;
+    }
     const token = ++slide_token;
     is_slide_playing = true;
-    const stage_width = stage.getBoundingClientRect().width || window.innerWidth || 320;
-    const leave_x = (delta_x < 0 ? -1 : 1) * Math.round(stage_width * 0.86);
-    move_stage(leave_x, true);
-
-    let has_finished = false;
-    function finish_leave() {
-      if (has_finished || token !== slide_token) {
-        return;
-      }
-      has_finished = true;
-      stage.removeEventListener("transitionend", on_leave_end);
-      stage.classList.remove("is_design_sliding");
-      stage.style.transform = "translate3d(" + (-leave_x) + "px, 0, 0)";
-      commit_design(next_design);
-      window.requestAnimationFrame(function enter_stage() {
-        if (token !== slide_token) {
-          return;
-        }
-        stage.classList.add("is_design_sliding");
-        stage.style.transform = "translate3d(0, 0, 0)";
-        window.setTimeout(function clear_enter() {
-          if (token !== slide_token) {
-            return;
-          }
-          is_slide_playing = false;
-          release_stage();
-        }, 320);
+    const from_x = read_stage_shift(stage);
+    const is_to_tarot = delta_x < 0;
+    const root_element = document.documentElement;
+    root_element.classList.add("is_design_sliding");
+    root_element.classList.toggle("is_slide_to_tarot", is_to_tarot);
+    root_element.classList.toggle("is_slide_to_aurora", !is_to_tarot);
+    root_element.style.setProperty("--slide_from", from_x + "px");
+    let transition = null;
+    try {
+      transition = document.startViewTransition(function update_design() {
+        stage.classList.remove("is_design_sliding");
+        stage.style.transform = "";
+        commit_design(next_design);
       });
+    } catch (error) {
+      console.error("화면 전환을 부드럽게 열지 못했습니다. 화면만 바꿉니다.", error);
+      is_slide_playing = false;
+      release_stage();
+      commit_design(next_design);
+      return;
     }
-
-    function on_leave_end(event) {
-      if (event.target !== stage || event.propertyName !== "transform") {
+    function finish_slide() {
+      if (token !== slide_token) {
         return;
       }
-      finish_leave();
+      is_slide_playing = false;
+      release_stage();
     }
-
-    stage.addEventListener("transitionend", on_leave_end);
-    window.setTimeout(finish_leave, 380);
+    transition.finished.then(finish_slide, finish_slide);
   }
 
   /**

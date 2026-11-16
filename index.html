@@ -23,12 +23,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261116d">
+  <link rel="stylesheet" href="css/style.css?v=20261116i">
   <link rel="stylesheet" href="css/aurora.css">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
   <script src="js/constants.js"></script>
-  <script src="js/design.js?v=20261116b"></script>
+  <script src="js/design.js?v=20261116g"></script>
 </head>
 <body>
   <!-- 아이콘 모음. 화면에는 보이지 않고, 아래에서 <use>로 꺼내 씁니다. -->
@@ -59,8 +59,8 @@
         <div class="music_box">
           <div class="music_head">
             <button id="music_toggle" class="design_button music_toggle" type="button" aria-expanded="false" aria-controls="music_list">MUSIC</button>
-            <!-- 곡이 나올 때만, 음량 막대 왼쪽에 남은 시간을 보여 줍니다. -->
-            <span id="music_remain" class="music_remain" aria-hidden="true">00:00</span>
+            <!-- 음악이 꺼지면 00:00과 멈춘 막대를 그대로 보여 줍니다. -->
+            <span id="music_remain" class="music_remain">00:00</span>
             <span id="music_level" class="music_meter music_level" aria-hidden="true">
               <span class="music_bar"></span>
               <span class="music_bar"></span>
@@ -457,7 +457,7 @@
   <script src="js/storage.js"></script>
   <script src="js/app.js?v=20261115o"></script>
   <script src="js/relation.js"></script>
-  <script src="js/music.js?v=20261116e"></script>
+  <script src="js/music.js?v=20261116f"></script>
   <script src="js/face_read.js?v=20261115n"></script>
 </body>
 </html>
