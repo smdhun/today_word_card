@@ -59,6 +59,19 @@
   }
 
   /**
+   * 이미지 아래 버튼 문구를 바꿉니다. 뒷면과 앞면의 말이 다릅니다.
+   */
+  function set_draw_label(label_text) {
+    const button = document.getElementById("draw_button");
+    const label = button ? button.querySelector(".label_tarot") : null;
+    if (!label) {
+      console.error("카드 고르기 문구를 찾지 못했습니다. 페이지를 새로고침해 주세요.");
+      return;
+    }
+    label.textContent = label_text;
+  }
+
+  /**
    * 덮인 뒷면을 보여 줍니다. 순서는 바꾸지 않습니다.
    */
   function show_tarot_back() {
@@ -72,6 +85,7 @@
       image.alt = "덮인 타로 카드";
       image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";
       reading.hidden = true;
+      set_draw_label("오늘의 카드 고르기");
       show_tarot_status("");
     } catch (error) {
       console.error("카드 뒷면을 보여 주지 못했습니다. 페이지를 새로고침해 주세요.", error);
@@ -127,6 +141,7 @@
       insight.textContent = card.insight;
       question.textContent = card.question;
       reading.hidden = false;
+      set_draw_label("카드 다시 고르기");
       show_tarot_status("");
       window.scrollTo(0, 0);
     } catch (error) {
