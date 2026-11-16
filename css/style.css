@@ -203,6 +203,7 @@ h2 {
 /* 음량 막대 왼쪽의 남은 시간. 숫자가 바뀌어도 너비가 흔들리지 않습니다. */
 .music_remain {
   flex: 0 0 auto;
+  min-width: 40px;
   color: var(--ink);
   font-family: var(--font_label);
   font-size: 13px;
@@ -210,6 +211,18 @@ h2 {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
   line-height: 16px;
+  text-align: right;
+}
+
+/* 음악이 꺼져도 시간과 막대 자리는 남겨, 오로라와 타로가 움직이지 않게 합니다. */
+.music_head .music_remain,
+.music_head .music_level {
+  visibility: hidden;
+}
+
+.music_head .music_remain.is_on,
+.music_head .music_level.is_on {
+  visibility: visible;
 }
 
 /* 음악 목록이 열린 동안 오로라, 타로, 인간관계 화면은 스크롤되지 않습니다. */
@@ -237,9 +250,17 @@ html.is_music_list_open .top_bar {
   max-height: min(360px, 60vh);
   padding: 8px;
   overflow: hidden;
+  border: 1px solid rgba(233, 226, 210, 0.55);
   border-radius: 12px;
   background: var(--card_result);
   box-shadow: var(--shadow_result);
+}
+
+/* 타로 목록도 오로라처럼 뒤 화면이 비치게 합니다. */
+:root[data-design="tarot"] .music_panel {
+  background: rgba(34, 32, 22, 0.74);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
 }
 
 /* 반복 표시는 목록 위에 고정하고, 곡 제목만 위아래로 움직입니다. */
@@ -374,7 +395,7 @@ html.is_music_list_open .top_bar {
 }
 
 .music_track.is_playing .music_meter,
-.music_level:not([hidden]) {
+.music_head .music_level {
   display: flex;
 }
 
@@ -800,6 +821,15 @@ html.is_music_list_open .top_bar {
   width: min(840px, 100% - 40px);
   margin: 0 auto;
   padding: 8px 0 48px;
+}
+
+/* 밀어서 화면을 바꿀 때 본문이 옆으로 이동해도 가로 스크롤이 생기지 않습니다. */
+html.is_design_sliding {
+  overflow-x: hidden;
+}
+
+.stage.is_design_sliding {
+  transition: transform 280ms cubic-bezier(0.22, 0.9, 0.28, 1);
 }
 
 .intro {

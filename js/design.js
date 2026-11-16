@@ -155,10 +155,13 @@
 
   const SWIPE_MIN_X = 70;
   const SWIPE_MAX_MS = 400;
+  const SLIDE_FOLLOW_MAX = 56;
   let swipe_start_x = 0;
   let swipe_start_y = 0;
   let swipe_start_at = 0;
   let is_swipe_tracking = false;
+  let is_slide_playing = false;
+  let slide_token = 0;
 
   /**
    * 버튼과 밀기가 같은 길로 화면을 바꿉니다.
@@ -232,11 +235,142 @@
   }
 
   /**
+   * 밀리는 본문입니다. 위쪽 버튼은 제자리에 둡니다.
+   */
+  function stage_element() {
+    return document.querySelector("main.stage");
+  }
+
+  /**
+   * 움직임 줄이기를 켠 브라우저인지 확인합니다.
+   */
+  function prefers_still_motion() {
+    try {
+      return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    } catch (error) {
+      console.error("움직임 설정을 확인하지 못했습니다.", error);
+      return false;
+    }
+  }
+
+  /**
+   * 손가락 방향으로 화면이 조금 따라갈 거리를 구합니다.
+   * 더 갈 화면이 없으면 조금만 밀렸다가 돌아옵니다.
+   */
+  function follow_shift(delta_x) {
+    const current_design = document.documentElement.dataset.design;
+    const can_leave = (
+      (delta_x < 0 && current_design === root.DESIGN_AURORA) ||
+      (delta_x > 0 && current_design === root.DESIGN_TAROT)
+    );
+    const gain = can_leave ? 0.42 : 0.12;
+    const max_shift = can_leave ? SLIDE_FOLLOW_MAX : 22;
+    const shifted = delta_x * gain;
+    return Math.max(-max_shift, Math.min(max_shift, shifted));
+  }
+
+  /**
+   * 본문을 가로로 옮깁니다. is_animated가 참이면 부드럽게 이동합니다.
+   */
+  function move_stage(shift_x, is_animated) {
+    const stage = stage_element();
+    if (!stage) {
+      return null;
+    }
+    document.documentElement.classList.add("is_design_sliding");
+    stage.classList.toggle("is_design_sliding", Boolean(is_animated));
+    stage.style.transform = "translate3d(" + Math.round(shift_x) + "px, 0, 0)";
+    return stage;
+  }
+
+  /**
+   * 밀기 이동을 걷어 내고 본문을 제자리로 되돌립니다.
+   */
+  function release_stage() {
+    const stage = stage_element();
+    document.documentElement.classList.remove("is_design_sliding");
+    if (!stage) {
+      return;
+    }
+    stage.classList.remove("is_design_sliding");
+    stage.style.transform = "";
+  }
+
+  /**
+   * 화면을 바꾸지 않으면 조금 밀렸던 본문이 제자리로 돌아옵니다.
+   */
+  function spring_stage_back() {
+    const token = slide_token;
+    if (!move_stage(0, true)) {
+      return;
+    }
+    window.setTimeout(function clear_spring() {
+      if (token !== slide_token || is_slide_playing) {
+        return;
+      }
+      release_stage();
+    }, 300);
+  }
+
+  /**
+   * 지금 화면이 손가락 방향으로 빠지고, 다음 화면이 반대쪽에서 들어옵니다.
+   */
+  function play_design_slide(next_design, delta_x) {
+    const stage = stage_element();
+    if (!stage || prefers_still_motion()) {
+      release_stage();
+      commit_design(next_design);
+      return;
+    }
+    const token = ++slide_token;
+    is_slide_playing = true;
+    const stage_width = stage.getBoundingClientRect().width || window.innerWidth || 320;
+    const leave_x = (delta_x < 0 ? -1 : 1) * Math.round(stage_width * 0.86);
+    move_stage(leave_x, true);
+
+    let has_finished = false;
+    function finish_leave() {
+      if (has_finished || token !== slide_token) {
+        return;
+      }
+      has_finished = true;
+      stage.removeEventListener("transitionend", on_leave_end);
+      stage.classList.remove("is_design_sliding");
+      stage.style.transform = "translate3d(" + (-leave_x) + "px, 0, 0)";
+      commit_design(next_design);
+      window.requestAnimationFrame(function enter_stage() {
+        if (token !== slide_token) {
+          return;
+        }
+        stage.classList.add("is_design_sliding");
+        stage.style.transform = "translate3d(0, 0, 0)";
+        window.setTimeout(function clear_enter() {
+          if (token !== slide_token) {
+            return;
+          }
+          is_slide_playing = false;
+          release_stage();
+        }, 320);
+      });
+    }
+
+    function on_leave_end(event) {
+      if (event.target !== stage || event.propertyName !== "transform") {
+        return;
+      }
+      finish_leave();
+    }
+
+    stage.addEventListener("transitionend", on_leave_end);
+    window.setTimeout(finish_leave, 380);
+  }
+
+  /**
    * 손가락이 닿은 자리를 기억합니다. 손가락이 둘 이상이면 넘기지 않습니다.
    */
   function on_swipe_start(event) {
     try {
-      if (!event.touches || event.touches.length !== 1) {
+      if (is_slide_playing || !event.touches || event.touches.length !== 1) {
         is_swipe_tracking = false;
         return;
       }
@@ -256,7 +390,7 @@
   }
 
   /**
-   * 가로 밀기가 분명하면 브라우저가 페이지를 옆으로 당기지 않게 합니다.
+   * 가로 밀기가 분명하면 본문이 손가락을 조금 따라갑니다.
    * 세로가 더 크면 글을 읽는 스크롤이므로 그대로 둡니다.
    */
   function on_swipe_move(event) {
@@ -267,16 +401,18 @@
       const touch = event.touches[0];
       const delta_x = touch.clientX - swipe_start_x;
       const delta_y = touch.clientY - swipe_start_y;
-      if (Math.abs(delta_x) > 12 && Math.abs(delta_x) > Math.abs(delta_y)) {
-        event.preventDefault();
+      if (Math.abs(delta_x) <= 12 || Math.abs(delta_x) <= Math.abs(delta_y)) {
+        return;
       }
+      event.preventDefault();
+      move_stage(follow_shift(delta_x), false);
     } catch (error) {
       console.error("화면 밀기를 따라가지 못했습니다.", error);
     }
   }
 
   /**
-   * 손을 뗐을 때 가로 70px 이상, 세로보다 크고, 0.4초 안이면 화면을 바꿉니다.
+   * 손을 뗐을 때 가로 70px 이상, 세로보다 크고, 0.4초 안이면 화면을 넘깁니다.
    */
   function on_swipe_end(event) {
     try {
@@ -286,30 +422,35 @@
       is_swipe_tracking = false;
       const touch = event.changedTouches && event.changedTouches[0];
       if (!touch) {
+        spring_stage_back();
         return;
       }
       const delta_x = touch.clientX - swipe_start_x;
       const delta_y = touch.clientY - swipe_start_y;
       const elapsed_ms = Date.now() - swipe_start_at;
-      if (elapsed_ms > SWIPE_MAX_MS || Math.abs(delta_x) <= Math.abs(delta_y)) {
-        return;
-      }
       const next_design = design_for_swipe(delta_x);
-      if (!next_design) {
+      if (elapsed_ms > SWIPE_MAX_MS || Math.abs(delta_x) <= Math.abs(delta_y) || !next_design) {
+        spring_stage_back();
         return;
       }
-      commit_design(next_design);
+      play_design_slide(next_design, delta_x);
     } catch (error) {
       is_swipe_tracking = false;
+      is_slide_playing = false;
+      release_stage();
       console.error("화면을 밀어서 바꾸지 못했습니다. 위쪽 버튼을 눌러 주세요.", error);
     }
   }
 
   /**
-   * 터치가 끊기면 진행 중인 밀기를 버립니다.
+   * 터치가 끊기면 진행 중인 밀기를 버리고 본문을 되돌립니다.
    */
   function on_swipe_cancel() {
+    if (!is_swipe_tracking) {
+      return;
+    }
     is_swipe_tracking = false;
+    spring_stage_back();
   }
 
   /**

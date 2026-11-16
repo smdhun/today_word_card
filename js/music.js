@@ -208,7 +208,7 @@
       return;
     }
     analyser.getByteFrequencyData(frequency_bins);
-    const meters = document.querySelectorAll(".music_track.is_playing .music_meter, .music_level:not([hidden])");
+    const meters = document.querySelectorAll(".music_track.is_playing .music_meter, .music_level.is_on");
     meters.forEach(paint_meter);
   }
 
@@ -279,7 +279,10 @@
       return;
     }
     const is_playing = !audio.paused && !audio.ended;
-    remain.hidden = !is_playing;
+    /* 숨김 속성은 자리를 없애므로, 보이기만 끄고 칸은 유지합니다. */
+    remain.hidden = false;
+    remain.classList.toggle("is_on", is_playing);
+    remain.setAttribute("aria-hidden", is_playing ? "false" : "true");
     if (!is_playing || !Number.isFinite(audio.duration)) {
       remain.textContent = "00:00";
       return;
@@ -304,7 +307,8 @@
     toggle.classList.toggle("is_playing", is_playing);
     const level = document.getElementById("music_level");
     if (level) {
-      level.hidden = !is_playing;
+      level.hidden = false;
+      level.classList.toggle("is_on", is_playing);
     }
     update_remain();
   }
@@ -457,6 +461,39 @@
   }
 
   /**
+   * 목록을 열 때 재생 중인 곡이 보이도록 맞춥니다.
+   * 이미 보이면 목록은 움직이지 않습니다.
+   */
+  function reveal_playing_track() {
+    try {
+      const list = document.getElementById("music_list");
+      if (!list) {
+        console.error("재생 목록을 찾지 못했습니다.");
+        return;
+      }
+      const playing = list.querySelector(".music_track.is_playing");
+      if (!playing) {
+        return;
+      }
+      const item = playing.closest("li") || playing;
+      const list_rect = list.getBoundingClientRect();
+      const item_rect = item.getBoundingClientRect();
+      if (list_rect.height <= 0) {
+        return;
+      }
+      const is_above = item_rect.top < list_rect.top;
+      const is_below = item_rect.bottom > list_rect.bottom + 1;
+      if (!is_above && !is_below) {
+        return;
+      }
+      const delta = (item_rect.top + item_rect.height / 2) - (list_rect.top + list_rect.height / 2);
+      list.scrollTop += delta;
+    } catch (error) {
+      console.error("재생 중인 곡으로 목록을 맞추지 못했습니다. 목록을 직접 밀어 확인해 주세요.", error);
+    }
+  }
+
+  /**
    * 목록을 열거나 닫습니다. 음악을 멈추지는 않습니다.
    */
   function set_panel_open(panel, toggle, next_open) {
@@ -465,6 +502,7 @@
     toggle.setAttribute("aria-expanded", is_open ? "true" : "false");
     if (is_open) {
       lock_background_scroll();
+      reveal_playing_track();
       return;
     }
     unlock_background_scroll();
