@@ -162,6 +162,10 @@
   let is_swipe_tracking = false;
   let is_slide_playing = false;
   let slide_token = 0;
+  let slide_preview = null;
+  let preview_direction = 0;
+  let preview_travel = 0;
+  let cached_css_text = "";
 
   /**
    * 버튼과 밀기가 같은 길로 화면을 바꿉니다.
@@ -254,8 +258,8 @@
   }
 
   /**
-   * 손가락 방향으로 화면이 조금 따라갈 거리를 구합니다.
-   * 더 갈 화면이 없으면 조금만 밀렸다가 돌아옵니다.
+   * 손가락이 연 자리만큼 화면을 옮깁니다.
+   * 넘어갈 수 있으면 손가락과 같게 움직이고, 없으면 조금만 밀립니다.
    */
   function follow_shift(delta_x) {
     const current_design = document.documentElement.dataset.design;
@@ -263,10 +267,15 @@
       (delta_x < 0 && current_design === root.DESIGN_AURORA) ||
       (delta_x > 0 && current_design === root.DESIGN_TAROT)
     );
-    const gain = can_leave ? 0.78 : 0.16;
-    const max_shift = can_leave ? SLIDE_FOLLOW_MAX : 24;
-    const shifted = delta_x * gain;
-    return Math.max(-max_shift, Math.min(max_shift, shifted));
+    if (!can_leave) {
+      const rubbed = delta_x * 0.16;
+      return Math.max(-24, Math.min(24, rubbed));
+    }
+    const travel = preview_travel || SLIDE_FOLLOW_MAX;
+    if (delta_x < 0) {
+      return Math.max(delta_x, -travel);
+    }
+    return Math.min(delta_x, travel);
   }
 
   /**
@@ -290,25 +299,42 @@
     const stage = stage_element();
     document.documentElement.classList.remove("is_design_sliding", "is_slide_to_tarot", "is_slide_to_aurora");
     document.documentElement.style.removeProperty("--slide_from");
+    remove_preview();
     if (!stage) {
       return;
     }
     stage.classList.remove("is_design_sliding");
+    stage.style.transitionDuration = "";
+    stage.style.transition = "";
     stage.style.transform = "";
   }
 
   /**
-   * 화면을 바꾸지 않으면 조금 밀렸던 본문이 제자리로 돌아옵니다.
+   * 화면을 바꾸지 않으면 밀었던 두 화면이 제자리로 돌아옵니다.
    */
   function spring_stage_back() {
-    const token = slide_token;
-    if (!move_stage(0, true)) {
+    const stage = stage_element();
+    const token = ++slide_token;
+    if (!stage) {
+      remove_preview();
       return;
     }
+    is_slide_playing = true;
+    document.documentElement.classList.add("is_design_sliding");
+    stage.classList.add("is_design_sliding");
+    if (slide_preview && preview_direction) {
+      slide_preview.classList.add("is_design_sliding");
+    }
+    void stage.offsetWidth;
+    stage.style.transform = "translate3d(0, 0, 0)";
+    if (slide_preview && preview_direction) {
+      slide_preview.style.transform = "translate3d(" + (-preview_direction * preview_travel) + "px, 0, 0)";
+    }
     window.setTimeout(function clear_spring() {
-      if (token !== slide_token || is_slide_playing) {
+      if (token !== slide_token) {
         return;
       }
+      is_slide_playing = false;
       release_stage();
     }, 580);
   }
@@ -322,13 +348,93 @@
   }
 
   /**
-   * 지금 화면의 모양을 다른 문서에 붙여, 디자인을 바꿔도 옛 모습이 남게 합니다.
+   * 옆에 붙여 둔 다음 화면을 치웁니다.
+   */
+  function remove_preview() {
+    if (slide_preview) {
+      slide_preview.remove();
+      slide_preview = null;
+    }
+    preview_direction = 0;
+    preview_travel = 0;
+  }
+
+  /**
+   * 같은 주소의 스타일을 한 번만 모아, 옆 화면을 같은 모습으로 그립니다.
+   */
+  function collect_css_text() {
+    if (cached_css_text) {
+      return cached_css_text;
+    }
+    const css_parts = [];
+    Array.prototype.forEach.call(document.styleSheets, function copy_sheet(sheet) {
+      try {
+        Array.prototype.forEach.call(sheet.cssRules, function copy_rule(rule) {
+          css_parts.push(rule.cssText);
+        });
+      } catch (error) {
+        /* 다른 주소의 글꼴 파일은 규칙으로 복사되지 않습니다. */
+      }
+    });
+    cached_css_text = css_parts.join("\n");
+    return cached_css_text;
+  }
+
+  /**
+   * 밀리는 방향의 다음 화면을 바로 옆에 붙여 둡니다.
+   */
+  function ensure_preview(direction) {
+    if (slide_preview || !direction) {
+      return;
+    }
+    const stage = stage_element();
+    if (!stage) {
+      return;
+    }
+    const current_design = document.documentElement.dataset.design;
+    const next_design = direction < 0 ? root.DESIGN_TAROT : root.DESIGN_AURORA;
+    const can_show = (
+      (direction < 0 && current_design === root.DESIGN_AURORA) ||
+      (direction > 0 && current_design === root.DESIGN_TAROT)
+    );
+    if (!can_show) {
+      return;
+    }
+    const from_x = read_stage_shift(stage);
+    const rect = stage.getBoundingClientRect();
+    preview_travel = Math.round(rect.width) || 320;
+    preview_direction = direction;
+    slide_preview = build_slide_ghost(stage, next_design, from_x);
+    if (!slide_preview) {
+      preview_direction = 0;
+      preview_travel = 0;
+      return;
+    }
+    slide_preview.style.transform = "translate3d(" + (from_x - direction * preview_travel) + "px, 0, 0)";
+  }
+
+  /**
+   * 지금 화면과 옆 화면을 같은 거리로 옮깁니다.
+   */
+  function place_pair(shift_x, is_animated) {
+    const stage = move_stage(shift_x, is_animated);
+    if (!slide_preview || !preview_direction) {
+      return stage;
+    }
+    slide_preview.classList.toggle("is_design_sliding", Boolean(is_animated));
+    const preview_x = shift_x - preview_direction * preview_travel;
+    slide_preview.style.transform = "translate3d(" + Math.round(preview_x) + "px, 0, 0)";
+    return stage;
+  }
+
+  /**
+   * 고른 디자인의 화면을 다른 문서에 붙여, 옆에서 함께 밀리게 합니다.
    */
   function build_slide_ghost(stage, design_name, from_x) {
     try {
       const rect = stage.getBoundingClientRect();
       const frame = document.createElement("iframe");
-      const css_parts = [];
+      const css_parts = [collect_css_text()];
       frame.className = "stage_ghost_frame";
       frame.setAttribute("aria-hidden", "true");
       frame.tabIndex = -1;
@@ -336,17 +442,9 @@
       frame.style.left = (rect.left - from_x) + "px";
       frame.style.width = rect.width + "px";
       frame.style.height = rect.height + "px";
+      frame.style.background = design_name === root.DESIGN_AURORA ? "#0f131d" : "#16130a";
       frame.style.transform = "translate3d(" + from_x + "px, 0, 0)";
       document.body.appendChild(frame);
-      Array.prototype.forEach.call(document.styleSheets, function copy_sheet(sheet) {
-        try {
-          Array.prototype.forEach.call(sheet.cssRules, function copy_rule(rule) {
-            css_parts.push(rule.cssText);
-          });
-        } catch (error) {
-          /* 다른 주소의 글꼴 파일은 규칙으로 복사되지 않습니다. */
-        }
-      });
       const font_links = [];
       document.querySelectorAll("link[rel='stylesheet']").forEach(function copy_font(link) {
         if (link.href && link.href.indexOf("fonts.googleapis.com") !== -1) {
@@ -363,7 +461,7 @@
         "<!DOCTYPE html><html data-design=\"" + design_name + "\"><head>" +
         font_links.join("") +
         "<style>" + css_parts.join("\n") +
-        "html,body{margin:0;background:transparent;overflow:hidden;}" +
+        "html,body{margin:0;overflow:hidden;}" +
         ".stage{width:100%!important;max-width:none!important;margin:0!important;transform:none!important;}" +
         "</style></head><body>" + stage.outerHTML + "</body></html>"
       );
@@ -420,7 +518,7 @@
   }
 
   /**
-   * 손가락을 뗀 자리에서 옛 화면과 새 화면이 이어져 넘어갑니다.
+   * 손가락을 뗀 자리에서 옆 화면이 가운데로 들어올 때까지 이어 밀립니다.
    */
   function play_design_slide(next_design, delta_x) {
     const stage = stage_element();
@@ -429,41 +527,46 @@
       commit_design(next_design);
       return;
     }
-    if (typeof document.startViewTransition !== "function") {
+    if (!slide_preview) {
       play_joined_slide(next_design, delta_x);
       return;
     }
     const token = ++slide_token;
     is_slide_playing = true;
+    const direction = delta_x < 0 ? -1 : 1;
+    const travel = preview_travel || Math.round(stage.getBoundingClientRect().width) || 320;
     const from_x = read_stage_shift(stage);
-    const is_to_tarot = delta_x < 0;
-    const root_element = document.documentElement;
-    root_element.classList.add("is_design_sliding");
-    root_element.classList.toggle("is_slide_to_tarot", is_to_tarot);
-    root_element.classList.toggle("is_slide_to_aurora", !is_to_tarot);
-    root_element.style.setProperty("--slide_from", from_x + "px");
-    let transition = null;
-    try {
-      transition = document.startViewTransition(function update_design() {
-        stage.classList.remove("is_design_sliding");
-        stage.style.transform = "";
-        commit_design(next_design);
-      });
-    } catch (error) {
-      console.error("화면 전환을 부드럽게 열지 못했습니다. 화면만 바꿉니다.", error);
+    const end_shift = direction * travel;
+    const distance = Math.abs(end_shift - from_x);
+    const duration_ms = Math.max(180, Math.min(540, Math.round(distance / travel * 540)));
+    if (distance < 2) {
+      stage.classList.remove("is_design_sliding");
+      commit_design(next_design);
+      stage.style.transform = "";
       is_slide_playing = false;
       release_stage();
-      commit_design(next_design);
       return;
     }
-    function finish_slide() {
+    stage.style.transitionDuration = duration_ms + "ms";
+    slide_preview.style.transitionDuration = duration_ms + "ms";
+    stage.classList.add("is_design_sliding");
+    slide_preview.classList.add("is_design_sliding");
+    void stage.offsetWidth;
+    stage.style.transform = "translate3d(" + end_shift + "px, 0, 0)";
+    slide_preview.style.transform = "translate3d(" + (end_shift - direction * travel) + "px, 0, 0)";
+    window.setTimeout(function finish_settle() {
       if (token !== slide_token) {
         return;
       }
+      stage.style.transition = "none";
+      if (slide_preview) {
+        slide_preview.style.transition = "none";
+      }
+      commit_design(next_design);
+      stage.style.transform = "";
       is_slide_playing = false;
       release_stage();
-    }
-    transition.finished.then(finish_slide, finish_slide);
+    }, duration_ms + 40);
   }
 
   /**
@@ -491,7 +594,7 @@
   }
 
   /**
-   * 가로 밀기가 분명하면 본문이 손가락을 조금 따라갑니다.
+   * 가로로 밀면 본문이 손가락과 같이 움직이고, 밀려 난 자리에 다음 화면이 보입니다.
    * 세로가 더 크면 글을 읽는 스크롤이므로 그대로 둡니다.
    */
   function on_swipe_move(event) {
@@ -506,14 +609,20 @@
         return;
       }
       event.preventDefault();
-      move_stage(follow_shift(delta_x), false);
+      const current_design = document.documentElement.dataset.design;
+      if (delta_x < 0 && current_design === root.DESIGN_AURORA) {
+        ensure_preview(-1);
+      } else if (delta_x > 0 && current_design === root.DESIGN_TAROT) {
+        ensure_preview(1);
+      }
+      place_pair(follow_shift(delta_x), false);
     } catch (error) {
       console.error("화면 밀기를 따라가지 못했습니다.", error);
     }
   }
 
   /**
-   * 손을 뗐을 때 가로 70px 이상, 세로보다 크고, 0.4초 안이면 화면을 넘깁니다.
+   * 손을 뗐을 때, 빠르게 밀었거나 화면을 충분히 밀었으면 옆 화면으로 이어 넘깁니다.
    */
   function on_swipe_end(event) {
     try {
@@ -529,8 +638,14 @@
       const delta_x = touch.clientX - swipe_start_x;
       const delta_y = touch.clientY - swipe_start_y;
       const elapsed_ms = Date.now() - swipe_start_at;
+      const stage = stage_element();
+      const shift_x = stage ? read_stage_shift(stage) : 0;
+      const travel = preview_travel || SLIDE_FOLLOW_MAX;
+      const is_horizontal = Math.abs(delta_x) > Math.abs(delta_y);
+      const is_flung = elapsed_ms <= SWIPE_MAX_MS && Math.abs(delta_x) >= SWIPE_MIN_X;
+      const is_pushed = Math.abs(shift_x) >= Math.max(SWIPE_MIN_X, travel * 0.33);
       const next_design = design_for_swipe(delta_x);
-      if (elapsed_ms > SWIPE_MAX_MS || Math.abs(delta_x) <= Math.abs(delta_y) || !next_design) {
+      if (!is_horizontal || !next_design || (!is_flung && !is_pushed)) {
         spring_stage_back();
         return;
       }
