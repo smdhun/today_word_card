@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261117i">
+  <link rel="stylesheet" href="css/style.css?v=20261117j">
   <link rel="stylesheet" href="css/aurora.css">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
@@ -208,17 +208,13 @@
           <!-- 타로에서만 보입니다. 처음에는 뒷면이고, 뒤집으면 앞면과 질문이 나옵니다. -->
           <div id="tarot_stage" class="tarot_stage">
             <div class="tarot_frame">
-              <img id="tarot_image" class="tarot_image" src="images/tarot/back.jpg?v=20261116m" alt="덮인 타로 카드" width="768" height="1024">
-              <!-- 뒷면 장식. 초승달 기울기와 원 주변 별 반짝임만 담당합니다. -->
+              <img id="tarot_image" class="tarot_image" src="images/tarot/back_plain.jpg?v=20261117k" alt="덮인 타로 카드" width="768" height="1024">
+              <!-- 뒷면 장식. 두 원은 그대로 두고, 그 사이 문양만 그립니다. -->
               <div class="tarot_back_motion" aria-hidden="true">
+                <canvas id="tarot_weave" class="tarot_weave"></canvas>
+                <canvas id="tarot_glint" class="tarot_weave"></canvas>
                 <div class="tarot_moon_cover"></div>
                 <div class="tarot_moon"></div>
-                <div class="tarot_stars">
-                  <span></span><span></span><span></span><span></span>
-                  <span></span><span></span><span></span><span></span>
-                  <span></span><span></span><span></span><span></span>
-                  <span></span><span></span>
-                </div>
               </div>
             </div>
           </div>
@@ -464,7 +460,7 @@
   <script src="js/vignettes.js"></script>
   <script src="js/faces.js"></script>
   <script src="js/tarot_cards.js?v=20261115r"></script>
-  <script src="js/tarot.js?v=20261117c"></script>
+  <script src="js/tarot.js?v=20261117k"></script>
   <script src="js/validate.js"></script>
   <script src="js/picker.js?v=20261115k"></script>
   <script src="js/storage.js"></script>

@@ -7,6 +7,250 @@
 
   let deck = [];
   let deck_index = 0;
+  let weave_token = 0;
+  let weave_ready = null;
+
+  /**
+   * 움직임을 줄인 화면이면 그리지 않고 완성된 뒷면을 씁니다.
+   */
+  function prefers_still_motion() {
+    return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  /**
+   * 원 사이 문양 그림을 한 번만 불러 옵니다.
+   */
+  function load_weave_images() {
+    if (weave_ready) {
+      return weave_ready;
+    }
+    weave_ready = new Promise(function (resolve, reject) {
+      const filigree = new Image();
+      filigree.onload = function () {
+        resolve(filigree);
+      };
+      filigree.onerror = function () {
+        reject(new Error("weave image"));
+      };
+      filigree.src = root.TAROT_FOLDER + "filigree.png?v=20261117k";
+    });
+    return weave_ready;
+  }
+
+  /**
+   * 얽힌 선을 짧은 조각으로 나눕니다. 조각은 여기저기서 이어집니다.
+   */
+  function build_line_pieces(source_canvas) {
+    const width = source_canvas.width;
+    const height = source_canvas.height;
+    const cell = 7;
+    const cols = Math.ceil(width / cell);
+    const rows = Math.ceil(height / cell);
+    const sample = source_canvas.getContext("2d").getImageData(0, 0, width, height).data;
+    const alive = new Uint8Array(cols * rows);
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        if (sample[((y * width + x) * 4) + 3] > 24) {
+          alive[(Math.floor(y / cell) * cols) + Math.floor(x / cell)] = 1;
+        }
+      }
+    }
+
+    const remaining = [];
+    for (let index = 0; index < alive.length; index += 1) {
+      if (alive[index]) {
+        remaining.push(index);
+      }
+    }
+    for (let index = remaining.length - 1; index > 0; index -= 1) {
+      const swap_index = Math.floor(random_unit() * (index + 1));
+      const held = remaining[index];
+      remaining[index] = remaining[swap_index];
+      remaining[swap_index] = held;
+    }
+
+    const open = new Set(remaining);
+    const pieces = [];
+    const directions = [-1, 1, -cols, cols];
+
+    while (open.size && remaining.length) {
+      const start = remaining.pop();
+      if (!open.has(start)) {
+        continue;
+      }
+      open.delete(start);
+      const piece = [start];
+      let current = start;
+      let direction = directions[Math.floor(random_unit() * directions.length)];
+      const length = 8 + Math.floor(random_unit() * 18);
+      for (let step = 0; step < length; step += 1) {
+        const next_list = [];
+        directions.forEach(function (offset) {
+          const next = current + offset;
+          if (!open.has(next)) {
+            return;
+          }
+          const same_row = offset === -1 || offset === 1;
+          if (same_row && Math.floor(next / cols) !== Math.floor(current / cols)) {
+            return;
+          }
+          next_list.push(offset);
+        });
+        if (!next_list.length) {
+          break;
+        }
+        const preferred = next_list.indexOf(direction) >= 0 && random_unit() < 0.72
+          ? direction
+          : next_list[Math.floor(random_unit() * next_list.length)];
+        current += preferred;
+        direction = preferred;
+        open.delete(current);
+        piece.push(current);
+      }
+      pieces.push(piece);
+    }
+
+    const order = [];
+    pieces.forEach(function (piece) {
+      piece.forEach(function (index) {
+        order.push(index);
+      });
+    });
+    return { order: order, cell: cell, cols: cols };
+  }
+
+  /**
+   * 그리기를 멈춥니다. 앞면으로 바꿀 때 호출합니다.
+   */
+  function clear_canvas(canvas_id) {
+    const canvas = document.getElementById(canvas_id);
+    if (!canvas) {
+      return;
+    }
+    const context = canvas.getContext("2d");
+    if (context) {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  /**
+   * 그리기를 멈춥니다. 앞면으로 바꿀 때 호출합니다.
+   */
+  function stop_back_weave() {
+    weave_token += 1;
+    clear_canvas("tarot_weave");
+    clear_canvas("tarot_glint");
+  }
+
+  /**
+   * 두 원 사이의 문양을 흩어서 그리고, 그려지는 자리에 약한 빛을 남깁니다.
+   */
+  function start_back_weave() {
+    const token = weave_token + 1;
+    weave_token = token;
+    const canvas = document.getElementById("tarot_weave");
+    const glint = document.getElementById("tarot_glint");
+    if (!canvas || !glint) {
+      return;
+    }
+    load_weave_images().then(function (filigree) {
+      if (token !== weave_token) {
+        return;
+      }
+      const width = filigree.naturalWidth;
+      const height = filigree.naturalHeight;
+      if (!width || !height) {
+        throw new Error("empty weave");
+      }
+      const source = document.createElement("canvas");
+      source.width = width;
+      source.height = height;
+      source.getContext("2d").drawImage(filigree, 0, 0);
+      const lines = build_line_pieces(source);
+      canvas.width = width;
+      canvas.height = height;
+      glint.width = width;
+      glint.height = height;
+      const view = canvas.getContext("2d");
+      const glint_view = glint.getContext("2d");
+      view.clearRect(0, 0, width, height);
+      glint_view.clearRect(0, 0, width, height);
+
+      const started = performance.now();
+      const line_ms = 4600;
+      let drawn = 0;
+      const glints = [];
+
+      function paint_cell(index, now) {
+        const x = (index % lines.cols) * lines.cell;
+        const y = Math.floor(index / lines.cols) * lines.cell;
+        view.drawImage(source, x, y, lines.cell, lines.cell, x, y, lines.cell, lines.cell);
+        if (random_unit() < 0.018) {
+          glints.push({
+            x: x + lines.cell / 2,
+            y: y + lines.cell / 2,
+            born: now,
+            life: 560
+          });
+        }
+      }
+
+      function paint_glints(now) {
+        glint_view.clearRect(0, 0, width, height);
+        const alive = [];
+        glints.forEach(function (glint_dot) {
+          const age = (now - glint_dot.born) / glint_dot.life;
+          if (age >= 1) {
+            return;
+          }
+          alive.push(glint_dot);
+          const alpha = Math.sin(Math.PI * age);
+          glint_view.fillStyle = "#f4e6c2";
+          glint_view.globalAlpha = alpha * 0.22;
+          glint_view.beginPath();
+          glint_view.arc(glint_dot.x, glint_dot.y, 18, 0, Math.PI * 2);
+          glint_view.fill();
+          glint_view.globalAlpha = alpha * 0.55;
+          glint_view.beginPath();
+          glint_view.arc(glint_dot.x, glint_dot.y, 4, 0, Math.PI * 2);
+          glint_view.fill();
+        });
+        glints.length = 0;
+        alive.forEach(function (glint_dot) {
+          glints.push(glint_dot);
+        });
+        glint_view.globalAlpha = 1;
+      }
+
+      function draw_lines(now) {
+        if (token !== weave_token) {
+          return;
+        }
+        const progress = Math.min(1, (now - started) / line_ms);
+        const eased = progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        const target = Math.floor(eased * lines.order.length);
+        while (drawn < target) {
+          paint_cell(lines.order[drawn], now);
+          drawn += 1;
+        }
+        paint_glints(now);
+        if (progress < 1 || glints.length) {
+          window.requestAnimationFrame(draw_lines);
+        }
+      }
+
+      window.requestAnimationFrame(draw_lines);
+    }).catch(function (error) {
+      console.error("카드 무늬를 그리지 못했습니다. 완성된 뒷면을 보여 줍니다.", error);
+      const image = document.getElementById("tarot_image");
+      if (image && root.TAROT_FOLDER && root.TAROT_BACK) {
+        image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";
+      }
+    });
+  }
 
   /**
    * 카드가 이름, 그림, 한 줄, 질문을 모두 가졌는지 확인합니다.
@@ -83,7 +327,13 @@
         return;
       }
       image.alt = "덮인 타로 카드";
-      image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";
+      if (prefers_still_motion()) {
+        stop_back_weave();
+        image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";
+      } else {
+        image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261117k";
+        start_back_weave();
+      }
       reading.hidden = true;
       set_draw_label("오늘의 카드 고르기");
       show_tarot_status("");
@@ -135,6 +385,7 @@
         console.error("타로 카드 그림을 불러오지 못했습니다.", card.file);
         show_tarot_status("카드 그림을 불러오지 못했습니다. 다시 뒤집어 주세요.");
       };
+      stop_back_weave();
       image.alt = card.name + " 카드";
       image.src = root.TAROT_FOLDER + card.file + "?v=20261115q";
       name.textContent = card.name;
