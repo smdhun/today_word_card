@@ -349,6 +349,29 @@
   /**
    * 재생 확인 창을 엽니다.
    */
+  /**
+   * 움직임 줄이기를 켠 브라우저인지 확인합니다.
+   */
+  function prefers_still_motion() {
+    try {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch (error) {
+      console.error("움직임 설정을 확인하지 못했습니다.", error);
+      return false;
+    }
+  }
+
+  /**
+   * 떠오르는 창이 끝나면 강아지를 보여 줍니다.
+   */
+  function show_offer_dog(offer) {
+    if (!offer) {
+      return;
+    }
+    offer.classList.remove("is_rising");
+    offer.classList.add("is_dog_ready");
+  }
+
   function open_music_offer() {
     const offer = document.getElementById("music_offer");
     const yes_button = document.getElementById("music_offer_yes");
@@ -356,9 +379,21 @@
       console.error("음악 재생 확인 창을 찾지 못했습니다.");
       return;
     }
-    is_offer_open = true;
-    offer.hidden = false;
-    yes_button.focus();
+    try {
+      is_offer_open = true;
+      offer.classList.remove("is_rising", "is_dog_ready");
+      offer.hidden = false;
+      if (prefers_still_motion()) {
+        show_offer_dog(offer);
+      } else {
+        offer.classList.add("is_rising");
+      }
+      yes_button.focus();
+    } catch (error) {
+      console.error("음악 재생 확인 창을 열지 못했습니다. 잠시 후 다시 열어 주세요.", error);
+      offer.hidden = false;
+      show_offer_dog(offer);
+    }
   }
 
   /**
@@ -370,6 +405,7 @@
       return;
     }
     is_offer_open = false;
+    offer.classList.remove("is_rising", "is_dog_ready");
     offer.hidden = true;
   }
 
@@ -770,6 +806,12 @@
       if (offer && offer_yes && offer_no) {
         offer_yes.addEventListener("click", accept_music_offer);
         offer_no.addEventListener("click", close_music_offer);
+        offer.addEventListener("animationend", function on_offer_risen(event) {
+          if (event.animationName !== "music_offer_rise") {
+            return;
+          }
+          show_offer_dog(offer);
+        });
         offer.addEventListener("click", function on_offer_backdrop(event) {
           if (event.target === offer) {
             close_music_offer();

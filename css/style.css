@@ -482,6 +482,37 @@ html.is_music_list_open .top_bar {
   display: none;
 }
 
+/* 창이 아래에서 천천히 떠오릅니다. 강아지는 이 움직임이 끝난 뒤에 나옵니다. */
+.music_offer.is_rising {
+  animation: music_offer_dim 1.4s ease-out both;
+}
+
+.music_offer.is_rising .music_offer_card {
+  animation: music_offer_rise 1.4s cubic-bezier(0.22, 0.82, 0.2, 1) both;
+}
+
+@keyframes music_offer_dim {
+  from {
+    background-color: rgba(8, 10, 16, 0);
+  }
+
+  to {
+    background-color: rgba(8, 10, 16, 0.62);
+  }
+}
+
+@keyframes music_offer_rise {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .music_offer_card {
   position: relative;
   width: min(360px, 100%);
@@ -501,6 +532,12 @@ html.is_music_list_open .top_bar {
   height: 0;
   container-type: inline-size;
   pointer-events: none;
+  opacity: 0;
+}
+
+.music_offer.is_dog_ready .music_offer_dog_track {
+  opacity: 1;
+  transition: opacity 0.7s ease;
 }
 
 .music_offer_dog {
@@ -510,6 +547,9 @@ html.is_music_list_open .top_bar {
   width: 42px;
   height: 47px;
   perspective: 220px;
+}
+
+.music_offer.is_dog_ready .music_offer_dog {
   animation: music_dog_travel 19.5s ease-in-out infinite;
 }
 
@@ -530,10 +570,13 @@ html.is_music_list_open .top_bar {
   width: 100%;
   height: 100%;
   transform-origin: center center;
-  animation: music_dog_turn 19.5s linear infinite;
   filter:
     drop-shadow(0 2px 0 rgba(176, 112, 16, 0.45))
     drop-shadow(0 6px 4px rgba(0, 0, 0, 0.22));
+}
+
+.music_offer.is_dog_ready .music_offer_dog_turn {
+  animation: music_dog_turn 19.5s linear infinite;
 }
 
 .music_offer_dog_figure {
@@ -541,8 +584,11 @@ html.is_music_list_open .top_bar {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  animation: music_dog_bob 0.7s ease-in-out infinite;
   transform-origin: center bottom;
+}
+
+.music_offer.is_dog_ready .music_offer_dog_figure {
+  animation: music_dog_bob 0.7s ease-in-out infinite;
 }
 
 /* 끝에 닿으면 바로 뒤집고, 잠시 뒤 반대쪽으로 걸어갑니다. */
@@ -1937,6 +1983,10 @@ fieldset {
   }
 
   /* 강아지는 달리지 않고 창 윗줄 가운데에 서 있습니다. */
+  .music_offer_dog_track {
+    opacity: 1;
+  }
+
   .music_offer_dog {
     left: calc(50% - 21px);
   }

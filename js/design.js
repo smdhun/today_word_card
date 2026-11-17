@@ -492,10 +492,11 @@
   /**
    * 옛 화면과 새 화면을 나란히 두고 같은 속도로 밀어서 이어 줍니다.
    */
-  function play_joined_slide(next_design, delta_x) {
+  function play_joined_slide(next_design, delta_x, duration_scale) {
     const stage = stage_element();
     const token = ++slide_token;
     is_slide_playing = true;
+    const join_ms = duration_scale === 2 ? 1200 : 600;
     const from_x = read_stage_shift(stage);
     const direction = delta_x < 0 ? -1 : 1;
     const width = Math.round(stage.getBoundingClientRect().width) || 320;
@@ -516,9 +517,11 @@
       }
       if (ghost) {
         ghost.classList.add("is_design_sliding");
+        ghost.style.transitionDuration = join_ms + "ms";
         ghost.style.transform = "translate3d(" + (from_x - stage_start) + "px, 0, 0)";
       }
       stage.classList.add("is_design_sliding");
+      stage.style.transitionDuration = join_ms + "ms";
       stage.style.transform = "translate3d(0, 0, 0)";
       window.setTimeout(function clear_join() {
         if (token !== slide_token) {
@@ -530,16 +533,17 @@
         is_slide_playing = false;
         release_stage();
         notify_aurora_swipe(next_design);
-      }, 600);
+      }, join_ms + 40);
     });
   }
 
   /**
    * 손가락을 뗀 자리에서 옆 화면이 가운데로 들어올 때까지 이어 밀립니다.
    */
-  function play_design_slide(next_design, delta_x) {
+  function play_design_slide(next_design, delta_x, duration_scale) {
     has_left_opening_tarot = true;
     const stage = stage_element();
+    const pace = duration_scale === 2 ? 2 : 1;
     if (!stage || prefers_still_motion()) {
       release_stage();
       commit_design(next_design);
@@ -547,7 +551,7 @@
       return;
     }
     if (!slide_preview) {
-      play_joined_slide(next_design, delta_x);
+      play_joined_slide(next_design, delta_x, pace);
       return;
     }
     const token = ++slide_token;
@@ -557,7 +561,7 @@
     const from_x = read_stage_shift(stage);
     const end_shift = direction * travel;
     const distance = Math.abs(end_shift - from_x);
-    const duration_ms = Math.max(180, Math.min(540, Math.round(distance / travel * 540)));
+    const duration_ms = Math.max(180, Math.min(540, Math.round(distance / travel * 540))) * pace;
     if (distance < 2) {
       stage.classList.remove("is_design_sliding");
       commit_design(next_design);
@@ -710,7 +714,7 @@
       }
       document.dispatchEvent(new CustomEvent("today_word_pause_tarot_weave"));
       ensure_preview(1);
-      play_design_slide(root.DESIGN_AURORA, SWIPE_MIN_X);
+      play_design_slide(root.DESIGN_AURORA, SWIPE_MIN_X, 2);
     } catch (error) {
       console.error("첫 화면을 오로라로 넘기지 못했습니다. 화면을 오른쪽으로 밀어 주세요.", error);
     }
