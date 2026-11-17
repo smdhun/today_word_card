@@ -166,6 +166,7 @@
   let preview_direction = 0;
   let preview_travel = 0;
   let cached_css_text = "";
+  let has_left_opening_tarot = false;
 
   /**
    * 버튼과 밀기가 같은 길로 화면을 바꿉니다.
@@ -537,6 +538,7 @@
    * 손가락을 뗀 자리에서 옆 화면이 가운데로 들어올 때까지 이어 밀립니다.
    */
   function play_design_slide(next_design, delta_x) {
+    has_left_opening_tarot = true;
     const stage = stage_element();
     if (!stage || prefers_still_motion()) {
       release_stage();
@@ -606,6 +608,7 @@
       swipe_start_y = touch.clientY;
       swipe_start_at = Date.now();
       is_swipe_tracking = true;
+      has_left_opening_tarot = true;
       if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
         document.dispatchEvent(new CustomEvent("today_word_pause_tarot_weave"));
       }
@@ -692,6 +695,28 @@
   }
 
   /**
+   * 처음 타로를 1초 보여 준 뒤, 오른쪽 밀기와 같이 오로라로 넘깁니다.
+   */
+  function play_opening_slide() {
+    try {
+      if (has_left_opening_tarot || is_slide_playing) {
+        return;
+      }
+      if (document.documentElement.dataset.design !== root.DESIGN_TAROT) {
+        return;
+      }
+      if (is_overlay_open("music_offer") || is_overlay_open("camera_sheet")) {
+        return;
+      }
+      document.dispatchEvent(new CustomEvent("today_word_pause_tarot_weave"));
+      ensure_preview(1);
+      play_design_slide(root.DESIGN_AURORA, SWIPE_MIN_X);
+    } catch (error) {
+      console.error("첫 화면을 오로라로 넘기지 못했습니다. 화면을 오른쪽으로 밀어 주세요.", error);
+    }
+  }
+
+  /**
    * 휴대폰 터치로 오로라와 타로를 넘깁니다. 마우스는 버튼을 그대로 씁니다.
    */
   function bind_design_swipe() {
@@ -725,6 +750,7 @@
       mark_pressed_button(is_known_design(current_design) ? current_design : root.DESIGN_DEFAULT);
       show_design_hint();
       bind_design_swipe();
+      window.setTimeout(play_opening_slide, 1000);
     } catch (error) {
       console.error("디자인 버튼을 연결하지 못했습니다.", error);
     }

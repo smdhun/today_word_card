@@ -780,7 +780,7 @@
             close_music_offer();
           }
         });
-        /* 타로에서 손가락으로 밀어 오로라로 넘어간 뒤에 한 번만 묻습니다. */
+        /* 첫 타로가 오로라로 넘어간 뒤에 한 번만 묻습니다. */
         let has_asked_music = false;
         document.addEventListener("today_word_aurora_swipe", function on_aurora_swipe() {
           if (has_asked_music || is_offer_open) {
