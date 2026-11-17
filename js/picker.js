@@ -300,6 +300,32 @@
   };
 
   /**
+   * 오로라에 올릴 캐릭터 한 장을 고릅니다.
+   * 지금 화면이 타로여도 오로라와 같은 순서로 골라, 넘어갈 때 그림이 바뀌지 않게 합니다.
+   */
+  root.pick_face_vignette = function pick_face_vignette(mood_id, offset) {
+    try {
+      const face_list = root.FACE_VIGNETTES ? root.FACE_VIGNETTES[mood_id] : null;
+      if (!Array.isArray(face_list) || face_list.length === 0) {
+        return null;
+      }
+      const safe_offset = Number.isInteger(offset) && offset >= 0 ? offset : 0;
+      const seed_key = [session_seed, mood_id, root.DESIGN_AURORA, "vignette"].join("|");
+      const face = pick_from_deck(face_list, seed_key, safe_offset);
+      if (!face || !face.file || !face.caption) {
+        return null;
+      }
+      return {
+        src: (root.FACE_FOLDER || "") + face.file,
+        caption: face.caption,
+      };
+    } catch (error) {
+      console.error("오로라 캐릭터를 고르지 못했습니다.", error);
+      return null;
+    }
+  };
+
+  /**
    * 기분에 맞는 그림 한 장을 고릅니다.
    * 그림은 덤이라서, 고르지 못하면 null을 돌려주고 카드는 그대로 만듭니다.
    */

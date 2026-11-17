@@ -225,17 +225,61 @@
   }
 
   /**
+   * 달빛 풍경 주소인지 확인합니다. 오로라 캐릭터 칸에는 이 사진을 올리지 않습니다.
+   */
+  function is_scene_photo(src) {
+    return typeof src === "string" && src.indexOf("images/vignettes/") !== -1;
+  }
+
+  /**
+   * 숨겨진 그림 칸에 오로라 캐릭터를 미리 겁니다.
+   * 화면이 넘어갈 때 풍경이 보이지 않고, 도착한 캐릭터와 같은 얼굴이 나오게 합니다.
+   */
+  function place_hidden_aurora_face() {
+    try {
+      if (typeof root.pick_face_vignette !== "function" || !els.vignette_image) {
+        return;
+      }
+      const mood_id = current_card && current_card.mood && current_card.mood.id
+        ? current_card.mood.id
+        : (root.MOOD_DEFAULT || "joy");
+      const offset = current_card && Number.isInteger(current_card.offset) ? current_card.offset : 0;
+      const face = root.pick_face_vignette(mood_id, offset);
+      if (!face || !face.src || is_scene_photo(face.src)) {
+        return;
+      }
+      if (els.vignette_image.getAttribute("src") === face.src) {
+        return;
+      }
+      els.vignette_image.src = face.src;
+      els.vignette_image.alt = "오로라 캐릭터, " + face.caption;
+    } catch (error) {
+      console.error("오로라 캐릭터를 미리 걸지 못했습니다. 화면을 넘긴 뒤 다시 확인해 주세요.", error);
+    }
+  }
+
+  /**
    * 다 불러온 새 그림과 캡션을 화면에 겁니다.
    * 지금 그림을 바닥에 깔아 두고 새 그림을 그 위에서 서서히 나타나게 해서, 두 그림이 겹쳐 바뀌어 보입니다.
    */
   function show_vignette(vignette) {
     try {
-      const is_previous_loaded = els.vignette_image.naturalWidth > 0;
       const is_tarot = document.documentElement.dataset.design === root.DESIGN_TAROT;
+      // 이 칸은 오로라 캐릭터 자리입니다. 달빛 풍경은 넘기는 동안에도 올리지 않습니다.
+      if (is_scene_photo(vignette.src)) {
+        els.card_vignette.style.backgroundImage = "";
+        if (is_tarot) {
+          place_hidden_aurora_face();
+        }
+        return;
+      }
+      const previous_src = els.vignette_image.getAttribute("src") || "";
+      const is_previous_loaded = els.vignette_image.naturalWidth > 0;
+      const is_previous_scene = is_scene_photo(previous_src);
       // 타로는 여백에 이전 사진이 비치면 안 되므로, 카드 색만 남깁니다.
-      if (!is_tarot && is_previous_loaded && els.vignette_image.currentSrc) {
+      if (!is_tarot && !is_previous_scene && is_previous_loaded && els.vignette_image.currentSrc) {
         els.card_vignette.style.backgroundImage = 'url("' + els.vignette_image.currentSrc + '")';
-      } else if (is_tarot) {
+      } else {
         els.card_vignette.style.backgroundImage = "";
       }
       els.vignette_image.src = vignette.src;
@@ -706,6 +750,10 @@
     apply_startup_tarot_image(card);
     current_card = card;
     render_card(card);
+    // 타로에 있는 동안 캐릭터 칸은 숨겨져 있습니다. 풍경이 아니라 오로라 얼굴을 미리 걸어 둡니다.
+    if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
+      place_hidden_aurora_face();
+    }
     persist_card(validated, card);
     preload_next_vignette(validated, card);
   }
