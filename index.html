@@ -23,8 +23,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261117j">
-  <link rel="stylesheet" href="css/aurora.css">
+  <link rel="stylesheet" href="css/style.css?v=20261118b">
+  <link rel="stylesheet" href="css/aurora.css?v=20261117l">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
   <script src="js/constants.js"></script>
@@ -114,12 +114,10 @@
 
   <main class="stage">
     <section class="intro">
-      <p class="aurora_kicker">깊은 밤의 의식</p>
       <h1>
         <span class="title_tarot">오늘의 한마디</span>
         <span class="title_aurora">마음의 결을 고르는 시간</span>
       </h1>
-      <p class="aurora_lead">오늘 당신의 밤에 머물고 있는 감정을 가만히 짚어보세요.</p>
       <p class="tarot_lead">덮인 카드 한 장을 뒤집으면, 오늘 붙들 질문이 나옵니다.</p>
     </section>
 
@@ -446,6 +444,14 @@
   <!-- 처음 버튼을 누를 때 한 번만 묻는 음악 재생 확인입니다. -->
   <div id="music_offer" class="music_offer" hidden>
     <div class="music_offer_card" role="dialog" aria-modal="true" aria-labelledby="music_offer_title">
+      <!-- 창 윗줄 끝에 닿으면 돌아서 반대쪽으로 가는 강아지. 읽기에는 빠집니다. -->
+      <div class="music_offer_dog_track" aria-hidden="true">
+        <div class="music_offer_dog">
+          <div class="music_offer_dog_turn">
+            <img class="music_offer_dog_figure" src="images/music_dog.png?v=20261117z" alt="">
+          </div>
+        </div>
+      </div>
       <h2 id="music_offer_title" class="music_offer_title">음악을 재생할까요?</h2>
       <p class="music_offer_text">배경 음악을 틀 수 있습니다. 원하지 않으면 나중에 MUSIC에서 고를 수 있습니다.</p>
       <div class="music_offer_actions">
@@ -466,7 +472,7 @@
   <script src="js/storage.js"></script>
   <script src="js/app.js?v=20261115o"></script>
   <script src="js/relation.js"></script>
-  <script src="js/music.js?v=20261116f"></script>
+  <script src="js/music.js?v=20261117m"></script>
   <script src="js/face_read.js?v=20261115n"></script>
 </body>
 </html>

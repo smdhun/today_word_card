@@ -44,20 +44,9 @@
   display: inline;
 }
 
-:root[data-design="aurora"] .aurora_kicker,
-:root[data-design="aurora"] .aurora_lead,
 :root[data-design="aurora"] .title_aurora,
 :root[data-design="aurora"] .epilogue_aurora {
   display: block;
-}
-
-:root[data-design="aurora"] .aurora_kicker {
-  margin: 0 0 8px;
-  color: var(--secondary);
-  font-family: var(--font_label);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
 }
 
 :root[data-design="aurora"] .intro h1 {
@@ -65,13 +54,15 @@
   font-weight: 600;
 }
 
-:root[data-design="aurora"] .aurora_lead {
-  max-width: 28em;
-  margin: 8px 0 0;
-  color: var(--ink_soft);
-  font-family: var(--font_label);
-  font-size: 13px;
-  line-height: 20px;
+/* 제목 위 여백을 제목과 감정 칸 사이 여백과 같게 둡니다. */
+:root[data-design="aurora"] .stage {
+  padding-top: 24px;
+}
+
+@media (min-width: 760px) {
+  :root[data-design="aurora"] .stage {
+    padding-top: 32px;
+  }
 }
 
 :root[data-design="aurora"] .panel,

@@ -41,7 +41,6 @@
   let meter_frame_id = 0;
   let is_reduced_motion = false;
   let is_muted = false;
-  let has_asked_music = false;
   let is_offer_open = false;
   const PLAY_MODE_ONE = "one";
   const PLAY_MODE_ONCE = "once";
@@ -781,17 +780,8 @@
             close_music_offer();
           }
         });
-        document.addEventListener("click", function on_first_button(event) {
-          if (has_asked_music || is_offer_open) {
-            return;
-          }
-          const button = event.target.closest("button");
-          if (!button || offer.contains(button)) {
-            return;
-          }
-          has_asked_music = true;
-          open_music_offer();
-        }, true);
+        /* 화면이 열리자마자 한 번만 묻습니다. 버튼을 누른 뒤에 묻지 않습니다. */
+        open_music_offer();
       }
       is_reduced_motion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     } catch (error) {
