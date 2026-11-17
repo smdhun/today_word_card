@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" data-theme="dark" data-design="aurora">
+<html lang="ko" data-theme="dark" data-design="tarot">
 <head>
   <meta charset="UTF-8">
   <!-- 처음 화면은 100%입니다. 확대는 5배까지, 축소는 80%까지 허용합니다. -->
@@ -27,8 +27,8 @@
   <link rel="stylesheet" href="css/aurora.css?v=20261117l">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
-  <script src="js/constants.js"></script>
-  <script src="js/design.js?v=20261116k"></script>
+  <script src="js/constants.js?v=20261118c"></script>
+  <script src="js/design.js?v=20261118d"></script>
 </head>
 <body>
   <!-- 아이콘 모음. 화면에는 보이지 않고, 아래에서 <use>로 꺼내 씁니다. -->
@@ -48,11 +48,11 @@
       <svg class="icon sound_icon_off" aria-hidden="true"><use href="#icon_volume_off"></use></svg>
     </button>
     <div class="top_bar_inner">
-      <!-- 처음에는 오로라가 눌려 있고, 그다음이 타로입니다. 인간관계는 글을 남겨 두고 태그만 숨깁니다. -->
+      <!-- 처음에는 타로가 눌려 있고, 그다음이 오로라입니다. 인간관계는 글을 남겨 두고 태그만 숨깁니다. -->
       <div class="top_actions">
         <div class="design_switch" role="group" aria-label="화면 디자인">
-          <button id="design_aurora" class="design_button" type="button" data-design-button data-design="aurora" aria-pressed="true">오로라</button>
-          <button id="design_tarot" class="design_button" type="button" data-design-button data-design="tarot" aria-pressed="false">타로</button>
+          <button id="design_aurora" class="design_button" type="button" data-design-button data-design="aurora" aria-pressed="false">오로라</button>
+          <button id="design_tarot" class="design_button" type="button" data-design-button data-design="tarot" aria-pressed="true">타로</button>
           <button id="design_relation" class="design_button" type="button" data-design-button data-design="relation" aria-pressed="false" hidden>인간관계</button>
         </div>
         <!-- 화면 버튼이 아닙니다. 인간관계 오른쪽에서 곡 목록만 엽니다. -->
@@ -466,13 +466,13 @@
   <script src="js/vignettes.js"></script>
   <script src="js/faces.js"></script>
   <script src="js/tarot_cards.js?v=20261115r"></script>
-  <script src="js/tarot.js?v=20261117k"></script>
+  <script src="js/tarot.js?v=20261118d"></script>
   <script src="js/validate.js"></script>
   <script src="js/picker.js?v=20261115k"></script>
   <script src="js/storage.js"></script>
   <script src="js/app.js?v=20261115o"></script>
   <script src="js/relation.js"></script>
-  <script src="js/music.js?v=20261117m"></script>
+  <script src="js/music.js?v=20261118c"></script>
   <script src="js/face_read.js?v=20261115n"></script>
 </body>
 </html>

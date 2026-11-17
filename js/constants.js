@@ -25,8 +25,8 @@
   root.DESIGN_TAROT = "tarot";
   root.DESIGN_AURORA = "aurora";
   root.DESIGN_RELATION = "relation";
-  // 고른 적이 없으면 오로라 화면으로 엽니다.
-  root.DESIGN_DEFAULT = root.DESIGN_AURORA;
+  // 프로그램을 열 때마다 타로 화면으로 시작합니다.
+  root.DESIGN_DEFAULT = root.DESIGN_TAROT;
   root.DESIGN_STORAGE_KEY = "today_word_card_design";
   // 위쪽 버튼 안내를 이미 본 브라우저인지 기억하는 서랍 이름입니다.
   root.DESIGN_HINT_KEY = "today_word_card_design_hint";

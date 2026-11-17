@@ -8,6 +8,8 @@
   let deck = [];
   let deck_index = 0;
   let weave_token = 0;
+  // 처음 타로 화면은 두 원 사이를 채우지 않습니다. 화면을 넘긴 뒤에 다시 오면 그립니다.
+  let is_opening_plain = true;
   let weave_ready = null;
 
   /**
@@ -330,6 +332,10 @@
       if (prefers_still_motion()) {
         stop_back_weave();
         image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";
+      } else if (is_opening_plain) {
+        // 첫 화면에서 화면을 넘길 때는 문양이 없는 뒷면만 보여 줍니다.
+        stop_back_weave();
+        image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261117k";
       } else {
         image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261117k";
         start_back_weave();
@@ -403,4 +409,27 @@
 
   root.show_tarot_back = show_tarot_back;
   root.flip_tarot_card = flip_tarot_card;
+
+  /**
+   * 처음 화면을 넘기는 동안에는 두 원 사이 문양을 그리지 않습니다.
+   */
+  document.addEventListener("today_word_pause_tarot_weave", function on_pause_weave() {
+    if (!is_opening_plain) {
+      return;
+    }
+    stop_back_weave();
+  });
+
+  /**
+   * 타로를 한 번 떠나면, 다음에 돌아올 때부터 문양을 채웁니다.
+   */
+  document.addEventListener("today_word_design_change", function on_leave_opening_tarot() {
+    if (document.documentElement.dataset.design !== root.DESIGN_TAROT) {
+      is_opening_plain = false;
+    }
+  });
+
+  if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
+    show_tarot_back();
+  }
 })();

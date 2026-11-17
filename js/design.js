@@ -19,7 +19,7 @@
 
   /**
    * 고른 디자인을 저장합니다. 성공하면 true를 돌려줍니다.
-   * 다음 실행의 첫 화면은 이 값과 상관없이 오로라입니다.
+   * 다음 실행의 첫 화면은 이 값과 상관없이 타로입니다.
    */
   function save_design(design) {
     try {
@@ -474,6 +474,21 @@
   }
 
   /**
+   * 손가락으로 밀어 오로라에 도착했을 때만 음악 질문에 알립니다.
+   * 버튼으로 바꾼 경우에는 알리지 않습니다.
+   */
+  function notify_aurora_swipe(next_design) {
+    try {
+      if (next_design !== root.DESIGN_AURORA) {
+        return;
+      }
+      document.dispatchEvent(new CustomEvent("today_word_aurora_swipe"));
+    } catch (error) {
+      console.error("오로라로 넘긴 소식을 전하지 못했습니다.", error);
+    }
+  }
+
+  /**
    * 옛 화면과 새 화면을 나란히 두고 같은 속도로 밀어서 이어 줍니다.
    */
   function play_joined_slide(next_design, delta_x) {
@@ -513,6 +528,7 @@
         }
         is_slide_playing = false;
         release_stage();
+        notify_aurora_swipe(next_design);
       }, 600);
     });
   }
@@ -525,6 +541,7 @@
     if (!stage || prefers_still_motion()) {
       release_stage();
       commit_design(next_design);
+      notify_aurora_swipe(next_design);
       return;
     }
     if (!slide_preview) {
@@ -545,6 +562,7 @@
       stage.style.transform = "";
       is_slide_playing = false;
       release_stage();
+      notify_aurora_swipe(next_design);
       return;
     }
     stage.style.transitionDuration = duration_ms + "ms";
@@ -566,6 +584,7 @@
       stage.style.transform = "";
       is_slide_playing = false;
       release_stage();
+      notify_aurora_swipe(next_design);
     }, duration_ms + 40);
   }
 
@@ -587,6 +606,9 @@
       swipe_start_y = touch.clientY;
       swipe_start_at = Date.now();
       is_swipe_tracking = true;
+      if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
+        document.dispatchEvent(new CustomEvent("today_word_pause_tarot_weave"));
+      }
     } catch (error) {
       is_swipe_tracking = false;
       console.error("화면 밀기를 시작하지 못했습니다.", error);
@@ -718,7 +740,7 @@
         return;
       }
 
-      // 실행할 때마다 오로라로 시작합니다. 링크를 연 사람도 같은 화면을 먼저 봅니다.
+      // 실행할 때마다 타로로 시작합니다. 링크를 연 사람도 같은 화면을 먼저 봅니다.
       apply_design(root.DESIGN_DEFAULT);
 
       if (document.readyState === "loading") {

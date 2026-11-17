@@ -780,8 +780,15 @@
             close_music_offer();
           }
         });
-        /* 화면이 열리자마자 한 번만 묻습니다. 버튼을 누른 뒤에 묻지 않습니다. */
-        open_music_offer();
+        /* 타로에서 손가락으로 밀어 오로라로 넘어간 뒤에 한 번만 묻습니다. */
+        let has_asked_music = false;
+        document.addEventListener("today_word_aurora_swipe", function on_aurora_swipe() {
+          if (has_asked_music || is_offer_open) {
+            return;
+          }
+          has_asked_music = true;
+          open_music_offer();
+        });
       }
       is_reduced_motion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     } catch (error) {
