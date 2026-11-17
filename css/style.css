@@ -1120,6 +1120,92 @@ html.is_slide_to_aurora::view-transition-new(design_stage) {
   height: auto;
 }
 
+/* 카드가 뒤집힌 뒤에 버튼이 떠오르고, 그다음 글이 올라옵니다. */
+@keyframes tarot_piece_rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+html.is_tarot_opening #draw_button {
+  opacity: 0;
+  transform: translateY(22px);
+  pointer-events: none;
+}
+
+html.is_tarot_opening.is_tarot_button #draw_button {
+  animation: tarot_piece_rise 0.7s cubic-bezier(0.22, 0.82, 0.2, 1) forwards;
+  pointer-events: auto;
+}
+
+html.is_tarot_opening .tarot_reading {
+  opacity: 0;
+  transform: translateY(28px);
+}
+
+html.is_tarot_opening.is_tarot_text .tarot_reading {
+  animation: tarot_piece_rise 0.8s cubic-bezier(0.22, 0.82, 0.2, 1) forwards;
+}
+
+.tarot_reading.is_tarot_hold {
+  opacity: 0;
+}
+
+.tarot_to_face {
+  position: fixed;
+  z-index: 30;
+  margin: 0;
+  overflow: hidden;
+  border: 2px solid #e2c27a;
+  background: #141824;
+  box-shadow: 0 18px 36px -18px rgba(0, 0, 0, 0.55);
+  perspective: 1200px;
+  pointer-events: none;
+}
+
+.tarot_to_face_spin {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.7s ease-in-out;
+}
+
+.tarot_to_face.is_turn .tarot_to_face_spin {
+  transform: rotateY(180deg);
+}
+
+.tarot_to_face_back,
+.tarot_to_face_front {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.tarot_to_face_back img,
+.tarot_to_face_front {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tarot_to_face_back .tarot_back_motion {
+  display: block;
+}
+
+.tarot_to_face_front {
+  transform: rotateY(180deg);
+}
+
 /* 뒷면일 때만 선과 별을 그립니다. 앞면이 나오면 이 층은 사라집니다. */
 .tarot_back_motion {
   display: none;

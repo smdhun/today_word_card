@@ -1068,6 +1068,9 @@
           show_error("카드를 열지 못했습니다. 페이지를 새로고침한 뒤 다시 뒤집어 주세요.", "draw_button");
           return;
         }
+        if (typeof root.fly_tarot_to_character === "function" && root.fly_tarot_to_character()) {
+          return;
+        }
         root.flip_tarot_card();
         return;
       }

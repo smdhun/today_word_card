@@ -699,6 +699,13 @@
   }
 
   /**
+   * 카드 고르기가 시작되면 1초 뒤 자동 넘김은 하지 않습니다.
+   */
+  document.addEventListener("today_word_hold_opening", function on_hold_opening() {
+    has_left_opening_tarot = true;
+  });
+
+  /**
    * 처음 타로를 1초 보여 준 뒤, 오른쪽 밀기와 같이 오로라로 넘깁니다.
    */
   function play_opening_slide() {
