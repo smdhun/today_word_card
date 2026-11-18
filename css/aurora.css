@@ -155,7 +155,7 @@
   display: none;
 }
 
-/* 카메라로 찍기는 그림 바로 위 가운데입니다. 카드 간격 24px을 14px 당겨 그림과 10px을 둡니다. */
+/* 나의 얼굴에서 찾아보기는 그림 바로 위 가운데입니다. 카드 간격 24px을 14px 당겨 그림과 10px을 둡니다. */
 :root[data-design="aurora"] .camera_row {
   display: flex;
   justify-content: center;

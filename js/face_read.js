@@ -137,6 +137,19 @@
     if (sheet) {
       sheet.hidden = true;
     }
+    set_trace_ready(false);
+  }
+
+  /**
+   * 카메라가 켜진 뒤에만 판독보기를 누를 수 있게 합니다.
+   */
+  function set_trace_ready(is_ready) {
+    const button = document.getElementById("camera_trace_toggle");
+    if (!button) {
+      console.error("판독보기 버튼을 찾지 못했습니다.");
+      return;
+    }
+    button.disabled = !is_ready;
   }
 
   /**
@@ -700,6 +713,7 @@
     is_sheet_open = true;
     sheet.hidden = false;
     shutter.disabled = true;
+    set_trace_ready(false);
     show_camera_message(message_element, "얼굴을 읽을 준비를 하고 있습니다.");
     try {
       await ensure_landmarker();
@@ -713,6 +727,7 @@
       }
       show_camera_message(message_element, "");
       shutter.disabled = false;
+      set_trace_ready(true);
       shutter.focus();
       start_watch(video);
     } catch (error) {

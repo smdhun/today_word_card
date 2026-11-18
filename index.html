@@ -23,8 +23,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261118n">
-  <link rel="stylesheet" href="css/aurora.css?v=20261117l">
+  <link rel="stylesheet" href="css/style.css?v=20261118o">
+  <link rel="stylesheet" href="css/aurora.css?v=20261118o">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
   <script src="js/constants.js?v=20261118c"></script>
@@ -116,7 +116,7 @@
     <section class="intro">
       <h1>
         <span class="title_tarot">오늘의 한마디</span>
-        <span class="title_aurora">마음의 결을 고르는 시간</span>
+        <span class="title_aurora">마음에 드는 문장을 찾아볼까요</span>
       </h1>
       <p class="tarot_lead">덮인 카드 한 장을 뒤집으면, 오늘 붙들 질문이 나옵니다.</p>
     </section>
@@ -127,7 +127,7 @@
           <fieldset class="field">
             <legend>
               <span class="label_tarot">오늘의 기분</span>
-              <span class="label_aurora">감정 고르기</span>
+              <span class="label_aurora">지금 나의 기분은 어떤가요?</span>
             </legend>
             <div class="mood_grid">
               <label class="choice" for="mood_joy">
@@ -190,8 +190,7 @@
           <!-- 첫 그림은 오로라의 기쁨입니다. 스크립트 전에도, 링크 미리보기에서도 이 얼굴이 먼저입니다. -->
           <!-- 오로라에서만 보입니다. 그림 바로 위, 사진과 겹치지 않습니다. -->
           <div class="camera_row">
-            <button id="camera_open" class="camera_open" type="button">카메라로 찍기</button>
-            <button id="camera_trace_toggle" class="camera_trace_toggle" type="button" aria-pressed="false">판독보기</button>
+            <button id="camera_open" class="camera_open" type="button">나의 얼굴에서 찾아보기</button>
           </div>
 
           <!-- 화살표는 그림 밖에 둡니다. 사진을 가리지 않고 좌우에서 넘깁니다. -->
@@ -221,7 +220,7 @@
           <button id="draw_button" class="button button_primary" type="submit" form="fortune_form">
             <svg class="icon" aria-hidden="true"><use href="#icon_auto_awesome"/></svg>
             <span class="label_tarot">오늘의 카드 고르기</span>
-            <span class="label_aurora">새로운 문장 뽑기</span>
+            <span class="label_aurora">새로운 문장 보기</span>
           </button>
 
           <!-- 카드 글은 뒤집기 버튼 아래에 둡니다. 버튼을 이미지 아래에서 밀어내지 않습니다. -->
@@ -417,7 +416,7 @@
   <!-- 오로라에서 얼굴 표정과 윤곽을 읽는 창입니다. 사진은 이 창을 닫으면 지웁니다. -->
   <div id="camera_sheet" class="camera_sheet" hidden>
     <div class="camera_sheet_card" role="dialog" aria-modal="true" aria-labelledby="camera_sheet_title">
-      <h2 id="camera_sheet_title" class="camera_sheet_title">카메라로 찍기</h2>
+      <h2 id="camera_sheet_title" class="camera_sheet_title">나의 얼굴에서 찾아보기</h2>
       <p class="camera_sheet_text">안심하세요! 카메라로 촬영한 얼굴은 이 기기 안에서만 사용되고, 저장하거나 다른 곳으로 전송되지 않습니다.</p>
       <div class="camera_stage">
         <div class="camera_mirror">
@@ -435,6 +434,7 @@
       </div>
       <p id="camera_message" class="camera_message" role="alert" hidden></p>
       <div class="camera_sheet_actions">
+        <button id="camera_trace_toggle" class="camera_trace_toggle" type="button" aria-pressed="false" disabled>판독보기</button>
         <button id="camera_shutter" class="camera_shutter" type="button">촬영</button>
         <button id="camera_close" class="camera_close" type="button">닫기</button>
       </div>
@@ -473,6 +473,6 @@
   <script src="js/app.js?v=20261118h"></script>
   <script src="js/relation.js"></script>
   <script src="js/music.js?v=20261118g"></script>
-  <script src="js/face_read.js?v=20261115n"></script>
+  <script src="js/face_read.js?v=20261118o"></script>
 </body>
 </html>

@@ -714,6 +714,7 @@ html.is_music_list_open .top_bar {
   font-family: var(--font_label);
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -853,9 +854,24 @@ html.is_music_list_open .top_bar {
 
 .camera_sheet_actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+/* 판독보기는 카메라가 켜진 뒤에만 누를 수 있습니다. 글자가 바뀌어도 폭은 같습니다. */
+.camera_sheet_actions .camera_trace_toggle {
+  min-height: 36px;
+  margin-right: auto;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.camera_trace_toggle:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .camera_shutter,
