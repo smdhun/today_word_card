@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261118o">
+  <link rel="stylesheet" href="css/style.css?v=20261119e">
   <link rel="stylesheet" href="css/aurora.css?v=20261118o">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
@@ -445,13 +445,14 @@
   <div id="music_offer" class="music_offer" hidden>
     <div class="music_offer_card" role="dialog" aria-modal="true" aria-labelledby="music_offer_title">
       <!-- 창 윗줄 끝에 닿으면 돌아서 반대쪽으로 가는 강아지. 읽기에는 빠집니다. -->
-      <div class="music_offer_dog_track" aria-hidden="true">
-        <div class="music_offer_dog">
+      <div class="music_offer_dog_track">
+        <button type="button" class="music_offer_dog" aria-label="강아지 색 바꾸기">
           <div class="music_offer_dog_turn">
             <img class="music_offer_dog_figure" src="images/music_dog.png?v=20261118m" alt="">
           </div>
-        </div>
+        </button>
       </div>
+      <button id="music_offer_close" class="music_offer_close" type="button" aria-label="닫기"><span class="music_offer_x" aria-hidden="true"></span></button>
       <h2 id="music_offer_title" class="music_offer_title">음악을 재생할까요?</h2>
       <p class="music_offer_text">배경 음악을 틀 수 있습니다. 원하지 않으면 나중에 MUSIC에서 고를 수 있습니다.</p>
       <div class="music_offer_actions">
@@ -472,7 +473,7 @@
   <script src="js/storage.js"></script>
   <script src="js/app.js?v=20261118h"></script>
   <script src="js/relation.js"></script>
-  <script src="js/music.js?v=20261118g"></script>
+  <script src="js/music.js?v=20261119e"></script>
   <script src="js/face_read.js?v=20261118o"></script>
 </body>
 </html>

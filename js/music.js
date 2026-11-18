@@ -724,11 +724,53 @@
     mark_playing_track(list, toggle);
   }
 
+  const dog_colors = [
+    "images/music_dog.png?v=20261119d",
+    "images/music_dog_gray.png?v=20261119d",
+  ];
+  let dog_color_index = 0;
+
+  /**
+   * 고른 번호의 강아지 색을 그림에 올립니다.
+   */
+  function apply_dog_color(color_index) {
+    const figure = document.querySelector(".music_offer_dog_figure");
+    if (!figure) {
+      console.error("강아지 그림을 찾지 못했습니다. 페이지를 새로고침해 주세요.");
+      return;
+    }
+    dog_color_index = color_index;
+    figure.src = dog_colors[dog_color_index];
+  }
+
+  /**
+   * 처음 시작할 때 개나리색과 밝은 회색 중 하나를 고릅니다.
+   */
+  function pick_startup_dog() {
+    apply_dog_color(Math.floor(Math.random() * dog_colors.length));
+  }
+
+  /**
+   * 강아지를 누르면 다른 색으로 바꿉니다.
+   */
+  function toggle_dog_color() {
+    apply_dog_color((dog_color_index + 1) % dog_colors.length);
+  }
+
   /**
    * 버튼과 한 곡 재생기를 연결합니다.
    */
   function start_music() {
     try {
+      pick_startup_dog();
+      const dog_button = document.querySelector(".music_offer_dog");
+      if (dog_button) {
+        dog_button.addEventListener("click", function on_dog_color() {
+          toggle_dog_color();
+        });
+      } else {
+        console.error("강아지 버튼을 찾지 못했습니다. 색을 바꾸려면 페이지를 새로고침해 주세요.");
+      }
       const toggle = require_element("music_toggle");
       const panel = require_element("music_panel");
       const list = require_element("music_list");
@@ -738,6 +780,7 @@
       const offer = require_element("music_offer");
       const offer_yes = require_element("music_offer_yes");
       const offer_no = require_element("music_offer_no");
+      const offer_close = require_element("music_offer_close");
       if (!toggle || !panel || !list || !message_element || !music_box) {
         return;
       }
@@ -803,24 +846,15 @@
           set_muted(!is_muted);
         });
       }
-      if (offer && offer_yes && offer_no) {
+      if (offer && offer_yes && offer_no && offer_close) {
         offer_yes.addEventListener("click", accept_music_offer);
         offer_no.addEventListener("click", close_music_offer);
+        offer_close.addEventListener("click", close_music_offer);
         offer.addEventListener("animationend", function on_offer_risen(event) {
           if (event.animationName !== "music_offer_rise") {
             return;
           }
           show_offer_dog(offer);
-        });
-        offer.addEventListener("click", function on_offer_backdrop(event) {
-          if (event.target === offer) {
-            close_music_offer();
-          }
-        });
-        document.addEventListener("keydown", function on_offer_escape(event) {
-          if (event.key === "Escape" && is_offer_open) {
-            close_music_offer();
-          }
         });
         /* 첫 타로가 오로라로 넘어간 뒤에 한 번만 묻습니다. */
         let has_asked_music = false;
