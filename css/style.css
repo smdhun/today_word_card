@@ -1307,6 +1307,11 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
   display: block;
 }
 
+/* 뒷면은 터치하면 문양이 그려지므로, 누를 수 있는 카드처럼 보입니다. */
+:root[data-design="tarot"]:has(#tarot_reading[hidden]) .tarot_frame {
+  cursor: pointer;
+}
+
 .tarot_weave {
   position: absolute;
   inset: 0;

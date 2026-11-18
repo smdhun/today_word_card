@@ -581,6 +581,28 @@
   root.fly_tarot_to_character = fly_tarot_to_character;
 
   /**
+   * 덮인 뒷면을 터치하면 두 원 사이 문양을 그립니다.
+   */
+  function play_back_on_touch() {
+    if (is_card_flying || document.documentElement.dataset.design !== root.DESIGN_TAROT) {
+      return;
+    }
+    const reading = document.getElementById("tarot_reading");
+    const image = document.getElementById("tarot_image");
+    if (!reading || !reading.hidden || !image) {
+      return;
+    }
+    document.dispatchEvent(new CustomEvent("today_word_hold_opening"));
+    if (prefers_still_motion()) {
+      stop_back_weave();
+      image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";
+      return;
+    }
+    is_opening_plain = false;
+    start_back_weave();
+  }
+
+  /**
    * 처음 화면을 넘기는 동안에는 두 원 사이 문양을 그리지 않습니다.
    */
   document.addEventListener("today_word_pause_tarot_weave", function on_pause_weave() {
@@ -598,6 +620,19 @@
       is_opening_plain = false;
     }
   });
+
+  const tarot_stage = document.getElementById("tarot_stage");
+  if (tarot_stage) {
+    tarot_stage.addEventListener("click", function on_back_touch() {
+      try {
+        play_back_on_touch();
+      } catch (error) {
+        console.error("카드 뒷면 움직임을 시작하지 못했습니다. 다시 터치해 주세요.", error);
+      }
+    });
+  } else {
+    console.error("타로 카드 칸을 찾지 못했습니다. 페이지를 새로고침해 주세요.");
+  }
 
   if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
     show_tarot_back();
