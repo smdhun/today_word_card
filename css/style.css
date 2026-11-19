@@ -2127,6 +2127,35 @@ fieldset {
   color: var(--ink_soft);
 }
 
+/* 오로라에서는 칸을 누르면 그 칸의 문장만 바뀝니다. */
+:root[data-design="aurora"] .verse_lead,
+:root[data-design="aurora"] .verse_caution,
+:root[data-design="aurora"] .verse_wise {
+  cursor: pointer;
+}
+
+:root[data-design="aurora"] .verse_lead:focus-visible,
+:root[data-design="aurora"] .verse_caution:focus-visible,
+:root[data-design="aurora"] .verse_wise:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* 칸을 눌러 문장이 바뀔 때 그 칸만 잠깐 옅어졌다가 돌아옵니다. */
+:root[data-design="aurora"] .verse.is_slot_fresh {
+  animation: aurora_slot_swap 0.45s ease;
+}
+
+@keyframes aurora_slot_swap {
+  from {
+    opacity: 0.35;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 .wise_person {
   color: var(--ink_faint);
   font-family: var(--font_label);

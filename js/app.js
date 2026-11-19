@@ -157,6 +157,164 @@
   }
 
   /**
+   * 칸이 잠깐 옅어졌다가 돌아오는 움직임을 다시 재생합니다.
+   */
+  function replay_slot_motion(block) {
+    try {
+      if (!block) {
+        return;
+      }
+      block.classList.remove("is_slot_fresh");
+      void block.offsetWidth;
+      block.classList.add("is_slot_fresh");
+    } catch (error) {
+      console.error("칸 움직임을 재생하지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 지금 카드의 기분으로 검사에 통과한 입력을 만듭니다.
+   */
+  function validated_current_mood() {
+    try {
+      const mood_id = current_card && current_card.mood ? current_card.mood.id : "";
+      const validated = root.validate_input({ mood: mood_id });
+      if (!validated || !validated.is_valid) {
+        console.error("칸을 바꿀 기분을 확인하지 못했습니다.");
+        return null;
+      }
+      return validated;
+    } catch (error) {
+      console.error("칸을 바꿀 기분을 확인하지 못했습니다.", error);
+      return null;
+    }
+  }
+
+  /**
+   * 밤의 한 줄 또는 사색의 결만 다음 문장으로 바꿉니다.
+   */
+  function replace_phrase_slot(field_name) {
+    const validated = validated_current_mood();
+    if (!validated) {
+      return false;
+    }
+    const is_lead = field_name === "lead";
+    const offset_key = is_lead ? "lead_offset" : "caution_offset";
+    const text_key = is_lead ? "lead_text" : "caution_text";
+    const text_el = is_lead ? els.card_lead : els.card_caution;
+    const block = document.querySelector(is_lead ? ".verse_lead" : ".verse_caution");
+    let cursor = Number.isInteger(current_card[offset_key]) ? current_card[offset_key] : current_card.offset;
+    const current_text = current_card[text_key];
+    for (let step = 0; step < 40; step += 1) {
+      cursor += 1;
+      const card = root.pick_today_phrase(validated, cursor);
+      const next_text = card ? card[text_key] : "";
+      if (!next_text || next_text === current_text) {
+        continue;
+      }
+      current_card[offset_key] = cursor;
+      current_card[text_key] = next_text;
+      if (text_el) {
+        text_el.textContent = next_text;
+      }
+      replay_slot_motion(block);
+      return true;
+    }
+    console.error("다른 문장을 찾지 못했습니다.", field_name);
+    return false;
+  }
+
+  /**
+   * 격언 칸 하나만 다음 격언으로 바꿉니다. 다른 칸의 분야와 겹치지 않습니다.
+   */
+  function replace_wise_slot(slot_index) {
+    const validated = validated_current_mood();
+    if (!validated) {
+      return false;
+    }
+    const quotes = Array.isArray(current_card.wise_quotes) ? current_card.wise_quotes.slice() : [];
+    const current_quote = quotes[slot_index] || {};
+    const other_quote = quotes[slot_index === 0 ? 1 : 0] || {};
+    const offset_key = slot_index === 0 ? "wise_offset_0" : "wise_offset_1";
+    const block = slot_index === 0 ? els.wise_quote_first : els.wise_quote_second;
+    let cursor = Number.isInteger(current_card[offset_key]) ? current_card[offset_key] : current_card.offset;
+    for (let step = 0; step < 40; step += 1) {
+      cursor += 1;
+      const card = root.pick_today_phrase(validated, cursor);
+      const pair = card && Array.isArray(card.wise_quotes) ? card.wise_quotes : [];
+      const quote = pair[slot_index];
+      if (!quote || !quote.text || !quote.category || !quote.person) {
+        continue;
+      }
+      if (quote.category === other_quote.category) {
+        continue;
+      }
+      if (quote.text === current_quote.text && quote.person === current_quote.person) {
+        continue;
+      }
+      current_card[offset_key] = cursor;
+      quotes[slot_index] = quote;
+      current_card.wise_quotes = quotes;
+      if (slot_index === 0) {
+        render_wise_quote(els.wise_quote_first, els.wise_category_first, els.wise_text_first, els.wise_person_first, quote);
+      } else {
+        render_wise_quote(els.wise_quote_second, els.wise_category_second, els.wise_text_second, els.wise_person_second, quote);
+      }
+      replay_slot_motion(block);
+      return true;
+    }
+    console.error("다른 격언을 찾지 못했습니다.", slot_index);
+    return false;
+  }
+
+  /**
+   * 오로라에서 누른 칸의 문장만 바꿉니다.
+   */
+  function refresh_aurora_slot(slot_name) {
+    try {
+      if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
+        return;
+      }
+      if (!current_card) {
+        show_status("먼저 새로운 문장 보기를 누른 뒤 칸을 눌러 주세요.");
+        return;
+      }
+      const is_changed = slot_name === "wise_0" || slot_name === "wise_1"
+        ? replace_wise_slot(slot_name === "wise_0" ? 0 : 1)
+        : replace_phrase_slot(slot_name);
+      if (!is_changed) {
+        show_status("이 칸의 문장을 바꾸지 못했습니다. 잠시 후 다시 눌러 주세요.", true);
+      }
+    } catch (error) {
+      console.error("누른 칸의 문장을 바꾸지 못했습니다. 잠시 후 다시 눌러 주세요.", error);
+      show_status("이 칸의 문장을 바꾸지 못했습니다. 잠시 후 다시 눌러 주세요.", true);
+    }
+  }
+
+  /**
+   * 오로라 문장 칸을 누르면 그 칸만 바뀌게 연결합니다.
+   */
+  function bind_aurora_slot(block, slot_name, label) {
+    if (!block) {
+      console.error("문장 칸을 찾지 못했습니다.", slot_name);
+      return;
+    }
+    block.setAttribute("role", "button");
+    block.tabIndex = 0;
+    block.setAttribute("aria-label", label);
+    block.addEventListener("click", function on_slot_click() {
+      refresh_aurora_slot(slot_name);
+    });
+    block.addEventListener("keydown", function on_slot_key(event) {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      event.preventDefault();
+      refresh_aurora_slot(slot_name);
+    });
+  }
+
+  /**
    * 카드가 떠오르는 움직임을 처음부터 다시 재생합니다.
    * 클래스를 뗐다가 다시 붙여야 같은 움직임이 매번 새로 시작됩니다.
    */
@@ -1198,6 +1356,10 @@
       els.vignette_next.addEventListener("click", function on_next_vignette() {
         on_browse_vignette(1);
       });
+      bind_aurora_slot(document.querySelector(".verse_lead"), "lead", "밤의 한 줄을 다른 문장으로 바꿉니다");
+      bind_aurora_slot(document.querySelector(".verse_caution"), "caution", "사색의 결을 다른 문장으로 바꿉니다");
+      bind_aurora_slot(els.wise_quote_first, "wise_0", "첫 격언을 다른 문장으로 바꿉니다");
+      bind_aurora_slot(els.wise_quote_second, "wise_1", "둘째 격언을 다른 문장으로 바꿉니다");
       document.addEventListener("today_word_design_change", on_design_change);
       restore_saved_card();
     } catch (error) {
