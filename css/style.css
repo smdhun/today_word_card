@@ -426,6 +426,10 @@ html.is_music_list_open .top_bar {
   line-height: 18px;
   text-align: left;
   cursor: pointer;
+  /* 길게 눌러도 반투명 칠과 글자 선택이 생기지 않습니다. */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
 .music_title {
@@ -508,11 +512,35 @@ html.is_music_list_open .top_bar {
   }
 }
 
-.music_track:hover,
-.music_track:focus-visible {
-  color: var(--ink);
-  outline: 2px solid var(--primary);
-  outline-offset: 0;
+/* 손가락으로 누르면 초점이 남아 테두리가 남습니다. 터치에서는 테두리를 그리지 않습니다. */
+.music_track:focus,
+.music_track:focus-visible,
+.music_track:active {
+  outline: none;
+  background: transparent;
+}
+
+.music_track.is_playing:focus,
+.music_track.is_playing:focus-visible,
+.music_track.is_playing:active {
+  background: var(--primary);
+  color: var(--on_primary);
+}
+
+/* 마우스로 가리키거나 키보드로 이동할 때만 테두리를 보여 줍니다. */
+@media (hover: hover) and (pointer: fine) {
+  .music_track:hover,
+  .music_track:focus-visible {
+    color: var(--ink);
+    outline: 2px solid var(--primary);
+    outline-offset: 0;
+  }
+
+  .music_track.is_playing:hover,
+  .music_track.is_playing:focus-visible {
+    background: var(--primary);
+    color: var(--on_primary);
+  }
 }
 
 .music_track.is_playing {
