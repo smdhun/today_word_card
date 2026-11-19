@@ -48,6 +48,8 @@
   let play_mode = PLAY_MODE_ONCE;
   let once_origin_index = -1;
   let shuffle_deck = [];
+  // 무작위 재생에서 곡이 끝나 다음 곡으로 넘어갈 때만 목록을 맞춥니다.
+  let should_center_shuffle_track = false;
 
   /**
    * id로 요소를 찾고, 없으면 기록만 남깁니다.
@@ -512,7 +514,7 @@
   }
 
   /**
-   * 목록을 열 때 재생 중인 곡이 보이도록 맞춥니다.
+   * 재생 중인 곡이 펼친 목록 밖에 있으면 그 곡을 목록 한가운데로 옮깁니다.
    * 이미 보이면 목록은 움직이지 않습니다.
    */
   function reveal_playing_track() {
@@ -698,6 +700,7 @@
       return;
     }
     if (is_user_choice) {
+      should_center_shuffle_track = false;
       note_user_choice(index);
     }
     if (is_same_track && audio.ended) {
@@ -717,6 +720,7 @@
     if (play_result && typeof play_result.catch === "function") {
       play_result.catch(function on_play_failed(error) {
         console.error("곡을 재생하지 못했습니다.", error);
+        should_center_shuffle_track = false;
         show_music_error(message_element);
         mark_playing_track(list, toggle);
       });
@@ -818,6 +822,9 @@
             mark_playing_track(list, toggle);
             return;
           }
+          if (play_mode === PLAY_MODE_SHUFFLE && is_open) {
+            should_center_shuffle_track = true;
+          }
           play_track(next_index, false);
         } catch (error) {
           console.error("다음 곡을 정하지 못했습니다. 다른 곡을 눌러 주세요.", error);
@@ -832,6 +839,10 @@
       });
       audio.addEventListener("play", function on_play() {
         mark_playing_track(list, toggle);
+        if (should_center_shuffle_track) {
+          should_center_shuffle_track = false;
+          reveal_playing_track();
+        }
         start_meter();
       });
       audio.addEventListener("timeupdate", update_remain);
