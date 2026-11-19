@@ -262,6 +262,11 @@
 }
 
 :root[data-design="aurora"] .design_button[aria-pressed="true"] {
-  background: linear-gradient(90deg, #a078ff, #03b5d3);
+  background-image: linear-gradient(90deg, #a078ff, #03b5d3, #c9a6ff, #03b5d3, #a078ff);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
   color: #ffffff;
+  animation:
+    selected_color_flow 8s ease-in-out infinite,
+    selected_button_pop 1.2s cubic-bezier(0.22, 0.7, 0.2, 1);
 }
