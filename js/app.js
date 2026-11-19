@@ -1078,7 +1078,7 @@
       if (!card) {
         return;
       }
-      // 오로라와 타로는 그림이 가운데 나타났다가 문장 쪽으로 올라갑니다. 포커스가 스크롤을 가로채지 않게 합니다.
+      // 오로라는 그림이 가운데 나타났다가 문장 쪽으로 올라갑니다. 포커스가 스크롤을 가로채지 않게 합니다.
       if (uses_card_arrival()) {
         els.card_lead.focus({ preventScroll: true });
         play_aurora_arrival();

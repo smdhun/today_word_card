@@ -185,6 +185,20 @@ h2 {
   font-weight: 600;
 }
 
+/* 오로라, 타로 태그는 글자 수가 달라도 같은 폭입니다. */
+#design_aurora,
+#design_tarot {
+  box-sizing: border-box;
+  width: 4.89em;
+  text-align: center;
+}
+
+/* 선택된 타로는 오로라처럼 두 색이 가로로 번집니다. 금색과 타로의 푸른색, 짙은 글자색입니다. */
+:root[data-design="tarot"] .design_button[aria-pressed="true"] {
+  background: linear-gradient(90deg, #e8c176, #5d78d6);
+  color: #412d00;
+}
+
 /* 인간관계 오른쪽의 음악 목록. 막대 높이를 밀지 않도록 아래에 겹칩니다. */
 .music_box {
   position: relative;
@@ -1191,6 +1205,7 @@ html.is_slide_to_aurora::view-transition-new(design_stage) {
   gap: 18px;
   width: min(280px, 100%);
   margin: 0 auto;
+  perspective: 1200px;
 }
 
 .tarot_frame {
@@ -1201,6 +1216,7 @@ html.is_slide_to_aurora::view-transition-new(design_stage) {
   overflow: hidden;
   background: #141824;
   box-shadow: 0 18px 36px -18px rgba(0, 0, 0, 0.55);
+  transform-style: preserve-3d;
 }
 
 .tarot_image {
@@ -1317,6 +1333,16 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+/* 카드 바탕만 덮습니다. 금색 선은 비워서 그림이 그대로 보이게 합니다. */
+.tarot_back_wash {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* 초승달은 반짝이지 않고, 아주 천천히 기울었다가 돌아옵니다. */
