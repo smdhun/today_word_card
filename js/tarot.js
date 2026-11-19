@@ -11,6 +11,7 @@
   // 처음 타로 화면은 두 원 사이를 채우지 않습니다. 화면을 넘긴 뒤에 다시 오면 그립니다.
   let is_opening_plain = true;
   let weave_ready = null;
+  let weave_image = null;
 
   /**
    * 움직임을 줄인 화면이면 그리지 않고 완성된 뒷면을 씁니다.
@@ -29,6 +30,7 @@
     weave_ready = new Promise(function (resolve, reject) {
       const filigree = new Image();
       filigree.onload = function () {
+        weave_image = filigree;
         resolve(filigree);
       };
       filigree.onerror = function () {
@@ -394,6 +396,48 @@
   }
 
   /**
+   * 채우기가 끝난 문양을 날아가는 카드에 올립니다.
+   * 캔버스 그림은 복제되지 않아, 그대로 두면 문양 없는 처음 뒷면이 이동합니다.
+   */
+  function mount_finished_weave(motion_copy) {
+    const weave = document.createElement("canvas");
+    weave.className = "tarot_weave";
+    weave.setAttribute("aria-hidden", "true");
+    const moon_cover = motion_copy.querySelector(".tarot_moon_cover");
+    if (moon_cover) {
+      motion_copy.insertBefore(weave, moon_cover);
+    } else {
+      motion_copy.appendChild(weave);
+    }
+
+    function paint_finished_weave() {
+      if (!weave_image || !weave_image.naturalWidth) {
+        return;
+      }
+      try {
+        weave.width = weave_image.naturalWidth;
+        weave.height = weave_image.naturalHeight;
+        const view = weave.getContext("2d");
+        if (!view) {
+          console.error("완성된 카드 문양을 그리지 못했습니다. 문양 없는 뒷면으로 이동합니다.");
+          return;
+        }
+        view.drawImage(weave_image, 0, 0);
+      } catch (error) {
+        console.error("완성된 카드 문양을 그리지 못했습니다. 문양 없는 뒷면으로 이동합니다.", error);
+      }
+    }
+
+    if (weave_image) {
+      paint_finished_weave();
+      return;
+    }
+    load_weave_images().then(paint_finished_weave).catch(function (error) {
+      console.error("완성된 카드 문양을 불러오지 못했습니다. 문양 없는 뒷면으로 이동합니다.", error);
+    });
+  }
+
+  /**
    * 덮인 뒷면을 보여 줍니다. 순서는 바꾸지 않습니다.
    */
   function show_tarot_back() {
@@ -405,6 +449,9 @@
         return;
       }
       image.alt = "덮인 타로 카드";
+      load_weave_images().catch(function (error) {
+        console.error("카드 문양을 미리 불러오지 못했습니다. 페이지를 새로고침해 주세요.", error);
+      });
       if (prefers_still_motion()) {
         stop_back_weave();
         image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";
@@ -605,6 +652,7 @@
         motion_copy.querySelectorAll("canvas").forEach(function drop_canvas(canvas) {
           canvas.remove();
         });
+        mount_finished_weave(motion_copy);
         back.appendChild(motion_copy);
       }
       spin.appendChild(back);

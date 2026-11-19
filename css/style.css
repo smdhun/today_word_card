@@ -1421,7 +1421,7 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
 
 /*
   카드를 연 뒤에는 제목을 접고, 그림부터 오늘의 질문까지를
-  위쪽 띠 아래 남은 화면의 한가운데에 둡니다.
+  위쪽 띠 바로 아래에 둡니다. 가운데에 두면 띠와 카드 사이가 비습니다.
   그림 너비는 화면 높이에 맞춰, 글을 보려 스크롤하지 않게 합니다.
 */
 :root[data-design="tarot"]:has(#tarot_reading:not([hidden])) body {
@@ -1432,7 +1432,7 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
 
 :root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .stage {
   flex: 1;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
   padding: 8px 0 12px;
 }
@@ -1465,6 +1465,16 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
 :root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .tarot_question {
   font-size: 15px;
   line-height: 22px;
+  /* 한 줄이어도 두 줄 칸을 비워 둡니다. 카드를 바꿔도 아래 글이 올라오지 않습니다. */
+  min-height: 2lh;
+}
+
+/* 좁은 화면에서는 문장이 세 줄까지 내려가므로, 그 높이로 고정합니다. */
+@media (max-width: 355px) {
+  :root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .tarot_insight,
+  :root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .tarot_question {
+    min-height: 3lh;
+  }
 }
 
 :root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .epilogue {
