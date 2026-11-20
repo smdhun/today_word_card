@@ -93,12 +93,10 @@ h2 {
   backdrop-filter: blur(24px);
 }
 
-/* 화면 맨 오른쪽 스피커. 띠 높이를 밀지 않도록 겹칩니다. */
+/* 스피커는 음색 막대 옆에 둡니다. 화면 끝에 붙이지 않습니다. */
 .sound_toggle {
-  position: absolute;
-  top: 14px;
-  right: 16px;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 36px;
@@ -152,13 +150,6 @@ h2 {
   justify-content: center;
   gap: 8px;
   min-width: 0;
-}
-
-/* 가운데 정렬일 때 오로라 왼쪽 빈칸을 조금만 줄입니다. 스피커는 그대로 둡니다. */
-@media (min-width: 481px) {
-  .top_actions {
-    transform: translateX(-12px);
-  }
 }
 
 .design_switch {
@@ -2311,14 +2302,6 @@ fieldset {
 
   .design_switch {
     gap: 4px;
-  }
-
-  /* 스피커 자리를 비우고, 버튼 네 개가 한 줄에 남게 폭을 줄입니다. */
-  .top_bar_inner {
-    align-items: flex-start;
-    width: auto;
-    margin-right: 56px;
-    margin-left: 2px;
   }
 
   .top_actions,

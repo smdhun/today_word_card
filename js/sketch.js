@@ -27,6 +27,8 @@
 
   let photo_index = 0;
   let failed_steps = 0;
+  let paint_token = 0;
+  let shown_src = "";
   let tap_x = 0;
   let tap_y = 0;
   let is_tap_tracking = false;
@@ -62,20 +64,56 @@
   }
 
   /**
-   * 지금 차례의 원본을 화면에 겁니다. 실패하면 다음 장으로 한 칸만 넘깁니다.
+   * 지금 차례의 원본을 화면에 겁니다.
+   * 다음 사진이 다 열리기 전에는 지금 사진을 그대로 두어 빈 화면이 번쩍이지 않습니다.
    */
   function show_current_photo() {
     try {
-      const image = document.getElementById("sketch_image");
-      if (!image || !sketch_files.length) {
+      const shown = document.getElementById("sketch_image");
+      const cover = document.getElementById("sketch_image_next");
+      if (!shown || !cover || !sketch_files.length) {
         console.error("스케치 사진을 찾지 못했습니다.");
         return;
       }
       const photo = current_photo();
-      image.alt = "원본 사진, " + photo.caption;
-      if (image.getAttribute("src") !== photo.src) {
-        image.src = photo.src;
+      const request_src = photo.src;
+      const token = ++paint_token;
+      shown.alt = "원본 사진, " + photo.caption;
+      if (!shown.getAttribute("src")) {
+        shown.src = request_src;
+        shown_src = request_src;
+        return;
       }
+      if (shown_src === request_src) {
+        return;
+      }
+      cover.onload = function on_cover_load() {
+        if (token !== paint_token) {
+          return;
+        }
+        // 새 사진을 먼저 위에 올린 뒤, 아래 사진을 같은 그림으로 바꿉니다.
+        cover.classList.add("is_shown");
+        window.requestAnimationFrame(function copy_under_cover() {
+          if (token !== paint_token) {
+            return;
+          }
+          shown.src = request_src;
+          shown_src = request_src;
+          window.requestAnimationFrame(function hide_cover() {
+            if (token !== paint_token) {
+              return;
+            }
+            cover.classList.remove("is_shown");
+          });
+        });
+      };
+      cover.onerror = function on_cover_error() {
+        if (token !== paint_token) {
+          return;
+        }
+        on_photo_error();
+      };
+      cover.src = request_src;
     } catch (error) {
       console.error("원본 사진을 보여주지 못했습니다. 화면을 다시 터치해 주세요.", error);
     }
@@ -193,7 +231,8 @@
     try {
       const stage = document.getElementById("sketch_stage");
       const image = document.getElementById("sketch_image");
-      if (!stage || !image) {
+      const cover = document.getElementById("sketch_image_next");
+      if (!stage || !image || !cover) {
         console.error("스케치 화면을 찾지 못했습니다.");
         return;
       }

@@ -6,8 +6,23 @@
   background: #101418;
 }
 
+/* 위 버튼 아래를 사진이 끝까지 쓰도록, 화면 높이로 고정합니다. */
 :root[data-design="sketch"] body {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
   background: #101418;
+}
+
+:root[data-design="sketch"] .stage {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  gap: 0;
 }
 
 :root[data-design="sketch"] .intro,
@@ -23,23 +38,49 @@
 
 :root[data-design="sketch"] .sketch_stage {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  min-height: 62vh;
+  width: 100%;
+  min-height: 0;
   cursor: pointer;
 }
 
+/* 비율은 버리고, 남은 화면 전체를 같은 사각형으로 채웁니다. */
+.sketch_frame {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0;
+  background: #101418;
+}
+
 .sketch_image {
+  position: absolute;
+  inset: 0;
   display: block;
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  max-height: min(72vh, 780px);
-  object-fit: contain;
-  border-radius: 16px;
-  background: #0c1016;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  background: #101418;
+}
+
+/* 노래 목록은 오로라, 타로처럼 뒤 사진이 비칩니다. */
+:root[data-design="sketch"] .music_panel {
+  background: rgba(16, 20, 24, 0.74);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+/* 다음 사진은 다 불러온 뒤에만 위에 올립니다. 그 전에는 이전 사진이 그대로 보입니다. */
+.sketch_image_next {
+  opacity: 0;
+}
+
+.sketch_image_next.is_shown {
+  opacity: 1;
 }
 
 :root[data-design="sketch"] .design_button[aria-pressed="true"] {
