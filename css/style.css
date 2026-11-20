@@ -1316,13 +1316,18 @@ html.is_slide_to_aurora::view-transition-new(design_stage) {
   }
 }
 
-html.is_tarot_opening #draw_button {
+html.is_tarot_opening:not(.is_tarot_button) #draw_button {
   opacity: 0;
-  transform: translateY(22px);
+  visibility: hidden;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  transition: none;
   pointer-events: none;
 }
 
 html.is_tarot_opening.is_tarot_button #draw_button {
+  visibility: visible;
   animation: tarot_piece_rise 0.7s cubic-bezier(0.22, 0.82, 0.2, 1) forwards;
   pointer-events: auto;
 }
@@ -1749,6 +1754,7 @@ fieldset {
   border: 0;
   font-family: var(--font_label);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   /* 색은 모드를 바꿀 때 한 번에 바뀌어야 하므로, 눌림 움직임만 부드럽게 합니다. */
   transition: transform 0.15s;
 }
@@ -1772,12 +1778,14 @@ fieldset {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
 }
 
-.button_primary:hover:not(:disabled) {
-  background: var(--primary_hover);
-}
-
 .button_primary:active:not(:disabled) {
   transform: scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button_primary:hover:not(:disabled) {
+    background: var(--primary_hover);
+  }
 }
 
 .button_row {
@@ -2127,32 +2135,27 @@ fieldset {
   color: var(--ink_soft);
 }
 
-/* 오로라에서는 칸을 누르면 그 칸의 문장만 바뀝니다. */
+/* 오로라에서는 칸을 누르면 그 칸의 문장만 바뀝니다. 폰의 터치 반짝임은 없앱니다. */
 :root[data-design="aurora"] .verse_lead,
 :root[data-design="aurora"] .verse_caution,
 :root[data-design="aurora"] .verse_wise {
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
-:root[data-design="aurora"] .verse_lead:focus-visible,
-:root[data-design="aurora"] .verse_caution:focus-visible,
-:root[data-design="aurora"] .verse_wise:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+:root[data-design="aurora"] .verse_lead:focus,
+:root[data-design="aurora"] .verse_caution:focus,
+:root[data-design="aurora"] .verse_wise:focus {
+  outline: none;
 }
 
-/* 칸을 눌러 문장이 바뀔 때 그 칸만 잠깐 옅어졌다가 돌아옵니다. */
-:root[data-design="aurora"] .verse.is_slot_fresh {
-  animation: aurora_slot_swap 0.45s ease;
-}
-
-@keyframes aurora_slot_swap {
-  from {
-    opacity: 0.35;
-  }
-
-  to {
-    opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  :root[data-design="aurora"] .verse_lead:focus-visible,
+  :root[data-design="aurora"] .verse_caution:focus-visible,
+  :root[data-design="aurora"] .verse_wise:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
 }
 

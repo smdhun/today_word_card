@@ -157,22 +157,6 @@
   }
 
   /**
-   * 칸이 잠깐 옅어졌다가 돌아오는 움직임을 다시 재생합니다.
-   */
-  function replay_slot_motion(block) {
-    try {
-      if (!block) {
-        return;
-      }
-      block.classList.remove("is_slot_fresh");
-      void block.offsetWidth;
-      block.classList.add("is_slot_fresh");
-    } catch (error) {
-      console.error("칸 움직임을 재생하지 못했습니다.", error);
-    }
-  }
-
-  /**
    * 지금 카드의 기분으로 검사에 통과한 입력을 만듭니다.
    */
   function validated_current_mood() {
@@ -202,7 +186,6 @@
     const offset_key = is_lead ? "lead_offset" : "caution_offset";
     const text_key = is_lead ? "lead_text" : "caution_text";
     const text_el = is_lead ? els.card_lead : els.card_caution;
-    const block = document.querySelector(is_lead ? ".verse_lead" : ".verse_caution");
     let cursor = Number.isInteger(current_card[offset_key]) ? current_card[offset_key] : current_card.offset;
     const current_text = current_card[text_key];
     for (let step = 0; step < 40; step += 1) {
@@ -217,7 +200,6 @@
       if (text_el) {
         text_el.textContent = next_text;
       }
-      replay_slot_motion(block);
       return true;
     }
     console.error("다른 문장을 찾지 못했습니다.", field_name);
@@ -236,7 +218,6 @@
     const current_quote = quotes[slot_index] || {};
     const other_quote = quotes[slot_index === 0 ? 1 : 0] || {};
     const offset_key = slot_index === 0 ? "wise_offset_0" : "wise_offset_1";
-    const block = slot_index === 0 ? els.wise_quote_first : els.wise_quote_second;
     let cursor = Number.isInteger(current_card[offset_key]) ? current_card[offset_key] : current_card.offset;
     for (let step = 0; step < 40; step += 1) {
       cursor += 1;
@@ -260,7 +241,6 @@
       } else {
         render_wise_quote(els.wise_quote_second, els.wise_category_second, els.wise_text_second, els.wise_person_second, quote);
       }
-      replay_slot_motion(block);
       return true;
     }
     console.error("다른 격언을 찾지 못했습니다.", slot_index);
