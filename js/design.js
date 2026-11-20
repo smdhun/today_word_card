@@ -1,18 +1,19 @@
 /**
- * 타로, 오로라, 인간관계 화면을 바꾸고, 고른 화면을 브라우저에 기억합니다.
- * 휴대폰에서는 손가락을 가로로 밀어도 오로라와 타로가 바뀝니다.
+ * 타로, 오로라, 스케치, 인간관계 화면을 바꾸고, 고른 화면을 브라우저에 기억합니다.
+ * 휴대폰에서는 손가락을 가로로 밀면 오로라, 타로, 스케치 순으로 바뀝니다.
  * 화면이 그려지기 전에 정해야 색이 깜빡이지 않으므로 head에서 불러옵니다.
  */
 (function init_design() {
   const root = (window.TodayWordCard = window.TodayWordCard || {});
 
   /**
-   * 타로, 오로라, 인간관계 중 하나인지 확인합니다.
+   * 타로, 오로라, 스케치, 인간관계 중 하나인지 확인합니다.
    */
   function is_known_design(design) {
     return (
       design === root.DESIGN_TAROT ||
       design === root.DESIGN_AURORA ||
+      design === root.DESIGN_SKETCH ||
       design === root.DESIGN_RELATION
     );
   }
@@ -225,18 +226,39 @@
   }
 
   /**
-   * 손가락이 움직인 방향으로 다음 화면을 고릅니다.
-   * 왼쪽은 타로, 오른쪽은 오로라입니다. 더 갈 화면이 없으면 빈 문자열입니다.
+   * 손가락 방향의 옆 화면입니다. 왼쪽(-1)은 다음, 오른쪽(1)은 이전입니다.
+   * 순서는 오로라, 타로, 스케치입니다. 끝에서는 빈 문자열입니다.
    */
-  function design_for_swipe(delta_x) {
+  function design_beside(direction) {
     const current_design = document.documentElement.dataset.design;
-    if (delta_x <= -SWIPE_MIN_X && current_design === root.DESIGN_AURORA) {
-      return root.DESIGN_TAROT;
+    if (direction < 0) {
+      if (current_design === root.DESIGN_AURORA) {
+        return root.DESIGN_TAROT;
+      }
+      if (current_design === root.DESIGN_TAROT) {
+        return root.DESIGN_SKETCH;
+      }
+      return "";
     }
-    if (delta_x >= SWIPE_MIN_X && current_design === root.DESIGN_TAROT) {
-      return root.DESIGN_AURORA;
+    if (direction > 0) {
+      if (current_design === root.DESIGN_SKETCH) {
+        return root.DESIGN_TAROT;
+      }
+      if (current_design === root.DESIGN_TAROT) {
+        return root.DESIGN_AURORA;
+      }
     }
     return "";
+  }
+
+  /**
+   * 손가락이 충분히 움직였을 때만 옆 화면 이름을 돌려줍니다.
+   */
+  function design_for_swipe(delta_x) {
+    if (Math.abs(delta_x) < SWIPE_MIN_X) {
+      return "";
+    }
+    return design_beside(delta_x < 0 ? -1 : 1);
   }
 
   /**
@@ -263,11 +285,7 @@
    * 넘어갈 수 있으면 손가락과 같게 움직이고, 없으면 조금만 밀립니다.
    */
   function follow_shift(delta_x) {
-    const current_design = document.documentElement.dataset.design;
-    const can_leave = (
-      (delta_x < 0 && current_design === root.DESIGN_AURORA) ||
-      (delta_x > 0 && current_design === root.DESIGN_TAROT)
-    );
+    const can_leave = Boolean(design_beside(delta_x < 0 ? -1 : 1));
     if (!can_leave) {
       const rubbed = delta_x * 0.16;
       return Math.max(-24, Math.min(24, rubbed));
@@ -392,13 +410,8 @@
     if (!stage) {
       return;
     }
-    const current_design = document.documentElement.dataset.design;
-    const next_design = direction < 0 ? root.DESIGN_TAROT : root.DESIGN_AURORA;
-    const can_show = (
-      (direction < 0 && current_design === root.DESIGN_AURORA) ||
-      (direction > 0 && current_design === root.DESIGN_TAROT)
-    );
-    if (!can_show) {
+    const next_design = design_beside(direction);
+    if (!next_design) {
       return;
     }
     const from_x = read_stage_shift(stage);
@@ -429,6 +442,19 @@
   }
 
   /**
+   * 옆 화면의 빈 바탕색입니다. 사진이 뜨기 전에 다른 화면 색이 비치지 않게 합니다.
+   */
+  function ghost_background(design_name) {
+    if (design_name === root.DESIGN_AURORA) {
+      return "#0f131d";
+    }
+    if (design_name === root.DESIGN_SKETCH) {
+      return "#101418";
+    }
+    return "#16130a";
+  }
+
+  /**
    * 고른 디자인의 화면을 다른 문서에 붙여, 옆에서 함께 밀리게 합니다.
    */
   function build_slide_ghost(stage, design_name, from_x) {
@@ -443,7 +469,7 @@
       frame.style.left = (rect.left - from_x) + "px";
       frame.style.width = rect.width + "px";
       frame.style.height = rect.height + "px";
-      frame.style.background = design_name === root.DESIGN_AURORA ? "#0f131d" : "#16130a";
+      frame.style.background = ghost_background(design_name);
       frame.style.transform = "translate3d(" + from_x + "px, 0, 0)";
       document.body.appendChild(frame);
       const font_links = [];
@@ -638,11 +664,9 @@
         return;
       }
       event.preventDefault();
-      const current_design = document.documentElement.dataset.design;
-      if (delta_x < 0 && current_design === root.DESIGN_AURORA) {
-        ensure_preview(-1);
-      } else if (delta_x > 0 && current_design === root.DESIGN_TAROT) {
-        ensure_preview(1);
+      const direction = delta_x < 0 ? -1 : 1;
+      if (design_beside(direction)) {
+        ensure_preview(direction);
       }
       place_pair(follow_shift(delta_x), false);
     } catch (error) {

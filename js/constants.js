@@ -24,6 +24,7 @@
   // 화면 디자인. html의 data-design 값과 같아야 합니다.
   root.DESIGN_TAROT = "tarot";
   root.DESIGN_AURORA = "aurora";
+  root.DESIGN_SKETCH = "sketch";
   root.DESIGN_RELATION = "relation";
   // 프로그램을 열 때마다 타로 화면으로 시작합니다.
   root.DESIGN_DEFAULT = root.DESIGN_TAROT;

@@ -25,10 +25,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=20261120o">
   <link rel="stylesheet" href="css/aurora.css?v=20261120f">
+  <link rel="stylesheet" href="css/sketch.css?v=20261120t">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
-  <script src="js/constants.js?v=20261118c"></script>
-  <script src="js/design.js?v=20261118h"></script>
+  <script src="js/constants.js?v=20261120s"></script>
+  <script src="js/design.js?v=20261120s"></script>
 </head>
 <body>
   <!-- 아이콘 모음. 화면에는 보이지 않고, 아래에서 <use>로 꺼내 씁니다. -->
@@ -53,7 +54,7 @@
         <div class="design_switch" role="group" aria-label="화면 디자인">
           <button id="design_aurora" class="design_button" type="button" data-design-button data-design="aurora" aria-pressed="false">Aurora</button>
           <button id="design_tarot" class="design_button" type="button" data-design-button data-design="tarot" aria-pressed="true">Tarot</button>
-          <button id="design_sketch" class="design_button" type="button">Sketch</button>
+          <button id="design_sketch" class="design_button" type="button" data-design-button data-design="sketch" aria-pressed="false">Sketch</button>
           <button id="design_relation" class="design_button" type="button" data-design-button data-design="relation" aria-pressed="false" hidden>인간관계</button>
         </div>
         <!-- 화면 버튼이 아닙니다. 인간관계 오른쪽에서 곡 목록만 엽니다. -->
@@ -416,6 +417,11 @@
       </section>
     </article>
 
+    <!-- 스케치에서는 원본 사진만 보입니다. 터치하면 다음 한 장으로 바뀝니다. -->
+    <section id="sketch_stage" class="sketch_stage" aria-label="원본 사진">
+      <img id="sketch_image" class="sketch_image" alt="원본 사진" width="540" height="960">
+    </section>
+
     <footer class="epilogue">
       <p class="epilogue_tarot">밤하늘의 별처럼 삶의 길을 밝히는 한 줄의 성찰</p>
       <p class="epilogue_aurora">화면을 닫기 전, 깊은 숨을 들이쉬고 내쉬어보세요.</p>
@@ -480,6 +486,7 @@
   <script src="js/phrases.js?v=20261115f"></script>
   <script src="js/wise_quotes.js"></script>
   <script src="js/vignettes.js"></script>
+  <script src="js/sketch.js?v=20261120t"></script>
   <script src="js/faces.js"></script>
   <script src="js/tarot_cards.js?v=20261115r"></script>
   <script src="js/tarot.js?v=20261120i"></script>

@@ -1,0 +1,53 @@
+/*
+ * 스케치 화면. html에 data-design="sketch"가 붙을 때만 원본 사진이 보입니다.
+ */
+
+:root[data-design="sketch"] {
+  background: #101418;
+}
+
+:root[data-design="sketch"] body {
+  background: #101418;
+}
+
+:root[data-design="sketch"] .intro,
+:root[data-design="sketch"] .layout,
+:root[data-design="sketch"] .relation_guide,
+:root[data-design="sketch"] .epilogue {
+  display: none;
+}
+
+.sketch_stage {
+  display: none;
+}
+
+:root[data-design="sketch"] .sketch_stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 62vh;
+  cursor: pointer;
+}
+
+.sketch_image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: min(72vh, 780px);
+  object-fit: contain;
+  border-radius: 16px;
+  background: #0c1016;
+}
+
+:root[data-design="sketch"] .design_button[aria-pressed="true"] {
+  background-image: linear-gradient(90deg, #d7d2c8, #7f93a8, #efe8dc, #7f93a8, #d7d2c8);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  color: #1c1914;
+  animation:
+    selected_color_flow 8s ease-in-out infinite,
+    selected_button_pop 1.2s cubic-bezier(0.22, 0.7, 0.2, 1);
+}
