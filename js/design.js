@@ -1,6 +1,7 @@
 /**
  * 타로, 오로라, 스케치, 인간관계 화면을 바꾸고, 고른 화면을 브라우저에 기억합니다.
  * 휴대폰에서는 손가락을 가로로 밀면 오로라, 타로, 스케치 순으로 바뀝니다.
+ * 스케치에서 같은 방향(뮤직 버튼 쪽)으로 밀면 노래 목록이 열립니다.
  * 화면이 그려지기 전에 정해야 색이 깜빡이지 않으므로 head에서 불러옵니다.
  */
 (function init_design() {
@@ -249,6 +250,14 @@
       }
     }
     return "";
+  }
+
+  /**
+   * 스케치에서 뮤직 버튼 쪽으로 미는 손인지 확인합니다.
+   * 버튼은 스케치 오른쪽에 있고, 다음 화면으로 가는 손과 같이 왼쪽으로 움직입니다.
+   */
+  function is_sketch_music_swipe(delta_x) {
+    return document.documentElement.dataset.design === root.DESIGN_SKETCH && delta_x < 0;
   }
 
   /**
@@ -664,6 +673,9 @@
         return;
       }
       event.preventDefault();
+      if (is_sketch_music_swipe(delta_x)) {
+        return;
+      }
       const direction = delta_x < 0 ? -1 : 1;
       if (design_beside(direction)) {
         ensure_preview(direction);
@@ -695,6 +707,11 @@
       const shift_x = stage ? read_stage_shift(stage) : 0;
       const travel = preview_travel || SLIDE_FOLLOW_MAX;
       const is_horizontal = Math.abs(delta_x) > Math.abs(delta_y);
+      if (is_horizontal && is_sketch_music_swipe(delta_x) && Math.abs(delta_x) >= SWIPE_MIN_X) {
+        release_stage();
+        document.dispatchEvent(new CustomEvent("today_word_open_music_list"));
+        return;
+      }
       const is_flung = elapsed_ms <= SWIPE_MAX_MS && Math.abs(delta_x) >= SWIPE_MIN_X;
       const is_pushed = Math.abs(shift_x) >= Math.max(SWIPE_MIN_X, travel * 0.33);
       const next_design = design_for_swipe(delta_x);

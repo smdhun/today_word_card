@@ -60,11 +60,38 @@
 .sketch_image {
   position: absolute;
   inset: 0;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: fill;
   background: #101418;
+}
+
+/* 파스텔은 원본 위에 얹습니다. 손을 대지 않으면 천천히 나타났다가 사라집니다. */
+.sketch_pastel {
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes sketch_pastel_drift {
+  0% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 한 번 왕복에 36초. 앞 18초는 파스텔, 뒤 18초는 원본으로 돌아옵니다. */
+.sketch_pastel.is_breathing {
+  animation: sketch_pastel_drift 36s ease-in-out infinite;
 }
 
 /* 노래 목록은 오로라, 타로처럼 뒤 사진이 비칩니다. */
@@ -76,7 +103,9 @@
 
 /* 다음 사진은 다 불러온 뒤에만 위에 올립니다. 그 전에는 이전 사진이 그대로 보입니다. */
 .sketch_image_next {
+  z-index: 3;
   opacity: 0;
+  pointer-events: none;
 }
 
 .sketch_image_next.is_shown {

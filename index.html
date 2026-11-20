@@ -23,13 +23,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261120u">
+  <link rel="stylesheet" href="css/style.css?v=20261121c">
   <link rel="stylesheet" href="css/aurora.css?v=20261120f">
-  <link rel="stylesheet" href="css/sketch.css?v=20261120v">
+  <link rel="stylesheet" href="css/sketch.css?v=20261121b">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
   <script src="js/constants.js?v=20261120s"></script>
-  <script src="js/design.js?v=20261120s"></script>
+  <script src="js/design.js?v=20261121a"></script>
 </head>
 <body>
   <!-- 아이콘 모음. 화면에는 보이지 않고, 아래에서 <use>로 꺼내 씁니다. -->
@@ -43,6 +43,11 @@
   </svg>
 
   <header class="top_bar">
+    <!-- 음색 막대와 떼어, 위쪽 띠의 맨 오른쪽에 둡니다. -->
+    <button id="sound_toggle" class="sound_toggle" type="button" aria-pressed="false" aria-label="음소거">
+      <svg class="icon sound_icon_on" aria-hidden="true"><use href="#icon_volume_on"></use></svg>
+      <svg class="icon sound_icon_off" aria-hidden="true"><use href="#icon_volume_off"></use></svg>
+    </button>
     <div class="top_bar_inner">
       <!-- 처음에는 타로가 눌려 있고, 그다음이 오로라입니다. 인간관계는 글을 남겨 두고 태그만 숨깁니다. -->
       <div class="top_actions">
@@ -64,11 +69,6 @@
               <span class="music_bar"></span>
               <span class="music_bar"></span>
             </span>
-            <!-- 음색 막대 오른쪽. 화면 끝에 붙이지 않고, 버튼 줄과 함께 가운데에 둡니다. -->
-            <button id="sound_toggle" class="sound_toggle" type="button" aria-pressed="false" aria-label="음소거">
-              <svg class="icon sound_icon_on" aria-hidden="true"><use href="#icon_volume_on"></use></svg>
-              <svg class="icon sound_icon_off" aria-hidden="true"><use href="#icon_volume_off"></use></svg>
-            </button>
           </div>
           <div id="music_panel" class="music_panel" hidden>
             <!-- 반복 방식 세 개와 이전·다음 곡을 한 줄에 둡니다. -->
@@ -421,6 +421,7 @@
     <section id="sketch_stage" class="sketch_stage" aria-label="원본 사진">
       <div class="sketch_frame">
         <img id="sketch_image" class="sketch_image" alt="원본 사진" width="540" height="960">
+        <img id="sketch_pastel" class="sketch_image sketch_pastel" alt="" aria-hidden="true" width="540" height="960">
         <img id="sketch_image_next" class="sketch_image sketch_image_next" alt="" aria-hidden="true" width="540" height="960">
       </div>
     </section>
@@ -489,7 +490,7 @@
   <script src="js/phrases.js?v=20261115f"></script>
   <script src="js/wise_quotes.js"></script>
   <script src="js/vignettes.js"></script>
-  <script src="js/sketch.js?v=20261120u"></script>
+  <script src="js/sketch.js?v=20261121e"></script>
   <script src="js/faces.js"></script>
   <script src="js/tarot_cards.js?v=20261115r"></script>
   <script src="js/tarot.js?v=20261120i"></script>
@@ -498,7 +499,7 @@
   <script src="js/storage.js"></script>
   <script src="js/app.js?v=20261120i"></script>
   <script src="js/relation.js"></script>
-  <script src="js/music.js?v=20261120h"></script>
+  <script src="js/music.js?v=20261121c"></script>
   <script src="js/face_read.js?v=20261118o"></script>
 </body>
 </html>

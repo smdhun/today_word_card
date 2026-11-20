@@ -93,8 +93,12 @@ h2 {
   backdrop-filter: blur(24px);
 }
 
-/* 스피커는 음색 막대 옆에 둡니다. 화면 끝에 붙이지 않습니다. */
+/* 스피커는 음색 막대와 떼어 위쪽 띠의 맨 오른쪽에 둡니다. */
 .sound_toggle {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 2;
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -297,12 +301,14 @@ html.is_music_list_open .top_bar {
 .music_panel {
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
+  right: auto;
+  left: 0;
   z-index: 15;
   display: flex;
   flex-direction: column;
   width: min(280px, 70vw);
-  max-height: min(360px, 60vh);
+  /* 제목 두 줄(한 줄 34px, 간격 4px)을 더 보여 줍니다. */
+  max-height: min(436px, 72vh);
   padding: 8px;
   overflow: hidden;
   border: 1px solid rgba(233, 226, 210, 0.55);
@@ -2309,6 +2315,14 @@ fieldset {
     gap: 4px;
   }
 
+  /* 오른쪽 스피커 자리만큼 비우고, 그 안에 버튼 줄을 가운데에 둡니다. */
+  .top_bar_inner {
+    align-items: center;
+    width: calc(100% - 68px);
+    margin-right: 60px;
+    margin-left: 8px;
+  }
+
   #design_aurora,
   #design_tarot,
   #design_sketch,
@@ -2319,6 +2333,12 @@ fieldset {
 }
 
 @media (max-width: 340px) {
+  .top_bar_inner {
+    width: calc(100% - 60px);
+    margin-right: 56px;
+    margin-left: 4px;
+  }
+
   .music_head .music_level {
     display: none;
   }

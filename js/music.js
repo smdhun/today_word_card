@@ -453,6 +453,26 @@
   }
 
   let locked_scroll_y = 0;
+  let ignore_outside_until = 0;
+
+  /**
+   * 목록의 세로 위치는 버튼 바로 아래에 두고, 가로는 화면 한가운데로 맞춥니다.
+   */
+  function center_music_panel(panel) {
+    try {
+      const box = panel.closest(".music_box");
+      if (!box || panel.hidden) {
+        return;
+      }
+      const view_width = document.documentElement.clientWidth;
+      const panel_width = panel.offsetWidth;
+      const box_left = box.getBoundingClientRect().left;
+      const next_left = (view_width - panel_width) / 2 - box_left;
+      panel.style.left = Math.round(next_left) + "px";
+    } catch (error) {
+      console.error("음악 목록을 화면 가운데로 두지 못했습니다. Music 버튼을 다시 눌러 주세요.", error);
+    }
+  }
 
   /**
    * 목록이 열려 있는 동안 뒤 화면을 지금 위치에 붙여 둡니다.
@@ -556,6 +576,7 @@
     toggle.setAttribute("aria-expanded", is_open ? "true" : "false");
     if (is_open) {
       lock_background_scroll();
+      center_music_panel(panel);
       reveal_playing_track();
       return;
     }
@@ -881,7 +902,29 @@
         if (!is_open || music_box.contains(event.target)) {
           return;
         }
+        if (event.target.closest && event.target.closest("#sound_toggle")) {
+          return;
+        }
+        if (Date.now() < ignore_outside_until) {
+          return;
+        }
         set_panel_open(panel, toggle, false);
+      });
+      document.addEventListener("today_word_open_music_list", function on_open_from_swipe() {
+        try {
+          if (is_open) {
+            return;
+          }
+          ignore_outside_until = Date.now() + 700;
+          set_panel_open(panel, toggle, true);
+        } catch (error) {
+          console.error("밀어서 음악 목록을 열지 못했습니다. Music 버튼을 눌러 주세요.", error);
+        }
+      });
+      window.addEventListener("resize", function on_panel_resize() {
+        if (is_open) {
+          center_music_panel(panel);
+        }
       });
       document.addEventListener("keydown", function on_escape(event) {
         if (event.key === "Escape" && is_open) {

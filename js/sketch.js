@@ -32,7 +32,10 @@
   let tap_x = 0;
   let tap_y = 0;
   let is_tap_tracking = false;
+  let is_pastel_held = false;
+  let pastel_token = 0;
   let last_touch_at = 0;
+  const PASTEL_FOLDER = "images/sketches/";
 
   /**
    * 지금 화면이 스케치인지 확인합니다.
@@ -59,8 +62,85 @@
     }
     return {
       src: folder + file_name,
+      pastel_src: PASTEL_FOLDER + file_name + "?v=20261121e",
       caption: caption,
     };
+  }
+
+  /**
+   * 움직임 줄이기를 켠 브라우저에서는 파스텔로 넘기지 않습니다.
+   */
+  function prefers_still_motion() {
+    try {
+      return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    } catch (error) {
+      console.error("움직임 설정을 확인하지 못했습니다.", error);
+      return false;
+    }
+  }
+
+  /**
+   * 파스텔을 거두고 원본만 남깁니다.
+   */
+  function stop_pastel_fade() {
+    const pastel = document.getElementById("sketch_pastel");
+    if (!pastel) {
+      return;
+    }
+    pastel.classList.remove("is_breathing");
+  }
+
+  /**
+   * 손을 대지 않으면 파스텔로 천천히 갔다가 원본으로 천천히 돌아옵니다.
+   */
+  function begin_pastel_fade() {
+    try {
+      const pastel = document.getElementById("sketch_pastel");
+      if (!pastel || is_pastel_held || !is_sketch_design() || prefers_still_motion()) {
+        return;
+      }
+      if (!pastel.getAttribute("src") || !pastel.complete || pastel.naturalWidth === 0) {
+        return;
+      }
+      pastel.classList.remove("is_breathing");
+      void pastel.offsetWidth;
+      pastel.classList.add("is_breathing");
+    } catch (error) {
+      console.error("파스텔로 바꾸지 못했습니다. 원본 사진을 그대로 보여 줍니다.", error);
+    }
+  }
+
+  /**
+   * 지금 원본과 같은 파스텔을 준비한 뒤, 천천히 겹치기 시작합니다.
+   */
+  function load_pastel(on_ready) {
+    try {
+      const pastel = document.getElementById("sketch_pastel");
+      if (!pastel || !sketch_files.length) {
+        return;
+      }
+      const request_src = current_photo().pastel_src;
+      const token = ++pastel_token;
+      pastel.onload = function on_pastel_load() {
+        if (token !== pastel_token) {
+          return;
+        }
+        on_ready();
+      };
+      pastel.onerror = function on_pastel_error() {
+        if (token !== pastel_token) {
+          return;
+        }
+        console.error("파스텔 사진을 불러오지 못했습니다. 원본을 그대로 보여 줍니다.", request_src);
+      };
+      if (pastel.getAttribute("src") === request_src && pastel.complete && pastel.naturalWidth > 0) {
+        on_ready();
+        return;
+      }
+      pastel.src = request_src;
+    } catch (error) {
+      console.error("파스텔 전환을 준비하지 못했습니다. 원본 사진을 그대로 보여 줍니다.", error);
+    }
   }
 
   /**
@@ -79,12 +159,15 @@
       const request_src = photo.src;
       const token = ++paint_token;
       shown.alt = "원본 사진, " + photo.caption;
+      stop_pastel_fade();
       if (!shown.getAttribute("src")) {
         shown.src = request_src;
         shown_src = request_src;
+        load_pastel(begin_pastel_fade);
         return;
       }
       if (shown_src === request_src) {
+        load_pastel(begin_pastel_fade);
         return;
       }
       cover.onload = function on_cover_load() {
@@ -104,6 +187,7 @@
               return;
             }
             cover.classList.remove("is_shown");
+            load_pastel(begin_pastel_fade);
           });
         });
       };
@@ -170,6 +254,8 @@
       tap_x = event.touches[0].clientX;
       tap_y = event.touches[0].clientY;
       is_tap_tracking = true;
+      is_pastel_held = true;
+      stop_pastel_fade();
     } catch (error) {
       is_tap_tracking = false;
       console.error("사진 터치를 시작하지 못했습니다.", error);
@@ -185,6 +271,7 @@
         return;
       }
       is_tap_tracking = false;
+      is_pastel_held = false;
       last_touch_at = Date.now();
       if (!is_sketch_design()) {
         return;
@@ -196,6 +283,7 @@
       const delta_x = touch.clientX - tap_x;
       const delta_y = touch.clientY - tap_y;
       if (Math.abs(delta_x) > 12 || Math.abs(delta_y) > 12) {
+        begin_pastel_fade();
         return;
       }
       show_next_photo();
@@ -236,11 +324,37 @@
         console.error("스케치 화면을 찾지 못했습니다.");
         return;
       }
+      const pastel = document.getElementById("sketch_pastel");
+      if (!pastel) {
+        console.error("파스텔 사진을 얹을 자리를 찾지 못했습니다.");
+        return;
+      }
       image.addEventListener("error", on_photo_error);
       image.addEventListener("load", on_photo_load);
       stage.addEventListener("touchstart", on_sketch_touch_start, { passive: true });
       stage.addEventListener("touchend", on_sketch_touch_end);
+      stage.addEventListener("touchcancel", function on_sketch_touch_cancel() {
+        is_tap_tracking = false;
+        is_pastel_held = false;
+        begin_pastel_fade();
+      });
       stage.addEventListener("click", on_sketch_click);
+      const design_watch = new MutationObserver(function on_design_attribute() {
+        try {
+          if (is_sketch_design()) {
+            load_pastel(begin_pastel_fade);
+            return;
+          }
+          is_pastel_held = false;
+          stop_pastel_fade();
+        } catch (error) {
+          console.error("스케치 파스텔 전환을 맞추지 못했습니다.", error);
+        }
+      });
+      design_watch.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-design"],
+      });
       show_current_photo();
     } catch (error) {
       console.error("스케치 화면을 준비하지 못했습니다. 페이지를 새로고침해 주세요.", error);
