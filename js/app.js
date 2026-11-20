@@ -390,7 +390,7 @@
         return;
       }
       els.vignette_image.src = face.src;
-      els.vignette_image.alt = "오로라 캐릭터, " + face.caption;
+      els.vignette_image.alt = "Aurora 캐릭터, " + face.caption;
     } catch (error) {
       console.error("오로라 캐릭터를 미리 걸지 못했습니다. 화면을 넘긴 뒤 다시 확인해 주세요.", error);
     }
@@ -425,7 +425,7 @@
       // 타로는 달빛 설명, 오로라는 캐릭터 표정을 그림 이름으로 둡니다.
       const is_aurora = document.documentElement.dataset.design === root.DESIGN_AURORA;
       els.vignette_image.alt = is_aurora
-        ? "오로라 캐릭터, " + vignette.caption
+        ? "Aurora 캐릭터, " + vignette.caption
         : vignette.caption;
 
       // 그림과 그림 이름이 같은 박자로 다시 움직이게 합니다.
@@ -540,7 +540,7 @@
         els.vignette_caption.textContent = vignette.caption;
         const is_aurora_same = document.documentElement.dataset.design === root.DESIGN_AURORA;
         els.vignette_image.alt = is_aurora_same
-          ? "오로라 캐릭터, " + vignette.caption
+          ? "Aurora 캐릭터, " + vignette.caption
           : vignette.caption;
         return;
       }

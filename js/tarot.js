@@ -448,7 +448,7 @@
         console.error("타로 카드 칸을 찾지 못했습니다. 페이지를 새로고침해 주세요.");
         return;
       }
-      image.alt = "덮인 타로 카드";
+      image.alt = "덮인 Tarot 카드";
       load_weave_images().catch(function (error) {
         console.error("카드 문양을 미리 불러오지 못했습니다. 페이지를 새로고침해 주세요.", error);
       });

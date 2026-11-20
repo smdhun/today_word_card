@@ -154,6 +154,13 @@ h2 {
   min-width: 0;
 }
 
+/* 가운데 정렬일 때 오로라 왼쪽 빈칸을 조금만 줄입니다. 스피커는 그대로 둡니다. */
+@media (min-width: 481px) {
+  .top_actions {
+    transform: translateX(-12px);
+  }
+}
+
 .design_switch {
   display: flex;
   align-items: center;
@@ -185,11 +192,15 @@ h2 {
   font-weight: 600;
 }
 
-/* 오로라, 타로 태그는 글자 수가 달라도 같은 폭입니다. */
+/* Aurora, Tarot, Sketch, Music은 글자 길이와 상관없이 같은 61px입니다. */
 #design_aurora,
-#design_tarot {
+#design_tarot,
+#design_sketch,
+#music_toggle {
   box-sizing: border-box;
-  width: 4.89em;
+  flex-shrink: 0;
+  width: 61px;
+  padding: 0 8px;
   text-align: center;
 }
 
@@ -2300,6 +2311,40 @@ fieldset {
 
   .design_switch {
     gap: 4px;
+  }
+
+  /* 스피커 자리를 비우고, 버튼 네 개가 한 줄에 남게 폭을 줄입니다. */
+  .top_bar_inner {
+    align-items: flex-start;
+    width: auto;
+    margin-right: 56px;
+    margin-left: 2px;
+  }
+
+  .top_actions,
+  .music_head {
+    gap: 4px;
+  }
+
+  #design_aurora,
+  #design_tarot,
+  #design_sketch,
+  #music_toggle {
+    width: 52px;
+    padding: 0 4px;
+  }
+}
+
+@media (max-width: 340px) {
+  .music_head .music_level {
+    display: none;
+  }
+
+  #design_aurora,
+  #design_tarot,
+  #design_sketch,
+  #music_toggle {
+    width: 50px;
   }
 }
 
