@@ -316,21 +316,26 @@ html.is_music_list_open .top_bar {
   backdrop-filter: blur(24px);
 }
 
-/* 반복 표시는 목록 위에 고정하고, 곡 제목만 위아래로 움직입니다. */
+/* 반복 세 버튼과 이전·다음 곡을 한 줄에 둡니다. 곡 제목만 아래로 스크롤됩니다. */
 .music_modes {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin: 0 6px 8px;
+  gap: 2px;
+  margin: 0 2px 8px;
 }
 
-.music_mode {
+.music_mode_group {
+  display: contents;
+}
+
+.music_mode,
+.music_step {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
+  min-width: 36px;
   min-height: 44px;
   padding: 4px;
   border: 0;
@@ -339,6 +344,17 @@ html.is_music_list_open .top_bar {
   color: var(--ink_soft);
   font-family: var(--font_label);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.music_step {
+  flex: 0 0 auto;
+}
+
+.music_step svg {
+  display: block;
+  width: 22px;
+  height: 22px;
 }
 
 /* 선택된 반복 표시는 화면 색과 상관없이 금색입니다. */
@@ -346,9 +362,17 @@ html.is_music_list_open .top_bar {
   color: #e8c176;
 }
 
-.music_mode:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+.music_mode:focus,
+.music_step:focus {
+  outline: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .music_mode:focus-visible,
+  .music_step:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
 }
 
 .music_mode_one {

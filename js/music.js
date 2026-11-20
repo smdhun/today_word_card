@@ -48,7 +48,8 @@
   let play_mode = PLAY_MODE_ONCE;
   let once_origin_index = -1;
   let shuffle_deck = [];
-  // 무작위 재생에서 곡이 끝나 다음 곡으로 넘어갈 때만 목록을 맞춥니다.
+  let played_indexes = [];
+  // 목록이 열린 채 고른 곡이 화면 밖에 있으면 그 곡을 한가운데로 옮깁니다.
   let should_center_shuffle_track = false;
 
   /**
@@ -679,6 +680,66 @@
   }
 
   /**
+   * 이전 곡 또는 다음 곡으로 옮깁니다. 한 곡 반복이어도 옆 곡으로 갑니다.
+   * direction이 1이면 다음, -1이면 이전입니다.
+   */
+  function play_nearby_track(direction) {
+    try {
+      const count = TRACKS.length;
+      if (count === 0) {
+        console.error("이동할 곡이 없습니다. 목록을 다시 열어 주세요.");
+        return;
+      }
+      const step = direction < 0 ? -1 : 1;
+      let index = -1;
+      if (current_index < 0) {
+        index = step < 0 ? count - 1 : 0;
+      } else if (step > 0 && play_mode === PLAY_MODE_SHUFFLE) {
+        index = next_index_after_end();
+      } else if (step < 0 && play_mode === PLAY_MODE_SHUFFLE && played_indexes.length > 0) {
+        index = played_indexes.pop();
+      } else {
+        index = (current_index + step + count) % count;
+      }
+      if (index < 0) {
+        index = step < 0 ? count - 1 : 0;
+      }
+      if (step > 0 && current_index >= 0 && current_index !== index) {
+        played_indexes.push(current_index);
+        if (played_indexes.length > count) {
+          played_indexes.shift();
+        }
+      }
+      if (step < 0 && play_mode === PLAY_MODE_SHUFFLE && current_index >= 0 && current_index !== index) {
+        shuffle_deck.unshift(current_index);
+      }
+      if (is_open) {
+        should_center_shuffle_track = true;
+      }
+      if (index === current_index) {
+        try {
+          audio.currentTime = 0;
+        } catch (error) {
+          console.error("같은 곡을 처음부터 열지 못했습니다.", error);
+        }
+        const play_result = audio.play();
+        if (play_result && typeof play_result.catch === "function") {
+          play_result.catch(function on_replay_failed(error) {
+            console.error("곡을 다시 재생하지 못했습니다. 목록에서 곡을 눌러 주세요.", error);
+            should_center_shuffle_track = false;
+          });
+        }
+        return;
+      }
+      note_user_choice(index);
+      play_track(index, false);
+    } catch (error) {
+      console.error("곡을 바꾸지 못했습니다. 목록에서 곡을 다시 눌러 주세요.", error);
+      should_center_shuffle_track = false;
+    }
+  }
+
+  /**
    * 고른 곡을 재생합니다. 이미 재생 중이면 잠시 멈춥니다.
    * is_user_choice가 참이면 그 곡을 반복 순서의 새 기준으로 기록합니다.
    */
@@ -801,6 +862,18 @@
           set_play_mode(button.getAttribute("data-play-mode"));
         });
       });
+      const prev_button = document.getElementById("music_prev");
+      const next_button = document.getElementById("music_next");
+      if (!prev_button || !next_button) {
+        console.error("이전 곡 또는 다음 곡 버튼을 찾지 못했습니다. 페이지를 새로고침해 주세요.");
+      } else {
+        prev_button.addEventListener("click", function on_prev_click() {
+          play_nearby_track(-1);
+        });
+        next_button.addEventListener("click", function on_next_click() {
+          play_nearby_track(1);
+        });
+      }
       toggle.addEventListener("click", function on_toggle_click() {
         set_panel_open(panel, toggle, !is_open);
       });

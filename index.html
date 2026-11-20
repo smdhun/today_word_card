@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261120g">
+  <link rel="stylesheet" href="css/style.css?v=20261120h">
   <link rel="stylesheet" href="css/aurora.css?v=20261120f">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
@@ -69,31 +69,43 @@
             </span>
           </div>
           <div id="music_panel" class="music_panel" hidden>
-            <!-- 곡이 끝난 뒤의 순서만 정합니다. 처음에는 전체 한 번입니다. -->
-            <div class="music_modes" role="group" aria-label="반복 방식">
-              <button id="music_mode_one" class="music_mode" type="button" data-play-mode="one" aria-pressed="false" aria-label="한 곡 반복">
-                <svg class="music_mode_one" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16.2 6.2a6.2 6.2 0 0 0-9.7 1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                  <path d="M6.2 5.2v3.2h3.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M7.8 17.8a6.2 6.2 0 0 0 9.7-1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                  <path d="M17.8 18.8v-3.2h-3.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                  <text x="12" y="14.6" text-anchor="middle" font-size="7.5" font-family="sans-serif" fill="currentColor">1</text>
+            <!-- 반복 방식 세 개와 이전·다음 곡을 한 줄에 둡니다. -->
+            <div class="music_modes">
+              <div class="music_mode_group" role="group" aria-label="반복 방식">
+                <button id="music_mode_one" class="music_mode" type="button" data-play-mode="one" aria-pressed="false" aria-label="한 곡 반복">
+                  <svg class="music_mode_one" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M16.2 6.2a6.2 6.2 0 0 0-9.7 1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M6.2 5.2v3.2h3.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M7.8 17.8a6.2 6.2 0 0 0 9.7-1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M17.8 18.8v-3.2h-3.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    <text x="12" y="14.6" text-anchor="middle" font-size="7.5" font-family="sans-serif" fill="currentColor">1</text>
+                  </svg>
+                </button>
+                <button id="music_mode_once" class="music_mode" type="button" data-play-mode="once" aria-pressed="true" aria-label="전체 한 번">
+                  <span class="music_mode_all" aria-hidden="true">
+                    <span class="music_mode_all_word">ALL</span>
+                    <span class="music_mode_all_row">
+                      <svg viewBox="0 0 36 12" aria-hidden="true">
+                        <path d="M1 6h28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M24 2.2 32 6 24 9.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      <span class="music_mode_all_one">1</span>
+                    </span>
+                  </span>
+                </button>
+                <button id="music_mode_shuffle" class="music_mode" type="button" data-play-mode="shuffle" aria-pressed="false" aria-label="무작위 반복">
+                  <span class="music_mode_random">Random</span>
+                </button>
+              </div>
+              <button id="music_prev" class="music_step" type="button" aria-label="이전 곡">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14.5 7 9 12l5.5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </button>
-              <button id="music_mode_once" class="music_mode" type="button" data-play-mode="once" aria-pressed="true" aria-label="전체 한 번">
-                <span class="music_mode_all" aria-hidden="true">
-                  <span class="music_mode_all_word">ALL</span>
-                  <span class="music_mode_all_row">
-                    <svg viewBox="0 0 36 12" aria-hidden="true">
-                      <path d="M1 6h28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                      <path d="M24 2.2 32 6 24 9.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span class="music_mode_all_one">1</span>
-                  </span>
-                </span>
-              </button>
-              <button id="music_mode_shuffle" class="music_mode" type="button" data-play-mode="shuffle" aria-pressed="false" aria-label="무작위 반복">
-                <span class="music_mode_random">Random</span>
+              <button id="music_next" class="music_step" type="button" aria-label="다음 곡">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9.5 7 15 12l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
               </button>
             </div>
             <p id="music_message" class="music_message" role="alert" hidden></p>
@@ -475,7 +487,7 @@
   <script src="js/storage.js"></script>
   <script src="js/app.js?v=20261120e"></script>
   <script src="js/relation.js"></script>
-  <script src="js/music.js?v=20261119r"></script>
+  <script src="js/music.js?v=20261120h"></script>
   <script src="js/face_read.js?v=20261118o"></script>
 </body>
 </html>
