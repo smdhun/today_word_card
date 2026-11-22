@@ -1271,13 +1271,34 @@ html.is_slide_to_aurora[data-design="tarot"] .stage {
 }
 
 :root[data-design="tarot"] .tarot_stage {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 18px;
   width: min(280px, 100%);
   margin: 0 auto;
+  border-radius: 22px;
   perspective: 1200px;
+  /* 빛은 왼쪽 위. 그림자는 카드 밖, 오른쪽 아래로 둡니다. */
+  box-shadow:
+    14px 14px 16px rgba(0, 0, 0, 0.92),
+    6px 5px 8px rgba(0, 0, 0, 0.78);
+}
+
+/* 카드 본체의 그림자는 3D 층이 잘라 버리므로, 바닥 그림자는 카드 칸에 둡니다. */
+:root[data-design="tarot"] .tarot_stage::after {
+  content: "";
+  position: absolute;
+  left: 28%;
+  width: 78%;
+  bottom: -12px;
+  z-index: -1;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 48%, rgba(0, 0, 0, 0) 74%);
+  pointer-events: none;
 }
 
 .tarot_frame {
@@ -1287,7 +1308,7 @@ html.is_slide_to_aurora[data-design="tarot"] .stage {
   border-radius: 22px;
   overflow: hidden;
   background: #141824;
-  box-shadow: 0 18px 36px -18px rgba(0, 0, 0, 0.55);
+  box-shadow: none;
   transform-style: preserve-3d;
 }
 
@@ -1347,8 +1368,8 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
   border: 2px solid #e2c27a;
   background: #141824;
   box-shadow:
-    0 12px 16px rgba(0, 0, 0, 0.72),
-    0 4px 6px rgba(0, 0, 0, 0.55);
+    14px 14px 16px rgba(0, 0, 0, 0.92),
+    6px 5px 8px rgba(0, 0, 0, 0.78);
   perspective: 1200px;
   pointer-events: none;
 }
@@ -1403,12 +1424,9 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
 }
 
 /* 뒷면은 터치하면 문양이 그려지므로, 누를 수 있는 카드처럼 보입니다. */
-/* 그림자는 카드 테두리 바로 아래에서 시작합니다. 아래 여백 안에 머물게 둡니다. */
 :root[data-design="tarot"]:has(#tarot_reading[hidden]) .tarot_frame {
   cursor: pointer;
-  box-shadow:
-    0 12px 16px rgba(0, 0, 0, 0.72),
-    0 4px 6px rgba(0, 0, 0, 0.55);
+  box-shadow: none;
 }
 
 .tarot_weave {
