@@ -24,8 +24,8 @@
   let is_intro_running = false;
   // 음악 재생 여부를 한 번 고른 뒤에만 자동 변경을 켭니다.
   let has_music_choice = false;
-  // 기분, 문장, 화살표, 얼굴 찾기를 누르면 다시 시작하지 않습니다.
-  // 다른 화면으로 나갔다가 오로라로 돌아오는 경우는 여기에 넣지 않습니다.
+  // 기분, 문장, 얼굴 찾기를 누르면 다시 시작하지 않습니다.
+  // 좌우 화살표는 지금만 멈추고, 다른 화면을 갔다가 돌아오면 다시 시작합니다.
   let has_user_stopped_intro = false;
   let intro_timer = 0;
   // 한 바퀴에 여섯 기분을 한 번씩 담습니다. 비면 다시 섞습니다.
@@ -704,7 +704,7 @@
   }
 
   /**
-   * 사용자가 기분이나 문장, 화살표, 얼굴 찾기를 누르면 변화를 끝내고 다시 켜지 않습니다.
+   * 사용자가 기분이나 문장, 얼굴 찾기를 누르면 변화를 끝내고 다시 켜지 않습니다.
    */
   function stop_intro_faces_for_user() {
     has_user_stopped_intro = true;
@@ -829,7 +829,8 @@
    */
   function on_browse_vignette(step) {
     try {
-      stop_intro_faces_for_user();
+      // 화살표로 넘기는 동안만 멈춥니다. 다른 화면을 갔다가 오로라로 돌아오면 다시 시작합니다.
+      stop_intro_faces();
       if (typeof root.list_vignettes !== "function") {
         show_status("그림 목록을 열지 못했습니다. 페이지를 새로고침한 뒤 다시 눌러 주세요.", true);
         return;
@@ -996,19 +997,24 @@
   /**
    * 고른 카드를 화면에 그립니다.
    */
-  function render_card(card) {
+  function render_card(card, options) {
     try {
+      const keep_vignette = Boolean(options && options.keep_vignette);
       reset_face_reading();
       els.card_mood.textContent = card.mood.label;
       els.card_lead.textContent = card.lead_text;
       els.card_caution.textContent = card.caution_text;
       render_wise_quotes(card.wise_quotes);
-      render_vignette(card.vignette);
+      if (!keep_vignette) {
+        render_vignette(card.vignette);
+      }
       els.result_card.dataset.mood = card.mood.id;
       els.card_empty.hidden = true;
       els.card_head.hidden = false;
       els.card_body.hidden = false;
-      play_reveal();
+      if (!keep_vignette) {
+        play_reveal();
+      }
     } catch (error) {
       console.error("카드를 그리지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed);
@@ -1079,10 +1085,10 @@
   /**
    * 만든 카드를 현재 카드로 삼아 화면에 그리고, 저장하고, 다음 그림을 미리 받아 둡니다.
    */
-  function apply_card(validated, card) {
+  function apply_card(validated, card, options) {
     apply_startup_tarot_image(card);
     current_card = card;
-    render_card(card);
+    render_card(card, options);
     // 타로에 있는 동안 캐릭터 칸은 숨겨져 있습니다. 풍경이 아니라 오로라 얼굴을 미리 걸어 둡니다.
     if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
       place_hidden_aurora_face();
@@ -1512,7 +1518,11 @@
         show_error(root.MESSAGES.draw_failed);
         return;
       }
-      apply_card(validated, card);
+      // 자동 변경 중이면 지금 얼굴을 유지합니다. 돌아오자마자 다른 얼굴로 바뀌지 않습니다.
+      const keep_vignette = document.documentElement.dataset.design === root.DESIGN_AURORA
+        && has_music_choice
+        && !has_user_stopped_intro;
+      apply_card(validated, card, { keep_vignette: keep_vignette });
     } catch (error) {
       console.error("디자인에 맞는 문장을 다시 고르지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed);
