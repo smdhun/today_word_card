@@ -459,6 +459,7 @@
   }
 
   let locked_scroll_y = 0;
+  let is_background_locked = false;
   let ignore_outside_until = 0;
   let scroll_token = 0;
   let scroll_close_timer = 0;
@@ -484,10 +485,25 @@
   }
 
   /**
+   * 스케치 사진은 화면을 채우고 스크롤이 없습니다.
+   * 본문을 고정했다가 풀면 목록을 닫는 순간에 사진이 번쩍입니다.
+   */
+  function is_sketch_screen() {
+    const root = window.TodayWordCard || {};
+    return document.documentElement.dataset.design === (root.DESIGN_SKETCH || "sketch");
+  }
+
+  /**
    * 목록이 열려 있는 동안 뒤 화면을 지금 위치에 붙여 둡니다.
    */
   function lock_background_scroll() {
     try {
+      document.documentElement.classList.add("is_music_list_open");
+      if (is_sketch_screen()) {
+        is_background_locked = false;
+        return;
+      }
+      is_background_locked = true;
       locked_scroll_y = window.scrollY || document.documentElement.scrollTop || 0;
       const bar = document.querySelector(".top_bar");
       const bar_height = bar ? bar.getBoundingClientRect().height : 0;
@@ -499,7 +515,6 @@
       document.body.style.width = "100%";
       document.body.style.paddingTop = bar_height + "px";
       document.body.style.paddingRight = scrollbar_width > 0 ? scrollbar_width + "px" : "";
-      document.documentElement.classList.add("is_music_list_open");
     } catch (error) {
       console.error("뒤 화면을 고정하지 못했습니다. 목록은 그대로 열어둡니다.", error);
     }
@@ -511,6 +526,10 @@
   function unlock_background_scroll() {
     try {
       document.documentElement.classList.remove("is_music_list_open");
+      if (!is_background_locked) {
+        return;
+      }
+      is_background_locked = false;
       document.body.style.position = "";
       document.body.style.top = "";
       document.body.style.left = "";

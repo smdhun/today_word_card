@@ -22,7 +22,10 @@
   let tarot_reveal_no = 0;
   // 음악 선택 뒤에 캐릭터가 기분마다 바뀌는 동안만 참입니다.
   let is_intro_running = false;
-  // 사용자가 직접 조작하면 다시 시작하지 않습니다.
+  // 음악 재생 여부를 한 번 고른 뒤에만 자동 변경을 켭니다.
+  let has_music_choice = false;
+  // 기분, 문장, 화살표, 얼굴 찾기를 누르면 다시 시작하지 않습니다.
+  // 다른 화면으로 나갔다가 오로라로 돌아오는 경우는 여기에 넣지 않습니다.
   let has_user_stopped_intro = false;
   let intro_timer = 0;
   // 한 바퀴에 여섯 기분을 한 번씩 담습니다. 비면 다시 섞습니다.
@@ -701,7 +704,7 @@
   }
 
   /**
-   * 사용자가 화면을 직접 다루면 캐릭터 변화를 끝내고 다시 켜지 않습니다.
+   * 사용자가 기분이나 문장, 화살표, 얼굴 찾기를 누르면 변화를 끝내고 다시 켜지 않습니다.
    */
   function stop_intro_faces_for_user() {
     has_user_stopped_intro = true;
@@ -717,7 +720,7 @@
         return;
       }
       if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
-        stop_intro_faces_for_user();
+        stop_intro_faces();
         return;
       }
       if (!intro_queue.length) {
@@ -765,10 +768,11 @@
 
   /**
    * 음악 재생 여부를 고른 뒤에 캐릭터 변화를 시작합니다.
+   * 다른 화면을 다녀와 오로라로 돌아오면, 사용자가 직접 멈추지 않았을 때 다시 켭니다.
    */
   function start_intro_faces() {
     try {
-      if (has_user_stopped_intro || is_intro_running) {
+      if (!has_music_choice || has_user_stopped_intro || is_intro_running) {
         return;
       }
       if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
@@ -1470,12 +1474,21 @@
   }
 
   /**
+   * 음악 재생 여부를 고르면 표시해 두고, 오로라에 있을 때 캐릭터 변화를 켭니다.
+   */
+  function on_music_choice() {
+    has_music_choice = true;
+    start_intro_faces();
+  }
+
+  /**
    * 디자인이 바뀌면 같은 순번의 문장과 그림을 그 모드 덱에서 다시 고릅니다.
+   * 오로라를 떠나면 자동 변경만 멈추고, 돌아오면 다시 시작합니다.
    */
   function on_design_change() {
     try {
-      if (is_intro_running) {
-        stop_intro_faces_for_user();
+      if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
+        stop_intro_faces();
       }
       aurora_motion_no += 1;
       window.clearTimeout(aurora_hold_timer);
@@ -1503,6 +1516,14 @@
     } catch (error) {
       console.error("디자인에 맞는 문장을 다시 고르지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed);
+    } finally {
+      try {
+        if (document.documentElement.dataset.design === root.DESIGN_AURORA) {
+          start_intro_faces();
+        }
+      } catch (error) {
+        console.error("오로라로 돌아온 뒤 캐릭터 변화를 다시 켜지 못했습니다. 화면을 한 번 더 옮겨 주세요.", error);
+      }
     }
   }
 
@@ -1536,7 +1557,7 @@
       bind_aurora_slot(els.wise_quote_first, "wise_0", "첫 격언을 다른 문장으로 바꿉니다");
       bind_aurora_slot(els.wise_quote_second, "wise_1", "둘째 격언을 다른 문장으로 바꿉니다");
       document.addEventListener("today_word_design_change", on_design_change);
-      document.addEventListener("today_word_music_choice", start_intro_faces);
+      document.addEventListener("today_word_music_choice", on_music_choice);
       const camera_open = document.getElementById("camera_open");
       if (camera_open) {
         camera_open.addEventListener("click", stop_intro_faces_for_user);

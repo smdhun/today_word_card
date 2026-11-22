@@ -43,6 +43,12 @@
   width: 100%;
   min-height: 0;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 목록을 열어도 위 띠를 고정하지 않습니다. 고정했다가 풀면 사진이 번쩍입니다. */
+:root[data-design="sketch"].is_music_list_open .top_bar {
+  position: sticky;
 }
 
 /* 비율은 버리고, 남은 화면 전체를 같은 사각형으로 채웁니다. */
@@ -95,11 +101,11 @@
   animation: sketch_pastel_drift 36s ease-in-out infinite;
 }
 
-/* 노래 목록은 오로라, 타로처럼 뒤 사진이 비칩니다. 바탕 판에만 칠합니다. */
+/* 뒤 사진이 비치되, 흐림 필터는 쓰지 않습니다. 목록을 닫을 때 필터가 사라지면 사진이 번쩍입니다. */
 :root[data-design="sketch"] .music_panel::before {
-  background: rgba(16, 20, 24, 0.74);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
+  background: rgba(16, 20, 24, 0.92);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 /* 다음 사진은 다 불러온 뒤에만 위에 올립니다. 그 전에는 이전 사진이 그대로 보입니다. */
