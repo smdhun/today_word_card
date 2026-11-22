@@ -238,12 +238,24 @@
   }
 
   /**
+   * 음악 목록이 열려 있으면 사진 넘기기를 하지 않습니다. 목록만 접힙니다.
+   */
+  function is_music_list_open() {
+    return document.documentElement.classList.contains("is_music_list_open");
+  }
+
+  /**
    * 손가락이 거의 움직이지 않았으면 다음 사진으로 넘깁니다.
    * 가로로 민 터치는 화면 전환이므로 사진은 그대로 둡니다.
+   * 음악 목록이 열린 터치는 파스텔 흐름도 멈추지 않습니다.
    */
   function on_sketch_touch_start(event) {
     try {
       if (!is_sketch_design() || !event.touches || event.touches.length !== 1) {
+        is_tap_tracking = false;
+        return;
+      }
+      if (is_music_list_open()) {
         is_tap_tracking = false;
         return;
       }
@@ -297,7 +309,7 @@
    */
   function on_sketch_click(event) {
     try {
-      if (!is_sketch_design()) {
+      if (!is_sketch_design() || is_music_list_open()) {
         return;
       }
       if (Date.now() - last_touch_at < 700) {
