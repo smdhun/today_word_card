@@ -720,16 +720,7 @@ html.is_music_list_open .top_bar {
   display: none;
 }
 
-/* 강아지가 먼저 서 있는 동안에는 어두운 막과 문구를 숨깁니다. */
-.music_offer.is_dog_first {
-  background: transparent;
-}
-
-.music_offer.is_dog_first .music_offer_shell {
-  opacity: 0;
-}
-
-/* 강아지 다음에 테두리와 문구가 아래에서 올라옵니다. */
+/* 질문 상자가 아래에서 올라옵니다. 강아지는 이 상자가 보인 뒤에 나옵니다. */
 .music_offer.is_card_in {
   animation: music_offer_dim 0.45s ease-out both;
 }
@@ -2558,8 +2549,8 @@ fieldset {
     display: none !important;
   }
 
-  /* 강아지는 달리지 않고 창 윗줄 가운데에 서 있습니다. */
-  .music_offer_dog_track {
+  /* 강아지는 달리지 않고, 질문 상자가 나온 뒤에 창 윗줄 가운데에 섭니다. */
+  .music_offer.is_dog_ready .music_offer_dog_track {
     opacity: 1;
   }
 
