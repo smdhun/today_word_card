@@ -2128,6 +2128,43 @@ fieldset {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 왼쪽 화살표는 왼쪽으로, 오른쪽 화살표는 오른쪽으로 한 번 움찔합니다. */
+:root[data-design="aurora"] .vignette_nav_prev.is_nudging {
+  animation: aurora_arrow_nudge_left 0.24s ease-out;
+}
+
+:root[data-design="aurora"] .vignette_nav_next.is_nudging {
+  animation: aurora_arrow_nudge_right 0.24s ease-out;
+}
+
+@keyframes aurora_arrow_nudge_left {
+  0% {
+    transform: translateX(0);
+  }
+
+  40% {
+    transform: translateX(-6px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes aurora_arrow_nudge_right {
+  0% {
+    transform: translateX(0);
+  }
+
+  40% {
+    transform: translateX(6px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
 :root[data-design="tarot"] .vignette_nav {
   color: #f3e2bc;
 }

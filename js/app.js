@@ -824,6 +824,26 @@
   }
 
   /**
+   * 오로라 화살표를 누르면 가리키는 쪽으로 한 번 움찔합니다.
+   */
+  function nudge_aurora_arrow(step) {
+    try {
+      if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
+        return;
+      }
+      const button = step < 0 ? els.vignette_prev : els.vignette_next;
+      if (!button) {
+        return;
+      }
+      button.classList.remove("is_nudging");
+      void button.offsetWidth;
+      button.classList.add("is_nudging");
+    } catch (error) {
+      console.error("화살표 움직임을 시작하지 못했습니다.", error);
+    }
+  }
+
+  /**
    * 왼쪽·오른쪽 화살표로 그림만 바꿉니다. 문장과 순번은 그대로 둡니다.
    * step이 1이면 다음 그림, -1이면 이전 그림입니다. 끝에서는 처음으로 돌아갑니다.
    */
@@ -1555,6 +1575,12 @@
       els.form.addEventListener("submit", on_submit);
       document.querySelectorAll('input[name="mood"]').forEach(function watch_mood(input) {
         input.addEventListener("change", on_mood_change);
+      });
+      els.vignette_prev.addEventListener("pointerdown", function on_prev_nudge() {
+        nudge_aurora_arrow(-1);
+      });
+      els.vignette_next.addEventListener("pointerdown", function on_next_nudge() {
+        nudge_aurora_arrow(1);
       });
       els.vignette_prev.addEventListener("click", function on_prev_vignette() {
         on_browse_vignette(-1);
