@@ -66,6 +66,7 @@
   height: 100%;
   object-fit: fill;
   background: #101418;
+  transition: none;
 }
 
 /* 파스텔은 원본 위에 얹습니다. 손을 대지 않으면 천천히 나타났다가 사라집니다. */

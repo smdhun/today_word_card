@@ -223,8 +223,11 @@
 }
 
 /* 그림이 가운데에 있거나 위로 가는 동안 버튼과 문장은 비워 둡니다. */
+/* 좌우 화살표와 기분 칸도 같은 동안 감춥니다. 자리는 남겨 그림이 원래 곳으로 돌아옵니다. */
 :root[data-design="aurora"] .result_card.is_aurora_hold .card_body,
 :root[data-design="aurora"] .layout:has(.result_card.is_aurora_hold) .camera_row,
+:root[data-design="aurora"] .layout:has(.result_card.is_aurora_hold) .vignette_nav,
+:root[data-design="aurora"] .layout:has(.result_card.is_aurora_hold) .panel,
 :root[data-design="tarot"] .result_card.is_aurora_hold .card_body {
   opacity: 0;
   pointer-events: none;
@@ -245,6 +248,8 @@
 :root[data-design="aurora"] .result_card.is_aurora_arriving .card_body,
 :root[data-design="aurora"] .result_card.is_aurora_arriving .button_primary,
 :root[data-design="aurora"] .layout:has(.result_card.is_aurora_arriving) .camera_row,
+:root[data-design="aurora"] .layout:has(.result_card.is_aurora_arriving) .vignette_nav,
+:root[data-design="aurora"] .layout:has(.result_card.is_aurora_arriving) .panel,
 :root[data-design="tarot"] .result_card.is_aurora_arriving .card_body,
 :root[data-design="tarot"] .result_card.is_aurora_arriving .button_primary {
   animation: aurora_text_arrive 0.45s ease-out both;

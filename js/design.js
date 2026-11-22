@@ -180,12 +180,17 @@
         console.error("알 수 없는 디자인입니다.", next_design);
         return;
       }
+      // 브라우저 화면 전환이 옛 화면을 찍어 새 크기로 늘리지 않게, 바꾸는 순간에 끊습니다.
+      document.documentElement.classList.add("is_design_cut");
       apply_design(next_design);
       if (!save_design(next_design)) {
         show_save_notice();
       }
       document.dispatchEvent(new CustomEvent("today_word_design_change"));
       hide_design_hint();
+      window.requestAnimationFrame(function end_design_cut() {
+        document.documentElement.classList.remove("is_design_cut");
+      });
     } catch (error) {
       console.error("디자인을 바꾸지 못했습니다.", error);
     }
@@ -409,6 +414,48 @@
   }
 
   /**
+   * 스케치가 도착한 뒤의 사진 칸입니다. 위 버튼을 뺀 화면 전체라, 넘기는 동안 비율이 바뀌지 않습니다.
+   */
+  function sketch_bleed_rect() {
+    try {
+      const bar = document.querySelector(".top_bar");
+      const bar_bottom = bar ? Math.max(0, Math.round(bar.getBoundingClientRect().bottom)) : 0;
+      const width = Math.round(window.innerWidth) || 320;
+      const height = Math.max(120, Math.round(window.innerHeight - bar_bottom));
+      return { top: bar_bottom, left: 0, width: width, height: height };
+    } catch (error) {
+      console.error("스케치 화면 크기를 재지 못했습니다.", error);
+      return null;
+    }
+  }
+
+  /**
+   * 빈 문서가 하얗게 그려지기 전에 붙인 화면을 숨겼다가, 사진이 최종 크기로 놓이면 보여 줍니다.
+   */
+  function reveal_ghost_frame(frame, design_name) {
+    try {
+      const ghost_document = frame.contentDocument;
+      const sketch_image = ghost_document && ghost_document.getElementById("sketch_image");
+      const show_frame = function show_frame() {
+        window.requestAnimationFrame(function paint_frame() {
+          if (frame.isConnected) {
+            frame.style.visibility = "";
+          }
+        });
+      };
+      if (design_name === root.DESIGN_SKETCH && sketch_image && !sketch_image.complete) {
+        sketch_image.addEventListener("load", show_frame, { once: true });
+        sketch_image.addEventListener("error", show_frame, { once: true });
+        return;
+      }
+      show_frame();
+    } catch (error) {
+      frame.style.visibility = "";
+      console.error("넘기는 화면을 보여주지 못했습니다.", error);
+    }
+  }
+
+  /**
    * 밀리는 방향의 다음 화면을 바로 옆에 붙여 둡니다.
    */
   function ensure_preview(direction) {
@@ -425,7 +472,8 @@
     }
     const from_x = read_stage_shift(stage);
     const rect = stage.getBoundingClientRect();
-    preview_travel = Math.round(rect.width) || 320;
+    const bleed = next_design === root.DESIGN_SKETCH ? sketch_bleed_rect() : null;
+    preview_travel = (bleed && bleed.width) || Math.round(rect.width) || 320;
     preview_direction = direction;
     slide_preview = build_slide_ghost(stage, next_design, from_x);
     if (!slide_preview) {
@@ -468,12 +516,14 @@
    */
   function build_slide_ghost(stage, design_name, from_x) {
     try {
-      const rect = stage.getBoundingClientRect();
+      const is_sketch = design_name === root.DESIGN_SKETCH;
+      const rect = is_sketch ? (sketch_bleed_rect() || stage.getBoundingClientRect()) : stage.getBoundingClientRect();
       const frame = document.createElement("iframe");
       const css_parts = [collect_css_text()];
       frame.className = "stage_ghost_frame";
       frame.setAttribute("aria-hidden", "true");
       frame.tabIndex = -1;
+      frame.style.visibility = "hidden";
       frame.style.top = rect.top + "px";
       frame.style.left = (rect.left - from_x) + "px";
       frame.style.width = rect.width + "px";
@@ -492,16 +542,24 @@
         frame.remove();
         return null;
       }
+      const sketch_lock = is_sketch
+        ? "html,body{height:100%;background:#101418;}" +
+          ".stage{height:100%!important;padding:0!important;gap:0!important;}" +
+          ".sketch_stage,.sketch_frame{height:100%!important;flex:1 1 auto!important;}" +
+          ".sketch_image{transition:none!important;}"
+        : "";
       ghost_document.open();
       ghost_document.write(
         "<!DOCTYPE html><html data-design=\"" + design_name + "\"><head>" +
         font_links.join("") +
         "<style>" + css_parts.join("\n") +
-        "html,body{margin:0;overflow:hidden;}" +
+        "html,body{margin:0;overflow:hidden;background:" + ghost_background(design_name) + ";}" +
         ".stage{width:100%!important;max-width:none!important;margin:0!important;transform:none!important;}" +
+        sketch_lock +
         "</style></head><body>" + stage.outerHTML + "</body></html>"
       );
       ghost_document.close();
+      reveal_ghost_frame(frame, design_name);
       return frame;
     } catch (error) {
       console.error("넘기는 화면을 붙이지 못했습니다. 새 화면만 들입니다.", error);
@@ -534,7 +592,8 @@
     const join_ms = duration_scale === 2 ? 1200 : 600;
     const from_x = read_stage_shift(stage);
     const direction = delta_x < 0 ? -1 : 1;
-    const width = Math.round(stage.getBoundingClientRect().width) || 320;
+    const bleed = next_design === root.DESIGN_SKETCH ? sketch_bleed_rect() : null;
+    const width = (bleed && bleed.width) || Math.round(stage.getBoundingClientRect().width) || 320;
     const travel = width + 24;
     const current_design = document.documentElement.dataset.design || "";
     const ghost = build_slide_ghost(stage, current_design, from_x);
@@ -599,11 +658,7 @@
     const duration_ms = Math.max(180, Math.min(540, Math.round(distance / travel * 540))) * pace;
     if (distance < 2) {
       stage.classList.remove("is_design_sliding");
-      commit_design(next_design);
-      stage.style.transform = "";
-      is_slide_playing = false;
-      release_stage();
-      notify_aurora_swipe(next_design);
+      settle_slide(next_design, token);
       return;
     }
     stage.style.transitionDuration = duration_ms + "ms";
@@ -617,16 +672,43 @@
       if (token !== slide_token) {
         return;
       }
+      settle_slide(next_design, token);
+    }, duration_ms + 40);
+  }
+
+  /**
+   * 밀기가 끝난 뒤 새 화면을 확정합니다.
+   * 스케치는 실제 사진이 같은 크기로 그려진 다음에 옆 화면을 치워, 비율이 달라지거나 빈 화면이 번쩍이지 않습니다.
+   */
+  function settle_slide(next_design, token) {
+    const stage = stage_element();
+    if (stage) {
       stage.style.transition = "none";
-      if (slide_preview) {
-        slide_preview.style.transition = "none";
-      }
-      commit_design(next_design);
+    }
+    if (slide_preview) {
+      slide_preview.style.transition = "none";
+    }
+    commit_design(next_design);
+    if (stage) {
       stage.style.transform = "";
+    }
+    const hold_sketch = next_design === root.DESIGN_SKETCH && slide_preview;
+    if (!hold_sketch) {
       is_slide_playing = false;
       release_stage();
       notify_aurora_swipe(next_design);
-    }, duration_ms + 40);
+      return;
+    }
+    window.requestAnimationFrame(function paint_sketch() {
+      window.requestAnimationFrame(function drop_sketch_preview() {
+        if (token !== slide_token) {
+          return;
+        }
+        is_slide_playing = false;
+        release_stage();
+        notify_aurora_swipe(next_design);
+      });
+    });
   }
 
   /**

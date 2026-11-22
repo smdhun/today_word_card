@@ -1178,28 +1178,26 @@ html.is_design_sliding {
   transition: transform 540ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* 위쪽 버튼은 넘김 그림에 섞이지 않고 제자리에 둡니다. */
-.top_bar {
-  view-transition-name: top_bar;
-}
-
+/* 브라우저 화면 전환은 쓰지 않습니다. 켜지면 사진을 화면 크기로 늘리고, 화면 전체가 번쩍입니다. */
+.top_bar,
 .stage {
-  view-transition-name: design_stage;
+  view-transition-name: none;
 }
 
-/* 옛 화면과 새 화면이 이어진 채 함께 이동합니다. */
-html.is_design_sliding::view-transition-group(design_stage) {
-  overflow: visible;
-  animation: none;
-}
-
-html.is_design_sliding::view-transition-group(top_bar),
-html.is_design_sliding::view-transition-old(top_bar),
-html.is_design_sliding::view-transition-new(top_bar),
-html.is_design_sliding::view-transition-old(root),
-html.is_design_sliding::view-transition-new(root) {
+html.is_design_sliding::view-transition-group(*),
+html.is_design_sliding::view-transition-old(*),
+html.is_design_sliding::view-transition-new(*),
+html.is_design_cut::view-transition-group(*),
+html.is_design_cut::view-transition-old(*),
+html.is_design_cut::view-transition-new(*) {
   animation: none;
   mix-blend-mode: normal;
+}
+
+/* 화면이 바뀌는 동안 타로 사진의 확대가 이어져 비율이 움직이는 것처럼 보이지 않습니다. */
+html.is_design_sliding .card_vignette img,
+html.is_design_cut .card_vignette img {
+  transition: none;
 }
 
 /* 넘기는 동안 유리 카드가 뒤 화면에 비치지 않도록 바탕을 채웁니다. */
@@ -1215,42 +1213,6 @@ html.is_slide_to_aurora[data-design="aurora"] .stage {
 html.is_slide_to_tarot[data-design="tarot"] .stage,
 html.is_slide_to_aurora[data-design="tarot"] .stage {
   background: var(--surface);
-}
-
-html.is_slide_to_tarot::view-transition-old(design_stage) {
-  animation: design_leave_left 540ms cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-
-html.is_slide_to_tarot::view-transition-new(design_stage) {
-  animation: design_enter_from_right 540ms cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-
-html.is_slide_to_aurora::view-transition-old(design_stage) {
-  animation: design_leave_right 540ms cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-
-html.is_slide_to_aurora::view-transition-new(design_stage) {
-  animation: design_enter_from_left 540ms cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-
-@keyframes design_leave_left {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(calc(-100% - 24px - var(--slide_from, 0px)), 0, 0); }
-}
-
-@keyframes design_enter_from_right {
-  from { transform: translate3d(calc(100% + 24px + var(--slide_from, 0px)), 0, 0); }
-  to { transform: translate3d(0, 0, 0); }
-}
-
-@keyframes design_leave_right {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(calc(100% + 24px - var(--slide_from, 0px)), 0, 0); }
-}
-
-@keyframes design_enter_from_left {
-  from { transform: translate3d(calc(-100% - 24px + var(--slide_from, 0px)), 0, 0); }
-  to { transform: translate3d(0, 0, 0); }
 }
 
 /* 옛 화면을 붙여 두는 창. 다음 화면과 나란히 밀립니다. */
