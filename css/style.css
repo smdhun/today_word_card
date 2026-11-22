@@ -2106,8 +2106,19 @@ fieldset {
   outline-offset: -2px;
 }
 
+/* 오로라 화살표는 글자만 남깁니다. 둥근 어두운 칸과 테두리는 그리지 않습니다. */
 :root[data-design="aurora"] .vignette_nav {
   color: #d7f7ff;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+:root[data-design="aurora"] .vignette_nav:hover,
+:root[data-design="aurora"] .vignette_nav:focus-visible {
+  background: transparent;
+  outline: none;
+  color: #ffffff;
 }
 
 :root[data-design="tarot"] .vignette_nav {

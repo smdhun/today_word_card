@@ -1050,6 +1050,16 @@
         }
         set_panel_open(panel, toggle, false);
       });
+      document.addEventListener("today_word_design_change", function on_design_change_close_list() {
+        try {
+          if (!is_open) {
+            return;
+          }
+          set_panel_open(panel, toggle, false);
+        } catch (error) {
+          console.error("화면을 바꾼 뒤 음악 목록을 접지 못했습니다. Music 버튼을 눌러 주세요.", error);
+        }
+      });
       document.addEventListener("today_word_open_music_list", function on_toggle_from_swipe() {
         try {
           ignore_outside_until = Date.now() + 700;
