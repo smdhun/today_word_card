@@ -260,6 +260,7 @@
   /**
    * 스케치에서 뮤직 버튼 쪽으로 미는 손인지 확인합니다.
    * 버튼은 스케치 오른쪽에 있고, 다음 화면으로 가는 손과 같이 왼쪽으로 움직입니다.
+   * 목록이 이미 열려 있으면 같은 손이 목록을 접습니다.
    */
   function is_sketch_music_swipe(delta_x) {
     return document.documentElement.dataset.design === root.DESIGN_SKETCH && delta_x < 0;

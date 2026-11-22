@@ -311,14 +311,128 @@ html.is_music_list_open .top_bar {
   max-height: min(436px, 72vh);
   padding: 8px;
   overflow: hidden;
-  border: 1px solid rgba(233, 226, 210, 0.55);
+  border: 0;
   border-radius: 12px;
-  background: var(--card_result);
+  background: transparent;
   box-shadow: var(--shadow_result);
 }
 
+/* 바탕과 테두리만 담습니다. 버튼과 제목은 이 판 위에서 따로 움직입니다. */
+.music_panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 1px solid rgba(233, 226, 210, 0.55);
+  border-radius: 12px;
+  background: var(--card_result);
+  pointer-events: none;
+}
+
+.music_panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 열릴 때 바탕과 상단 버튼은 위에서 아래로, 곡 제목은 왼쪽에서 오른쪽으로 밀려 나옵니다. */
+.music_panel.is_opening::before {
+  animation: music_shell_down 0.36s cubic-bezier(0.22, 0.8, 0.24, 1) both;
+}
+
+.music_panel.is_opening .music_modes {
+  animation: music_modes_down 0.32s cubic-bezier(0.22, 0.8, 0.24, 1) 0.2s both;
+}
+
+/* 곡 제목은 한 줄씩 따로 밀립니다. 시작 시각은 열 때마다 스크립트가 다시 정합니다. */
+.music_panel.is_opening .music_track {
+  animation: music_row_in 0.32s cubic-bezier(0.22, 0.8, 0.24, 1) var(--music_row_delay, 0.18s) both;
+}
+
+/* 밀리는 동안 스크롤 막대가 가운데로 따라오지 않게 합니다. */
+.music_panel.is_opening .music_list,
+.music_panel.is_closing .music_list {
+  overflow: hidden;
+}
+
+/* 닫힐 때는 버튼이 위로, 제목이 왼쪽으로 빠진 뒤 바탕이 위로 밀려 올라갑니다. */
+.music_panel.is_closing {
+  pointer-events: none;
+}
+
+.music_panel.is_closing::before {
+  animation: music_shell_up 0.32s cubic-bezier(0.4, 0, 0.7, 0.2) var(--music_shell_delay, 0.16s) both;
+}
+
+.music_panel.is_closing .music_modes {
+  animation: music_modes_up 0.26s cubic-bezier(0.4, 0, 0.7, 0.2) both;
+}
+
+.music_panel.is_closing .music_track {
+  animation: music_row_out 0.26s cubic-bezier(0.4, 0, 0.7, 0.2) var(--music_row_delay, 0s) both;
+}
+
+@keyframes music_shell_down {
+  from {
+    transform: translateY(-100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes music_shell_up {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes music_modes_down {
+  from {
+    transform: translateY(-120%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes music_modes_up {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-120%);
+  }
+}
+
+@keyframes music_row_in {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes music_row_out {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
 /* 타로 목록도 오로라처럼 뒤 화면이 비치게 합니다. */
-:root[data-design="tarot"] .music_panel {
+:root[data-design="tarot"] .music_panel::before {
   background: rgba(34, 32, 22, 0.74);
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
@@ -1548,6 +1662,11 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
 
 :root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .card_inner {
   gap: 12px;
+}
+
+/* 카드 그림자가 다시 고르기 버튼에 닿지 않게, 버튼과 그 아래 글을 조금 내립니다. */
+:root[data-design="tarot"]:has(#tarot_reading:not([hidden])) #draw_button {
+  margin-top: 12px;
 }
 
 :root[data-design="tarot"]:has(#tarot_reading:not([hidden])) .tarot_stage {

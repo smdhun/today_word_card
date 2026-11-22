@@ -460,6 +460,9 @@
 
   let locked_scroll_y = 0;
   let ignore_outside_until = 0;
+  let scroll_token = 0;
+  let scroll_close_timer = 0;
+  let panel_motion_end = null;
 
   /**
    * 목록의 세로 위치는 버튼 바로 아래에 두고, 가로는 화면 한가운데로 맞춥니다.
@@ -574,19 +577,150 @@
   }
 
   /**
+   * 곡 제목의 밀기 순서를 섞습니다. 매번 다른 곡이 먼저 움직입니다.
+   */
+  function assign_title_wave(panel, is_opening) {
+    const tracks = panel.querySelectorAll(".music_track");
+    const ranks = [];
+    for (let index = 0; index < tracks.length; index += 1) {
+      ranks.push(index);
+    }
+    for (let index = ranks.length - 1; index > 0; index -= 1) {
+      const swap_index = Math.floor(Math.random() * (index + 1));
+      const held = ranks[index];
+      ranks[index] = ranks[swap_index];
+      ranks[swap_index] = held;
+    }
+    const step_s = 0.042;
+    const base_s = is_opening ? 0.18 : 0;
+    let max_delay_s = base_s;
+    tracks.forEach(function set_delay(track, index) {
+      const delay_s = base_s + ranks[index] * step_s;
+      if (delay_s > max_delay_s) {
+        max_delay_s = delay_s;
+      }
+      track.style.setProperty("--music_row_delay", delay_s.toFixed(3) + "s");
+    });
+    const shell_delay_s = is_opening ? 0 : Math.max(0.16, max_delay_s);
+    panel.style.setProperty("--music_shell_delay", shell_delay_s.toFixed(3) + "s");
+    return {
+      max_delay_s: max_delay_s,
+      shell_delay_s: shell_delay_s,
+      track_count: tracks.length
+    };
+  }
+
+  /**
+   * 밀기 동작을 다시 시작합니다. 움직임 줄이기면 클래스 없이 토큰만 바꿉니다.
+   */
+  function begin_panel_motion(panel, is_opening) {
+    scroll_token += 1;
+    window.clearTimeout(scroll_close_timer);
+    if (panel_motion_end) {
+      panel.removeEventListener("animationend", panel_motion_end);
+      panel_motion_end = null;
+    }
+    panel.classList.remove("is_opening", "is_closing");
+    const still_wave = { max_delay_s: 0, shell_delay_s: 0, track_count: 0 };
+    if (prefers_still_motion()) {
+      return { token: scroll_token, wave: still_wave };
+    }
+    const wave = assign_title_wave(panel, is_opening);
+    void panel.offsetWidth;
+    panel.classList.add(is_opening ? "is_opening" : "is_closing");
+    return { token: scroll_token, wave: wave };
+  }
+
+  /**
    * 목록을 열거나 닫습니다. 음악을 멈추지는 않습니다.
+   * 바탕과 상단 버튼은 위아래로 밀고, 제목은 좌우로 민 뒤에 닫힌 목록을 숨깁니다.
    */
   function set_panel_open(panel, toggle, next_open) {
-    is_open = next_open;
-    panel.hidden = !is_open;
-    toggle.setAttribute("aria-expanded", is_open ? "true" : "false");
-    if (is_open) {
-      lock_background_scroll();
-      center_music_panel(panel);
-      reveal_playing_track();
-      return;
+    try {
+      if (next_open === is_open) {
+        return;
+      }
+      if (next_open) {
+        panel.hidden = false;
+      }
+      const motion = begin_panel_motion(panel, next_open);
+      const token = motion.token;
+      const wave = motion.wave;
+      is_open = next_open;
+      toggle.setAttribute("aria-expanded", is_open ? "true" : "false");
+      if (is_open) {
+        lock_background_scroll();
+        center_music_panel(panel);
+        reveal_playing_track();
+        if (prefers_still_motion() || wave.track_count === 0) {
+          panel.classList.remove("is_opening");
+          return;
+        }
+        let row_in_left = wave.track_count;
+        panel_motion_end = function on_row_in_end(event) {
+          if (event.animationName !== "music_row_in") {
+            return;
+          }
+          row_in_left -= 1;
+          if (row_in_left > 0) {
+            return;
+          }
+          panel.removeEventListener("animationend", panel_motion_end);
+          panel_motion_end = null;
+          window.clearTimeout(scroll_close_timer);
+          if (token !== scroll_token || !is_open) {
+            return;
+          }
+          panel.classList.remove("is_opening");
+        };
+        panel.addEventListener("animationend", panel_motion_end);
+        scroll_close_timer = window.setTimeout(function on_open_backup() {
+          if (panel_motion_end) {
+            panel.removeEventListener("animationend", panel_motion_end);
+            panel_motion_end = null;
+          }
+          if (token !== scroll_token || !is_open) {
+            return;
+          }
+          panel.classList.remove("is_opening");
+        }, Math.ceil((wave.max_delay_s + 0.5) * 1000));
+        return;
+      }
+      let is_finish_done = false;
+      const finish_close = function finish_close() {
+        if (is_finish_done || token !== scroll_token || is_open) {
+          return;
+        }
+        is_finish_done = true;
+        panel.hidden = true;
+        panel.classList.remove("is_opening", "is_closing");
+        unlock_background_scroll();
+      };
+      if (prefers_still_motion()) {
+        finish_close();
+        return;
+      }
+      panel_motion_end = function on_shell_up_end(event) {
+        if (event.animationName !== "music_shell_up") {
+          return;
+        }
+        panel.removeEventListener("animationend", panel_motion_end);
+        panel_motion_end = null;
+        finish_close();
+      };
+      panel.addEventListener("animationend", panel_motion_end);
+      scroll_close_timer = window.setTimeout(function on_close_backup() {
+        if (panel_motion_end) {
+          panel.removeEventListener("animationend", panel_motion_end);
+          panel_motion_end = null;
+        }
+        finish_close();
+      }, Math.ceil((wave.shell_delay_s + 0.5) * 1000));
+    } catch (error) {
+      console.error("음악 목록을 펼치지 못했습니다. Music 버튼을 다시 눌러 주세요.", error);
+      panel.hidden = !next_open;
+      is_open = next_open;
     }
-    unlock_background_scroll();
   }
 
   /**
@@ -916,15 +1050,12 @@
         }
         set_panel_open(panel, toggle, false);
       });
-      document.addEventListener("today_word_open_music_list", function on_open_from_swipe() {
+      document.addEventListener("today_word_open_music_list", function on_toggle_from_swipe() {
         try {
-          if (is_open) {
-            return;
-          }
           ignore_outside_until = Date.now() + 700;
-          set_panel_open(panel, toggle, true);
+          set_panel_open(panel, toggle, !is_open);
         } catch (error) {
-          console.error("밀어서 음악 목록을 열지 못했습니다. Music 버튼을 눌러 주세요.", error);
+          console.error("밀어서 음악 목록을 바꾸지 못했습니다. Music 버튼을 눌러 주세요.", error);
         }
       });
       window.addEventListener("resize", function on_panel_resize() {

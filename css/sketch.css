@@ -95,8 +95,8 @@
   animation: sketch_pastel_drift 36s ease-in-out infinite;
 }
 
-/* 노래 목록은 오로라, 타로처럼 뒤 사진이 비칩니다. */
-:root[data-design="sketch"] .music_panel {
+/* 노래 목록은 오로라, 타로처럼 뒤 사진이 비칩니다. 바탕 판에만 칠합니다. */
+:root[data-design="sketch"] .music_panel::before {
   background: rgba(16, 20, 24, 0.74);
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
