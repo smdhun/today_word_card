@@ -948,6 +948,404 @@
     }
   }
 
+  // 곡 전체에서 미리 읽어 두는 높이 칸 수입니다. 화면에는 이보다 성기게 그립니다.
+  const WAVE_BUCKETS = 480;
+  const WAVE_REST = "#6a6f76";
+  const WAVE_PLAYED = "#d6d3cc";
+  let wave_peaks = null;
+  let wave_file = "";
+  let wave_token = 0;
+  let wave_frame_id = 0;
+  const wave_cache = {};
+  let wave_context = null;
+
+  /**
+   * 초를 분:초로 바꿉니다.
+   */
+  function format_clock(total_seconds) {
+    const safe_seconds = Number.isFinite(total_seconds) ? Math.max(0, Math.floor(total_seconds)) : 0;
+    const minutes = Math.floor(safe_seconds / 60);
+    const seconds = safe_seconds % 60;
+    return String(minutes) + ":" + String(seconds).padStart(2, "0");
+  }
+
+  /**
+   * 읽기 화면에 쓸 분과 초입니다.
+   */
+  function format_spoken_clock(total_seconds) {
+    const safe_seconds = Number.isFinite(total_seconds) ? Math.max(0, Math.floor(total_seconds)) : 0;
+    return Math.floor(safe_seconds / 60) + "분 " + (safe_seconds % 60) + "초";
+  }
+
+  /**
+   * 스케치에서 곡이 한 번이라도 시작됐으면 음파 띠를 보여 줍니다.
+   */
+  function should_show_wave() {
+    return is_sketch_screen() && current_index >= 0 && Boolean(audio.src);
+  }
+
+  /**
+   * 한 칸에서 가장 큰 소리와 그 위아래 방향을 함께 고릅니다.
+   */
+  function peaks_from_buffer(audio_buffer) {
+    const channel = audio_buffer.getChannelData(0);
+    const buckets = new Float32Array(WAVE_BUCKETS);
+    const step = Math.max(1, Math.floor(channel.length / WAVE_BUCKETS));
+    let max_peak = 0;
+    for (let bucket_index = 0; bucket_index < WAVE_BUCKETS; bucket_index += 1) {
+      const start = bucket_index * step;
+      const end = Math.min(channel.length, start + step);
+      let peak = 0;
+      for (let sample_index = start; sample_index < end; sample_index += 4) {
+        const sample = channel[sample_index];
+        if (Math.abs(sample) > Math.abs(peak)) {
+          peak = sample;
+        }
+      }
+      buckets[bucket_index] = peak;
+      if (Math.abs(peak) > max_peak) {
+        max_peak = Math.abs(peak);
+      }
+    }
+    if (max_peak > 0) {
+      for (let bucket_index = 0; bucket_index < buckets.length; bucket_index += 1) {
+        buckets[bucket_index] = buckets[bucket_index] / max_peak;
+      }
+    }
+    stretch_wave_peaks(buckets);
+    return buckets;
+  }
+
+  /**
+   * 비슷한 높이를 벌립니다. 작은 소리는 가운데로, 큰 소리는 끝으로 보냅니다.
+   */
+  function stretch_wave_peaks(buckets) {
+    const magnitudes = [];
+    for (let bucket_index = 0; bucket_index < buckets.length; bucket_index += 1) {
+      magnitudes.push(Math.abs(buckets[bucket_index]));
+    }
+    magnitudes.sort(function compare_magnitude(left, right) {
+      return left - right;
+    });
+    const low = magnitudes[Math.floor(magnitudes.length * 0.22)] || 0;
+    const high = magnitudes[Math.min(magnitudes.length - 1, Math.floor(magnitudes.length * 0.86))] || 1;
+    const span = Math.max(0.04, high - low);
+    for (let bucket_index = 0; bucket_index < buckets.length; bucket_index += 1) {
+      const sign = buckets[bucket_index] < 0 ? -1 : 1;
+      let shaped = (Math.abs(buckets[bucket_index]) - low) / span;
+      if (shaped < 0) {
+        shaped = 0;
+      }
+      if (shaped > 1) {
+        shaped = 1;
+      }
+      shaped = Math.pow(shaped, 1.65);
+      buckets[bucket_index] = sign * shaped;
+    }
+  }
+
+  /**
+   * 화면 너비에 맞춰 세로 선의 개수를 정합니다. 선이 붙어 면처럼 보이지 않게 간격을 둡니다.
+   */
+  function wave_column_count(width) {
+    return Math.max(48, Math.min(WAVE_BUCKETS, Math.floor(width / 4)));
+  }
+
+  /**
+   * 구간에서 가장 큰 값만 고르면 높이가 비슷해집니다. 가운데 소리를 그대로 씁니다.
+   */
+  function column_signed_peak(column_index, column_count) {
+    const bucket_index = Math.min(
+      wave_peaks.length - 1,
+      Math.max(0, Math.round((column_index + 0.5) * wave_peaks.length / column_count) - 1)
+    );
+    return wave_peaks[bucket_index];
+  }
+
+  // 이전 선 두께의 절반입니다. 세로 획 1.35, 이어지는 선 1.7.
+  const WAVE_BAR_WIDTH = 0.68;
+  const WAVE_LINE_WIDTH = 0.85;
+
+  /**
+   * 그릴 점의 목록을 만듭니다. x는 시간, y는 그 순간의 위아래입니다.
+   */
+  function wave_points(width, height) {
+    const mid_y = height / 2;
+    const amplitude = height * 0.49;
+    if (!wave_peaks || wave_peaks.length < 2) {
+      return { points: [], mid_y: mid_y };
+    }
+    const column_count = wave_column_count(width);
+    const points = [];
+    for (let column_index = 0; column_index < column_count; column_index += 1) {
+      const signed = column_signed_peak(column_index, column_count);
+      points.push({
+        x: ((column_index + 0.5) / column_count) * width,
+        y: mid_y - signed * amplitude,
+      });
+    }
+    return { points: points, mid_y: mid_y };
+  }
+
+  /**
+   * 아직 재생되지 않은 전체 모양입니다. 세로 높이와 이어지는 선을 함께 둡니다.
+   */
+  function stroke_wave_shape(context, width, height, color) {
+    const wave = wave_points(width, height);
+    context.strokeStyle = color;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    if (wave.points.length < 2) {
+      context.lineWidth = WAVE_LINE_WIDTH;
+      context.beginPath();
+      context.moveTo(0, wave.mid_y);
+      context.lineTo(width, wave.mid_y);
+      context.stroke();
+      return;
+    }
+    context.lineWidth = WAVE_BAR_WIDTH;
+    context.beginPath();
+    for (let point_index = 0; point_index < wave.points.length; point_index += 1) {
+      const point = wave.points[point_index];
+      context.moveTo(point.x, wave.mid_y);
+      context.lineTo(point.x, point.y);
+    }
+    context.stroke();
+    context.lineWidth = WAVE_LINE_WIDTH;
+    context.beginPath();
+    context.moveTo(wave.points[0].x, wave.points[0].y);
+    for (let point_index = 1; point_index < wave.points.length; point_index += 1) {
+      context.lineTo(wave.points[point_index].x, wave.points[point_index].y);
+    }
+    context.stroke();
+  }
+
+  /**
+   * 재생된 색은 붓을 떼지 않고 파형의 능선을 따라 그 지점까지 잇습니다.
+   */
+  function stroke_wave_trace(context, width, height, color, limit_ratio) {
+    const ratio = Math.max(0, Math.min(1, limit_ratio));
+    if (ratio <= 0) {
+      return;
+    }
+    const wave = wave_points(width, height);
+    context.strokeStyle = color;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.lineWidth = WAVE_LINE_WIDTH;
+    context.beginPath();
+    if (wave.points.length < 2) {
+      context.moveTo(0, wave.mid_y);
+      context.lineTo(width * ratio, wave.mid_y);
+      context.stroke();
+      return;
+    }
+    const exact = ratio * (wave.points.length - 1);
+    const last_index = Math.min(wave.points.length - 1, Math.floor(exact));
+    const fraction = exact - last_index;
+    context.moveTo(wave.points[0].x, wave.points[0].y);
+    for (let point_index = 1; point_index <= last_index; point_index += 1) {
+      context.lineTo(wave.points[point_index].x, wave.points[point_index].y);
+    }
+    if (ratio < 1 && fraction > 0 && last_index < wave.points.length - 1) {
+      const current = wave.points[last_index];
+      const next = wave.points[last_index + 1];
+      context.lineTo(
+        current.x + (next.x - current.x) * fraction,
+        current.y + (next.y - current.y) * fraction
+      );
+    }
+    context.stroke();
+  }
+
+  /**
+   * 전체 음파는 회색으로 두고, 재생된 부분은 능선을 한 번에 따라 흰색으로 긋습니다.
+   */
+  function draw_wave() {
+    const plate = document.getElementById("sketch_wave");
+    const canvas = document.getElementById("sketch_wave_canvas");
+    const elapsed = document.getElementById("sketch_wave_elapsed");
+    const total = document.getElementById("sketch_wave_total");
+    if (!plate || !canvas || !elapsed || !total) {
+      return;
+    }
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (width < 2 || height < 2) {
+      return;
+    }
+    try {
+      const pixel_ratio = window.devicePixelRatio || 1;
+      const pixel_width = Math.round(width * pixel_ratio);
+      const pixel_height = Math.round(height * pixel_ratio);
+      if (canvas.width !== pixel_width || canvas.height !== pixel_height) {
+        canvas.width = pixel_width;
+        canvas.height = pixel_height;
+      }
+      const context = canvas.getContext("2d");
+      if (!context) {
+        console.error("음파 화면을 열지 못했습니다.");
+        return;
+      }
+      context.setTransform(pixel_ratio, 0, 0, pixel_ratio, 0, 0);
+      context.clearRect(0, 0, width, height);
+      const duration = audio.duration;
+      const has_duration = Number.isFinite(duration) && duration > 0;
+      const progress = has_duration ? Math.max(0, Math.min(1, audio.currentTime / duration)) : 0;
+      context.save();
+      context.shadowColor = "rgba(0, 0, 0, 0.72)";
+      context.shadowBlur = 1.2;
+      context.shadowOffsetY = 0.6;
+      stroke_wave_shape(context, width, height, WAVE_REST);
+      context.restore();
+      if (progress > 0) {
+        stroke_wave_trace(context, width, height, WAVE_PLAYED, progress);
+      }
+      const elapsed_seconds = has_duration ? audio.currentTime : 0;
+      const total_seconds = has_duration ? duration : 0;
+      elapsed.textContent = format_clock(elapsed_seconds);
+      total.textContent = format_clock(total_seconds);
+      plate.setAttribute(
+        "aria-label",
+        "음악 진행 " + format_spoken_clock(elapsed_seconds) + ", 전체 " + format_spoken_clock(total_seconds)
+      );
+    } catch (error) {
+      console.error("음파 진행을 그리지 못했습니다. 재생은 계속됩니다.", error);
+    }
+  }
+
+  /**
+   * 재생 중일 때만 음파 채우기를 반복합니다.
+   */
+  function start_wave_loop() {
+    if (wave_frame_id) {
+      return;
+    }
+    function tick_wave() {
+      draw_wave();
+      if (!should_show_wave() || audio.paused || audio.ended) {
+        wave_frame_id = 0;
+        return;
+      }
+      wave_frame_id = window.requestAnimationFrame(tick_wave);
+    }
+    wave_frame_id = window.requestAnimationFrame(tick_wave);
+  }
+
+  /**
+   * 화면을 떠나거나 멈추면 음파 반복을 끊습니다.
+   */
+  function stop_wave_loop() {
+    if (!wave_frame_id) {
+      return;
+    }
+    window.cancelAnimationFrame(wave_frame_id);
+    wave_frame_id = 0;
+  }
+
+  /**
+   * 스케치가 아니면 음파를 숨기고, 스케치면 지금 위치까지 그립니다.
+   */
+  function sync_wave() {
+    const plate = document.getElementById("sketch_wave");
+    if (!plate) {
+      return;
+    }
+    if (!should_show_wave()) {
+      plate.hidden = true;
+      stop_wave_loop();
+      return;
+    }
+    plate.hidden = false;
+    window.requestAnimationFrame(function paint_wave_after_show() {
+      if (should_show_wave()) {
+        draw_wave();
+      }
+    });
+    if (!audio.paused && !audio.ended) {
+      start_wave_loop();
+    } else {
+      stop_wave_loop();
+    }
+  }
+
+  /**
+   * 곡 파일에서 음 높낮이를 한 번 읽어 둡니다. 재생은 기다리지 않습니다.
+   */
+  function load_wave(file) {
+    if (!file) {
+      return;
+    }
+    wave_file = file;
+    if (wave_cache[file]) {
+      wave_peaks = wave_cache[file];
+      sync_wave();
+      return;
+    }
+    const token = ++wave_token;
+    wave_peaks = null;
+    sync_wave();
+    const context = wave_decode_context();
+    if (!context) {
+      console.error("이 브라우저에서는 음파를 그릴 수 없습니다. 재생은 계속됩니다.");
+      return;
+    }
+    fetch(MUSIC_FOLDER + file)
+      .then(function read_wave_file(response) {
+        if (!response.ok) {
+          throw new Error("wave file");
+        }
+        return response.arrayBuffer();
+      })
+      .then(function decode_wave_file(buffer) {
+        return decode_audio_buffer(context, buffer);
+      })
+      .then(function store_wave(decoded) {
+        if (token !== wave_token) {
+          return;
+        }
+        const peaks = peaks_from_buffer(decoded);
+        wave_cache[file] = peaks;
+        if (wave_file === file) {
+          wave_peaks = peaks;
+          sync_wave();
+        }
+      })
+      .catch(function on_wave_failed(error) {
+        console.error("음파를 그리지 못했습니다. 재생은 계속됩니다.", error);
+      });
+  }
+
+  /**
+   * 음파를 읽을 때 쓰는 소리 해석기입니다. 재생 소리와는 따로 둡니다.
+   */
+  function wave_decode_context() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      return null;
+    }
+    if (!wave_context || wave_context.state === "closed") {
+      wave_context = new AudioContextClass();
+    }
+    return wave_context;
+  }
+
+  /**
+   * 곡 파일을 파형으로 바꿉니다. 브라우저마다 돌려주는 방식이 다릅니다.
+   */
+  function decode_audio_buffer(context, buffer) {
+    return new Promise(function decode_promise(resolve, reject) {
+      try {
+        const result = context.decodeAudioData(buffer.slice(0), resolve, reject);
+        if (result && typeof result.then === "function") {
+          result.then(resolve, reject);
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
   /**
    * 고른 곡을 재생합니다. 이미 재생 중이면 잠시 멈춥니다.
    * is_user_choice가 참이면 그 곡을 반복 순서의 새 기준으로 기록합니다.
@@ -986,6 +1384,7 @@
     if (!audio.src.endsWith(track.file)) {
       audio.src = next_src;
     }
+    load_wave(track.file);
     const play_result = audio.play();
     if (play_result && typeof play_result.catch === "function") {
       play_result.catch(function on_play_failed(error) {
@@ -1100,6 +1499,7 @@
       });
       document.addEventListener("today_word_design_change", function on_design_change_close_list() {
         try {
+          sync_wave();
           if (!is_open) {
             return;
           }
@@ -1155,6 +1555,7 @@
           reveal_playing_track();
         }
         start_meter();
+        sync_wave();
       });
       audio.addEventListener("timeupdate", update_remain);
       audio.addEventListener("loadedmetadata", update_remain);
@@ -1162,6 +1563,12 @@
       audio.addEventListener("pause", function on_pause() {
         stop_meter();
         mark_playing_track(list, toggle);
+        sync_wave();
+      });
+      window.addEventListener("resize", function on_wave_resize() {
+        if (should_show_wave()) {
+          draw_wave();
+        }
       });
       if (sound_button) {
         sound_button.addEventListener("click", function on_sound_click() {

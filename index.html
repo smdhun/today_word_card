@@ -25,7 +25,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=20261122ai">
   <link rel="stylesheet" href="css/aurora.css?v=20261122y">
-  <link rel="stylesheet" href="css/sketch.css?v=20261122ag">
+  <link rel="stylesheet" href="css/sketch.css?v=20261123ad">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
   <script src="js/constants.js?v=20261122a"></script>
@@ -422,6 +422,14 @@
         <img id="sketch_image" class="sketch_image" alt="원본 사진" width="540" height="960">
         <img id="sketch_pastel" class="sketch_image sketch_pastel" alt="" aria-hidden="true" width="540" height="960">
         <img id="sketch_image_next" class="sketch_image sketch_image_next" alt="" aria-hidden="true" width="540" height="960">
+        <!-- 사진 하단에 겹치는 음파입니다. 재생 색은 능선을 따라 긋고, 사진 터치는 막지 않습니다. -->
+        <div id="sketch_wave" class="sketch_wave" role="img" aria-label="음악 진행" hidden>
+          <canvas id="sketch_wave_canvas" aria-hidden="true"></canvas>
+          <div class="sketch_wave_times">
+            <span id="sketch_wave_elapsed">0:00</span>
+            <span id="sketch_wave_total">0:00</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -501,7 +509,7 @@
   <script src="js/storage.js"></script>
   <script src="js/app.js?v=20261122af"></script>
   <script src="js/relation.js"></script>
-  <script src="js/music.js?v=20261122v"></script>
+  <script src="js/music.js?v=20261123ac"></script>
   <script src="js/face_read.js?v=20261118o"></script>
 </body>
 </html>
