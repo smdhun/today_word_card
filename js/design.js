@@ -2,7 +2,7 @@
  * 타로, 오로라, 스케치, 인간관계 화면을 바꾸고, 고른 화면을 브라우저에 기억합니다.
  * 휴대폰에서는 손가락을 가로로 밀면 오로라, 타로, 스케치 순으로 바뀝니다.
  * 스케치에서 같은 방향(뮤직 버튼 쪽)으로 밀면 노래 목록이 열립니다.
- * 화면이 그려지기 전에 정해야 색이 깜빡이지 않으므로 head에서 불러옵니다.
+ * 화면이 그려지기 전에 오로라로 정해야 타로가 깜빡이지 않으므로 head에서 불러옵니다.
  */
 (function init_design() {
   const root = (window.TodayWordCard = window.TodayWordCard || {});
@@ -21,7 +21,7 @@
 
   /**
    * 고른 디자인을 저장합니다. 성공하면 true를 돌려줍니다.
-   * 다음 실행의 첫 화면은 이 값과 상관없이 타로입니다.
+   * 다음 실행의 첫 화면은 이 값과 상관없이 오로라입니다.
    */
   function save_design(design) {
     try {
@@ -830,24 +830,22 @@
   });
 
   /**
-   * 처음 타로를 1초 보여 준 뒤, 오른쪽 밀기와 같이 오로라로 넘깁니다.
+   * 오로라가 보인 뒤 음악 질문을 엽니다. 타로로 넘기는 동작은 하지 않습니다.
    */
-  function play_opening_slide() {
+  function open_starting_aurora() {
     try {
       if (has_left_opening_tarot || is_slide_playing) {
         return;
       }
-      if (document.documentElement.dataset.design !== root.DESIGN_TAROT) {
+      if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
         return;
       }
       if (is_overlay_open("music_offer") || is_overlay_open("camera_sheet")) {
         return;
       }
-      document.dispatchEvent(new CustomEvent("today_word_pause_tarot_weave"));
-      ensure_preview(1);
-      play_design_slide(root.DESIGN_AURORA, SWIPE_MIN_X, 2);
+      notify_aurora_swipe(root.DESIGN_AURORA);
     } catch (error) {
-      console.error("첫 화면을 오로라로 넘기지 못했습니다. 화면을 오른쪽으로 밀어 주세요.", error);
+      console.error("첫 오로라 화면에서 음악 질문을 열지 못했습니다. Music 버튼으로 음악을 고를 수 있습니다.", error);
     }
   }
 
@@ -885,7 +883,7 @@
       mark_pressed_button(is_known_design(current_design) ? current_design : root.DESIGN_DEFAULT);
       show_design_hint();
       bind_design_swipe();
-      window.setTimeout(play_opening_slide, 1000);
+      window.setTimeout(open_starting_aurora, 400);
     } catch (error) {
       console.error("디자인 버튼을 연결하지 못했습니다.", error);
     }
@@ -901,8 +899,8 @@
         return;
       }
 
-      // 실행할 때마다 타로로 시작합니다. 링크를 연 사람도 같은 화면을 먼저 봅니다.
-      apply_design(root.DESIGN_DEFAULT);
+      // 실행할 때마다 오로라로 시작합니다. 타로 화면은 먼저 보이지 않습니다.
+      apply_design(root.DESIGN_AURORA);
 
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", bind_design_buttons);

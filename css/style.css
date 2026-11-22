@@ -720,13 +720,22 @@ html.is_music_list_open .top_bar {
   display: none;
 }
 
-/* 창이 아래에서 천천히 떠오릅니다. 강아지는 이 움직임이 끝난 뒤에 나옵니다. */
-.music_offer.is_rising {
-  animation: music_offer_dim 1.4s ease-out both;
+/* 강아지가 먼저 서 있는 동안에는 어두운 막과 문구를 숨깁니다. */
+.music_offer.is_dog_first {
+  background: transparent;
 }
 
-.music_offer.is_rising .music_offer_card {
-  animation: music_offer_rise 1.4s cubic-bezier(0.22, 0.82, 0.2, 1) both;
+.music_offer.is_dog_first .music_offer_shell {
+  opacity: 0;
+}
+
+/* 강아지 다음에 테두리와 문구가 아래에서 올라옵니다. */
+.music_offer.is_card_in {
+  animation: music_offer_dim 0.45s ease-out both;
+}
+
+.music_offer.is_card_in .music_offer_shell {
+  animation: music_offer_rise 0.45s cubic-bezier(0.22, 0.82, 0.2, 1) both;
 }
 
 @keyframes music_offer_dim {
@@ -754,6 +763,10 @@ html.is_music_list_open .top_bar {
 .music_offer_card {
   position: relative;
   width: min(360px, 100%);
+}
+
+.music_offer_shell {
+  position: relative;
   padding: 22px 20px 18px;
   border: 1px solid rgba(233, 226, 210, 0.55);
   border-radius: 16px;
@@ -775,7 +788,7 @@ html.is_music_list_open .top_bar {
 
 .music_offer.is_dog_ready .music_offer_dog_track {
   opacity: 1;
-  transition: opacity 0.7s ease;
+  transition: opacity 0.35s ease;
 }
 
 .music_offer_dog {

@@ -364,15 +364,46 @@
     }
   }
 
+  // 강아지가 선 뒤 테두리와 문구가 따라오는 간격입니다.
+  const OFFER_CARD_DELAY_MS = 450;
+  let offer_card_timer = 0;
+
   /**
-   * 떠오르는 창이 끝나면 강아지를 보여 줍니다.
+   * 질문 상자 위에 강아지를 먼저 보여 줍니다.
    */
   function show_offer_dog(offer) {
-    if (!offer) {
+    if (!offer || offer.hidden) {
       return;
     }
-    offer.classList.remove("is_rising");
     offer.classList.add("is_dog_ready");
+  }
+
+  /**
+   * 강아지 다음에 테두리 박스와 문구를 보여 줍니다.
+   */
+  function show_offer_card(offer) {
+    if (!offer || offer.hidden) {
+      return;
+    }
+    offer.classList.remove("is_dog_first");
+    if (!prefers_still_motion()) {
+      offer.classList.add("is_card_in");
+    }
+    const yes_button = document.getElementById("music_offer_yes");
+    if (yes_button) {
+      yes_button.focus();
+    }
+  }
+
+  /**
+   * 강아지를 먼저 두고, 곧바로 질문 상자를 띄웁니다.
+   */
+  function schedule_offer_card(offer) {
+    window.clearTimeout(offer_card_timer);
+    offer_card_timer = window.setTimeout(function on_offer_card() {
+      offer_card_timer = 0;
+      show_offer_card(offer);
+    }, OFFER_CARD_DELAY_MS);
   }
 
   function open_music_offer() {
@@ -384,18 +415,21 @@
     }
     try {
       is_offer_open = true;
-      offer.classList.remove("is_rising", "is_dog_ready");
+      offer.classList.remove("is_card_in", "is_dog_ready");
+      offer.classList.add("is_dog_first");
       offer.hidden = false;
-      if (prefers_still_motion()) {
-        show_offer_dog(offer);
-      } else {
-        offer.classList.add("is_rising");
-      }
-      yes_button.focus();
+      window.requestAnimationFrame(function paint_dog() {
+        window.requestAnimationFrame(function fade_dog() {
+          show_offer_dog(offer);
+        });
+      });
+      schedule_offer_card(offer);
     } catch (error) {
       console.error("음악 재생 확인 창을 열지 못했습니다. 잠시 후 다시 열어 주세요.", error);
       offer.hidden = false;
+      offer.classList.add("is_dog_first");
       show_offer_dog(offer);
+      schedule_offer_card(offer);
     }
   }
 
@@ -409,7 +443,9 @@
     }
     const was_open = is_offer_open || !offer.hidden;
     is_offer_open = false;
-    offer.classList.remove("is_rising", "is_dog_ready");
+    window.clearTimeout(offer_card_timer);
+    offer_card_timer = 0;
+    offer.classList.remove("is_dog_first", "is_card_in", "is_dog_ready");
     offer.hidden = true;
     if (!was_open) {
       return;
@@ -1147,9 +1183,9 @@
           if (event.animationName !== "music_offer_rise") {
             return;
           }
-          show_offer_dog(offer);
+          offer.classList.remove("is_card_in");
         });
-        /* 첫 타로가 오로라로 넘어간 뒤에 한 번만 묻습니다. */
+        /* 처음 오로라가 열린 뒤에 한 번만 묻습니다. */
         let has_asked_music = false;
         document.addEventListener("today_word_aurora_swipe", function on_aurora_swipe() {
           if (has_asked_music || is_offer_open) {
