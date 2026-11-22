@@ -20,6 +20,19 @@
   let tarot_reveal_timer = 0;
   // 사진을 빨리 넘기면 이전 확대 계산을 무시하는 번호입니다.
   let tarot_reveal_no = 0;
+  // 음악 선택 뒤에 캐릭터가 기분마다 바뀌는 동안만 참입니다.
+  let is_intro_running = false;
+  // 사용자가 직접 조작하면 다시 시작하지 않습니다.
+  let has_user_stopped_intro = false;
+  let intro_timer = 0;
+  // 한 바퀴에 여섯 기분을 한 번씩 담습니다. 비면 다시 섞습니다.
+  let intro_queue = [];
+  // 기분별로 이미 보여 준 캐릭터 파일입니다. 같은 얼굴이 다시 나오지 않게 합니다.
+  const shown_intro_files = {};
+  const last_intro_file = {};
+  const INTRO_MOOD_IDS = ["joy", "calm", "excited", "anxious", "tired", "sad"];
+  // 얼굴이 나타난 뒤 다음 기분으로 넘어가기까지 기다립니다.
+  const INTRO_STEP_MS = 1600;
 
   /**
    * id로 요소를 찾고, 없으면 기록만 남깁니다.
@@ -252,6 +265,7 @@
    */
   function refresh_aurora_slot(slot_name) {
     try {
+      stop_intro_faces_for_user();
       if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
         return;
       }
@@ -596,11 +610,187 @@
   }
 
   /**
+   * 그림 주소에서 기분 폴더와 파일 이름만 남깁니다.
+   */
+  function intro_file_key(src) {
+    const text = String(src || "");
+    const marker = "images/faces/";
+    const at = text.indexOf(marker);
+    if (at < 0) {
+      return text.split("?")[0];
+    }
+    return text.slice(at + marker.length).split("?")[0];
+  }
+
+  /**
+   * 지금 화면에 있는 얼굴을 이미 쓴 캐릭터로 기억합니다.
+   */
+  function remember_current_intro_face() {
+    try {
+      const mood_id = current_browse_mood();
+      const src = els.vignette_image ? els.vignette_image.getAttribute("src") : "";
+      const file_key = intro_file_key(src);
+      if (!mood_id || !file_key) {
+        return;
+      }
+      if (!shown_intro_files[mood_id]) {
+        shown_intro_files[mood_id] = {};
+      }
+      shown_intro_files[mood_id][file_key] = true;
+      last_intro_file[mood_id] = file_key;
+    } catch (error) {
+      console.error("처음 캐릭터를 기억하지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 여섯 기분을 임의의 순서로 한 바퀴 만듭니다.
+   */
+  function refill_intro_queue() {
+    const order = INTRO_MOOD_IDS.slice();
+    for (let index = order.length - 1; index > 0; index -= 1) {
+      const swap_index = Math.floor(Math.random() * (index + 1));
+      const held = order[index];
+      order[index] = order[swap_index];
+      order[swap_index] = held;
+    }
+    intro_queue = order;
+  }
+
+  /**
+   * 이 기분에서 아직 안 보여 준 캐릭터 한 장을 고릅니다.
+   */
+  function take_intro_face(mood_id) {
+    const list = typeof root.list_vignettes === "function" ? root.list_vignettes(mood_id) : [];
+    if (!list.length) {
+      return null;
+    }
+    if (!shown_intro_files[mood_id]) {
+      shown_intro_files[mood_id] = {};
+    }
+    let pool = list.filter(function is_new_face(item) {
+      return !shown_intro_files[mood_id][intro_file_key(item.src)];
+    });
+    if (!pool.length) {
+      const last_key = last_intro_file[mood_id] || "";
+      shown_intro_files[mood_id] = {};
+      if (last_key) {
+        shown_intro_files[mood_id][last_key] = true;
+      }
+      pool = list.filter(function is_not_last_face(item) {
+        return !shown_intro_files[mood_id][intro_file_key(item.src)];
+      });
+      if (!pool.length) {
+        pool = list.slice();
+      }
+    }
+    const face = pool[Math.floor(Math.random() * pool.length)];
+    const file_key = intro_file_key(face.src);
+    shown_intro_files[mood_id][file_key] = true;
+    last_intro_file[mood_id] = file_key;
+    return face;
+  }
+
+  /**
+   * 자동으로 바뀌던 캐릭터를 멈춥니다.
+   */
+  function stop_intro_faces() {
+    is_intro_running = false;
+    window.clearTimeout(intro_timer);
+    intro_timer = 0;
+  }
+
+  /**
+   * 사용자가 화면을 직접 다루면 캐릭터 변화를 끝내고 다시 켜지 않습니다.
+   */
+  function stop_intro_faces_for_user() {
+    has_user_stopped_intro = true;
+    stop_intro_faces();
+  }
+
+  /**
+   * 다음 기분의 새 캐릭터를 화면에 올립니다. 문장은 그대로 둡니다.
+   */
+  function show_next_intro_face() {
+    try {
+      if (!is_intro_running) {
+        return;
+      }
+      if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
+        stop_intro_faces_for_user();
+        return;
+      }
+      if (!intro_queue.length) {
+        refill_intro_queue();
+      }
+      const mood_id = intro_queue.shift();
+      const face = take_intro_face(mood_id);
+      if (!face) {
+        console.error("바꿀 캐릭터를 찾지 못했습니다.", mood_id);
+        return;
+      }
+      check_radio("mood", mood_id);
+      const mood = (root.MOODS || []).find(function match_mood(item) {
+        return item.id === mood_id;
+      });
+      if (els.card_mood && mood) {
+        els.card_mood.textContent = mood.label;
+      }
+      if (els.result_card) {
+        els.result_card.dataset.mood = mood_id;
+      }
+      render_vignette(face);
+    } catch (error) {
+      console.error("캐릭터를 다음 기분으로 바꾸지 못했습니다.", error);
+      stop_intro_faces_for_user();
+    }
+  }
+
+  /**
+   * 한 얼굴이 보이도록 잠시 쉰 뒤 다음 기분으로 넘깁니다.
+   */
+  function schedule_intro_face() {
+    window.clearTimeout(intro_timer);
+    intro_timer = window.setTimeout(function on_intro_tick() {
+      intro_timer = 0;
+      if (!is_intro_running) {
+        return;
+      }
+      show_next_intro_face();
+      if (is_intro_running) {
+        schedule_intro_face();
+      }
+    }, INTRO_STEP_MS);
+  }
+
+  /**
+   * 음악 재생 여부를 고른 뒤에 캐릭터 변화를 시작합니다.
+   */
+  function start_intro_faces() {
+    try {
+      if (has_user_stopped_intro || is_intro_running) {
+        return;
+      }
+      if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
+        return;
+      }
+      is_intro_running = true;
+      remember_current_intro_face();
+      refill_intro_queue();
+      schedule_intro_face();
+    } catch (error) {
+      console.error("캐릭터 변화를 시작하지 못했습니다. 기분을 직접 골라 주세요.", error);
+      stop_intro_faces();
+    }
+  }
+
+  /**
    * 오로라에서 감정을 고르면, 그 감정의 캐릭터 그림으로 바로 바꿉니다.
    * 문장은 새로운 문장 보기를 누를 때까지 그대로 둡니다.
    */
   function on_mood_change() {
     try {
+      stop_intro_faces_for_user();
       if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
         return;
       }
@@ -635,6 +825,7 @@
    */
   function on_browse_vignette(step) {
     try {
+      stop_intro_faces_for_user();
       if (typeof root.list_vignettes !== "function") {
         show_status("그림 목록을 열지 못했습니다. 페이지를 새로고침한 뒤 다시 눌러 주세요.", true);
         return;
@@ -1200,6 +1391,7 @@
   function on_submit(event) {
     try {
       event.preventDefault();
+      stop_intro_faces_for_user();
       if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
         if (typeof root.flip_tarot_card !== "function") {
           console.error("타로 카드를 뒤집는 기능을 찾지 못했습니다.");
@@ -1282,6 +1474,9 @@
    */
   function on_design_change() {
     try {
+      if (is_intro_running) {
+        stop_intro_faces_for_user();
+      }
       aurora_motion_no += 1;
       window.clearTimeout(aurora_hold_timer);
       release_flying_image();
@@ -1341,6 +1536,11 @@
       bind_aurora_slot(els.wise_quote_first, "wise_0", "첫 격언을 다른 문장으로 바꿉니다");
       bind_aurora_slot(els.wise_quote_second, "wise_1", "둘째 격언을 다른 문장으로 바꿉니다");
       document.addEventListener("today_word_design_change", on_design_change);
+      document.addEventListener("today_word_music_choice", start_intro_faces);
+      const camera_open = document.getElementById("camera_open");
+      if (camera_open) {
+        camera_open.addEventListener("click", stop_intro_faces_for_user);
+      }
       restore_saved_card();
     } catch (error) {
       console.error("화면을 시작하지 못했습니다.", error);

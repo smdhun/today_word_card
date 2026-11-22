@@ -407,9 +407,15 @@
     if (!offer) {
       return;
     }
+    const was_open = is_offer_open || !offer.hidden;
     is_offer_open = false;
     offer.classList.remove("is_rising", "is_dog_ready");
     offer.hidden = true;
+    if (!was_open) {
+      return;
+    }
+    // 재생과 나중에 모두 선택을 마친 것으로 보고, 캐릭터 변화를 시작하게 알립니다.
+    document.dispatchEvent(new CustomEvent("today_word_music_choice"));
   }
 
   /**
