@@ -155,14 +155,29 @@
   display: none;
 }
 
-/* 나의 얼굴에서 찾아보기는 그림 바로 위 가운데입니다. 카드 간격 24px을 14px 당겨 그림과 10px을 둡니다. */
+/* 캐릭터를 기분 질문 위에 두고, 얼굴 찾기 버튼은 그림 바로 아래에 둡니다. */
+:root[data-design="aurora"] .aurora_hero {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+}
+
 :root[data-design="aurora"] .camera_row {
   display: flex;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 0 0 -14px;
+  margin: 0;
+}
+
+@media (min-width: 760px) {
+  /* 넓은 화면에서는 캐릭터가 왼쪽 기분 칸과 오른쪽 문장 칸을 모두 가로지릅니다. */
+  :root[data-design="aurora"] .aurora_hero {
+    grid-column: 1 / -1;
+  }
 }
 
 /* 감정 칸이 한 줄 줄어 비는 62px을 더한 그림 높이입니다. 기본 높이는 144px입니다. */
@@ -209,7 +224,7 @@
 
 /* 그림이 가운데에 있거나 위로 가는 동안 버튼과 문장은 비워 둡니다. */
 :root[data-design="aurora"] .result_card.is_aurora_hold .card_body,
-:root[data-design="aurora"] .result_card.is_aurora_hold .camera_row,
+:root[data-design="aurora"] .layout:has(.result_card.is_aurora_hold) .camera_row,
 :root[data-design="tarot"] .result_card.is_aurora_hold .card_body {
   opacity: 0;
   pointer-events: none;
@@ -229,7 +244,7 @@
 /* 그림이 제자리에 도착한 뒤에만 버튼과 문장이 나타납니다. */
 :root[data-design="aurora"] .result_card.is_aurora_arriving .card_body,
 :root[data-design="aurora"] .result_card.is_aurora_arriving .button_primary,
-:root[data-design="aurora"] .result_card.is_aurora_arriving .camera_row,
+:root[data-design="aurora"] .layout:has(.result_card.is_aurora_arriving) .camera_row,
 :root[data-design="tarot"] .result_card.is_aurora_arriving .card_body,
 :root[data-design="tarot"] .result_card.is_aurora_arriving .button_primary {
   animation: aurora_text_arrive 0.45s ease-out both;

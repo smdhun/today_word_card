@@ -1615,6 +1615,11 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
   gap: 24px;
 }
 
+/* 캐릭터 자리는 오로라에서만 엽니다. 타로는 이 칸을 쓰지 않습니다. */
+.aurora_hero {
+  display: none;
+}
+
 /* ───────── 입력 카드 ───────── */
 
 .panel {

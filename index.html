@@ -23,8 +23,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261121c">
-  <link rel="stylesheet" href="css/aurora.css?v=20261120f">
+  <link rel="stylesheet" href="css/style.css?v=20261122a">
+  <link rel="stylesheet" href="css/aurora.css?v=20261122a">
   <link rel="stylesheet" href="css/sketch.css?v=20261121b">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
@@ -136,6 +136,20 @@
     </section>
 
     <div class="layout">
+      <!-- 오로라에서만 보입니다. 기분 질문보다 위에 캐릭터를 둡니다. -->
+      <div class="aurora_hero">
+        <div class="vignette_frame">
+          <button type="button" id="vignette_prev" class="vignette_nav vignette_nav_prev" aria-label="이전 그림">&lt;</button>
+          <div id="card_vignette" class="card_vignette">
+            <img id="vignette_image" src="images/faces/joy/open_laugh.jpg" alt="Aurora의 기쁨 캐릭터" width="640" height="349">
+          </div>
+          <button type="button" id="vignette_next" class="vignette_nav vignette_nav_next" aria-label="다음 그림">&gt;</button>
+        </div>
+        <div class="camera_row">
+          <button id="camera_open" class="camera_open" type="button">나의 얼굴에서 찾아보기</button>
+        </div>
+      </div>
+
       <section class="panel" aria-label="오늘의 기분 선택">
         <form id="fortune_form" autocomplete="off" novalidate>
           <fieldset class="field">
@@ -199,21 +213,6 @@
               <span class="mood_chip_dot" aria-hidden="true"></span>
               <span id="card_mood"></span>
             </p>
-          </div>
-
-          <!-- 첫 그림은 오로라의 기쁨입니다. 스크립트 전에도, 링크 미리보기에서도 이 얼굴이 먼저입니다. -->
-          <!-- 오로라에서만 보입니다. 그림 바로 위, 사진과 겹치지 않습니다. -->
-          <div class="camera_row">
-            <button id="camera_open" class="camera_open" type="button">나의 얼굴에서 찾아보기</button>
-          </div>
-
-          <!-- 화살표는 그림 밖에 둡니다. 사진을 가리지 않고 좌우에서 넘깁니다. -->
-          <div class="vignette_frame">
-            <button type="button" id="vignette_prev" class="vignette_nav vignette_nav_prev" aria-label="이전 그림">&lt;</button>
-            <div id="card_vignette" class="card_vignette">
-              <img id="vignette_image" src="images/faces/joy/open_laugh.jpg" alt="Aurora의 기쁨 캐릭터" width="640" height="349">
-            </div>
-            <button type="button" id="vignette_next" class="vignette_nav vignette_nav_next" aria-label="다음 그림">&gt;</button>
           </div>
 
           <!-- 타로에서만 보입니다. 처음에는 뒷면이고, 뒤집으면 앞면과 질문이 나옵니다. -->
