@@ -1417,16 +1417,22 @@ html.is_slide_to_aurora[data-design="tarot"] .stage {
 */
 :root[data-design="tarot"]:has(#tarot_reading[hidden]) .tarot_stage {
   width: min(308px, 100%);
+  /* 0이면 패널에 묻히는 어두운 그림자, 1이면 지금 그림자입니다. 문양과 함께 밝아집니다. */
   box-shadow:
-    7.5px 8px 6px rgba(98, 90, 72, 0.96),
-    3px 3.5px 2px rgba(68, 62, 50, 0.92);
+    7.5px 8px 6px color-mix(in srgb, rgba(98, 90, 72, 0.96) calc(var(--back_rise, 1) * 100%), rgba(24, 22, 16, 0.96)),
+    3px 3.5px 2px color-mix(in srgb, rgba(68, 62, 50, 0.92) calc(var(--back_rise, 1) * 100%), rgba(20, 18, 14, 0.92));
 }
 
-/* 바닥 타원도 카드 아래로 나오는 높이를 절반으로 줄입니다. */
+/* 바닥 타원도 카드 아래로 나오는 높이를 절반으로 줄입니다. 밝기도 같은 속도로 올라갑니다. */
 :root[data-design="tarot"]:has(#tarot_reading[hidden]) .tarot_stage::after {
   bottom: -7px;
   height: 14px;
-  background: radial-gradient(ellipse at center, rgba(104, 96, 76, 0.96) 0%, rgba(78, 72, 58, 0.78) 52%, rgba(78, 72, 58, 0) 78%);
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, rgba(104, 96, 76, 0.96) calc(var(--back_rise, 1) * 100%), rgba(24, 22, 16, 0.96)) 0%,
+    color-mix(in srgb, rgba(78, 72, 58, 0.78) calc(var(--back_rise, 1) * 100%), rgba(24, 22, 16, 0.5)) 52%,
+    rgba(34, 32, 22, 0) 78%
+  );
 }
 
 /* 금빛 흐림이 제목 뒤에 있으면 글자가 묻힙니다. 제목 아래로 내립니다. */
@@ -1623,11 +1629,22 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
   display: block;
 }
 
-/* 뒷면은 터치하면 문양이 그려지므로, 누를 수 있는 카드처럼 보입니다. 바깥 금색 선은 한 단계 더 어둡게 둡니다. */
+/* 뒷면은 터치하면 문양이 그려지므로, 누를 수 있는 카드처럼 보입니다. 문양이 끝나면 이 밝기입니다. */
 :root[data-design="tarot"]:has(#tarot_reading[hidden]) .tarot_frame {
   cursor: pointer;
   box-shadow: none;
-  border-color: #816c3e;
+  /* 0이면 지금보다 한 단계 어두운 금색, 1이면 지금 테두리색입니다. 문양을 그리는 동안 올라갑니다. */
+  border-color: color-mix(in srgb, #816c3e calc(var(--back_rise, 1) * 100%), #473b22);
+}
+
+/* 바깥 금색 선만 담습니다. 투명한 부분은 달과 안쪽 무늬를 가리지 않습니다. */
+.tarot_border_dim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
 }
 
 .tarot_weave {

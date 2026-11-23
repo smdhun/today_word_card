@@ -206,6 +206,84 @@
     }
   }
 
+  let border_dim_ready_src = "";
+
+  /**
+   * 바깥 테두리의 금색 픽셀인지 확인합니다. 달과 안쪽 원은 빼 둡니다.
+   */
+  function is_outer_border_gold(x, y, width, height, red, green, blue) {
+    const is_gold = red > 70 && red > blue + 18 && green + 15 > blue;
+    if (!is_gold) {
+      return false;
+    }
+    const edge = Math.min(x, y, width - 1 - x, height - 1 - y);
+    const in_corner = (x < 180 || x > width - 180) && (y < 220 || y > height - 220);
+    return edge <= 68 || (in_corner && edge <= 155);
+  }
+
+  /**
+   * 바깥 금색 테두리만, 지금 밝기의 절반보다 조금 밝은 색으로 한 장 만들어 둡니다.
+   */
+  function ensure_border_dim() {
+    const image = document.getElementById("tarot_image");
+    const dim = document.getElementById("tarot_border_dim");
+    if (!image || !dim || !image.naturalWidth || !image.complete) {
+      return;
+    }
+    if (border_dim_ready_src === image.currentSrc && dim.width === image.naturalWidth) {
+      return;
+    }
+    const view = dim.getContext("2d", { willReadFrequently: true });
+    if (!view) {
+      return;
+    }
+    dim.width = image.naturalWidth;
+    dim.height = image.naturalHeight;
+    view.drawImage(image, 0, 0, dim.width, dim.height);
+    const frame = view.getImageData(0, 0, dim.width, dim.height);
+    const data = frame.data;
+    const darken = 0.55;
+    for (let index = 0, pixel = 0; index < data.length; index += 4, pixel += 1) {
+      const x = pixel % dim.width;
+      const y = Math.floor(pixel / dim.width);
+      const red = data[index];
+      const green = data[index + 1];
+      const blue = data[index + 2];
+      if (!is_outer_border_gold(x, y, dim.width, dim.height, red, green, blue)) {
+        data[index + 3] = 0;
+        continue;
+      }
+      data[index] = Math.round(red * darken);
+      data[index + 1] = Math.round(green * darken);
+      data[index + 2] = Math.round(blue * darken);
+      data[index + 3] = 255;
+    }
+    view.putImageData(frame, 0, 0);
+    border_dim_ready_src = image.currentSrc;
+  }
+
+  /**
+   * 문양 진행에 맞춰 테두리와 그림자를 어두운색에서 지금 밝기까지 올립니다.
+   * 0이면 가장 어둡고, 1이면 지금 밝기입니다. 카드 칸에 두면 테두리도 같이 받습니다.
+   */
+  function paint_border_rise(progress) {
+    try {
+      const stage = document.getElementById("tarot_stage");
+      const dim = document.getElementById("tarot_border_dim");
+      const amount = Math.max(0, Math.min(1, progress));
+      if (stage) {
+        stage.style.setProperty("--back_rise", String(amount));
+      }
+      if (!dim) {
+        return;
+      }
+      ensure_border_dim();
+      dim.style.opacity = String(1 - amount);
+    } catch (error) {
+      console.error("카드 테두리와 그림자 밝기를 바꾸지 못했습니다. 페이지를 새로고침해 주세요.", error);
+    }
+  }
+
   /**
    * 그리기를 멈춥니다. 앞면으로 바꿀 때 호출합니다.
    */
@@ -218,6 +296,7 @@
     if (wash) {
       wash.style.opacity = "0";
     }
+    paint_border_rise(1);
   }
 
   /**
@@ -232,6 +311,7 @@
       return;
     }
     paint_back_wash(1);
+    paint_border_rise(0);
     load_weave_images().then(function (filigree) {
       if (token !== weave_token) {
         return;
@@ -316,6 +396,7 @@
         }
         paint_glints(now);
         paint_back_wash(1 - progress);
+        paint_border_rise(progress);
         if (progress < 1 || glints.length) {
           window.requestAnimationFrame(draw_lines);
         }
@@ -325,6 +406,7 @@
     }).catch(function (error) {
       console.error("카드 무늬를 그리지 못했습니다. 완성된 뒷면을 보여 줍니다.", error);
       paint_back_wash(0);
+      paint_border_rise(1);
       const image = document.getElementById("tarot_image");
       if (image && root.TAROT_FOLDER && root.TAROT_BACK) {
         image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";

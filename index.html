@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261123bd">
+  <link rel="stylesheet" href="css/style.css?v=20261123bg">
   <link rel="stylesheet" href="css/aurora.css?v=20261122y">
   <link rel="stylesheet" href="css/sketch.css?v=20261123am">
   <link rel="stylesheet" href="css/relation.css">
@@ -222,6 +222,8 @@
               <div class="tarot_back_motion" aria-hidden="true">
                 <!-- 남색 바탕만 검정으로 덮었다가, 채우기 진행만큼 걷어 냅니다. -->
                 <canvas class="tarot_back_wash" aria-hidden="true"></canvas>
+                <!-- 바깥 금색 테두리만 어둡게 덮었다가, 문양과 함께 걷어 냅니다. -->
+                <canvas id="tarot_border_dim" class="tarot_border_dim" aria-hidden="true"></canvas>
                 <canvas id="tarot_weave" class="tarot_weave"></canvas>
                 <canvas id="tarot_glint" class="tarot_weave"></canvas>
                 <div class="tarot_moon_cover"></div>
@@ -502,7 +504,7 @@
   <script src="js/sketch.js?v=20261122z"></script>
   <script src="js/faces.js"></script>
   <script src="js/tarot_cards.js?v=20261115r"></script>
-  <script src="js/tarot.js?v=20261123az"></script>
+  <script src="js/tarot.js?v=20261123bg"></script>
   <script src="js/validate.js"></script>
   <script src="js/picker.js?v=20261118f"></script>
   <script src="js/storage.js"></script>
