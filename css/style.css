@@ -1565,6 +1565,14 @@ html.is_slide_to_aurora[data-design="tarot"] .stage {
   transform-style: preserve-3d;
 }
 
+/* 손가락으로 카드를 누를 때 브라우저가 올리는 회색 깜빡임을 끕니다. */
+#tarot_stage,
+.tarot_frame,
+.tarot_image {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
 .tarot_image {
   display: block;
   width: 100%;

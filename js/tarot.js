@@ -260,6 +260,32 @@
   }
 
   /**
+   * 문양 칸 크기를 맞춥니다. 크기를 바꾸는 순간 흰 칸이 카드를 덮지 않게 숨겼다 엽니다.
+   */
+  function size_weave_canvas(canvas, width, height) {
+    if (!canvas) {
+      return null;
+    }
+    try {
+      canvas.style.opacity = "0";
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      const view = canvas.getContext("2d");
+      if (view) {
+        view.clearRect(0, 0, width, height);
+      }
+      canvas.style.opacity = "";
+      return view;
+    } catch (error) {
+      console.error("카드 문양 칸을 준비하지 못했습니다. 페이지를 새로고침해 주세요.", error);
+      canvas.style.opacity = "";
+      return null;
+    }
+  }
+
+  /**
    * 두 원 사이의 문양을 흩어서 그리고, 그려지는 자리에 약한 빛을 남깁니다.
    */
   function start_back_weave() {
@@ -286,14 +312,11 @@
       source.height = height;
       source.getContext("2d").drawImage(filigree, 0, 0);
       const lines = build_line_pieces(source);
-      canvas.width = width;
-      canvas.height = height;
-      glint.width = width;
-      glint.height = height;
-      const view = canvas.getContext("2d");
-      const glint_view = glint.getContext("2d");
-      view.clearRect(0, 0, width, height);
-      glint_view.clearRect(0, 0, width, height);
+      const view = size_weave_canvas(canvas, width, height);
+      const glint_view = size_weave_canvas(glint, width, height);
+      if (!view || !glint_view) {
+        throw new Error("empty weave");
+      }
 
       const started = performance.now();
       const line_ms = 4600;

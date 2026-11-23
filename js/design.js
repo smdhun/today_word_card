@@ -162,6 +162,7 @@
   let swipe_start_y = 0;
   let swipe_start_at = 0;
   let is_swipe_tracking = false;
+  let has_paused_weave = false;
   let is_slide_playing = false;
   let slide_token = 0;
   let slide_preview = null;
@@ -825,10 +826,8 @@
       swipe_start_y = touch.clientY;
       swipe_start_at = Date.now();
       is_swipe_tracking = true;
+      has_paused_weave = false;
       has_left_opening_tarot = true;
-      if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
-        document.dispatchEvent(new CustomEvent("today_word_pause_tarot_weave"));
-      }
     } catch (error) {
       is_swipe_tracking = false;
       console.error("화면 밀기를 시작하지 못했습니다.", error);
@@ -851,6 +850,11 @@
         return;
       }
       event.preventDefault();
+      if (!has_paused_weave && document.documentElement.dataset.design === root.DESIGN_TAROT) {
+        // 카드를 누르기만 한 터치에서는 문양을 지우지 않습니다. 지웠다 다시 그리면 카드가 번쩍입니다.
+        has_paused_weave = true;
+        document.dispatchEvent(new CustomEvent("today_word_pause_tarot_weave"));
+      }
       if (is_sketch_music_swipe(delta_x)) {
         return;
       }
