@@ -404,13 +404,17 @@
     document.documentElement.style.removeProperty("--slide_from");
     remove_preview();
     remove_aurora_sky();
-    if (!stage) {
-      return;
+    if (stage) {
+      stage.classList.remove("is_design_sliding");
+      stage.style.transitionDuration = "";
+      stage.style.transition = "";
+      stage.style.transform = "";
     }
-    stage.classList.remove("is_design_sliding");
-    stage.style.transitionDuration = "";
-    stage.style.transition = "";
-    stage.style.transform = "";
+    try {
+      document.dispatchEvent(new CustomEvent("today_word_slide_settled"));
+    } catch (error) {
+      console.error("화면 넘김이 끝났다는 소식을 전하지 못했습니다.", error);
+    }
   }
 
   /**

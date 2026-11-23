@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
   <script src="js/constants.js?v=20261122a"></script>
-  <script src="js/design.js?v=20261123bh"></script>
+  <script src="js/design.js?v=20261123bi"></script>
 </head>
 <body>
   <!-- 아이콘 모음. 화면에는 보이지 않고, 아래에서 <use>로 꺼내 씁니다. -->
@@ -220,7 +220,7 @@
               <img id="tarot_image" class="tarot_image" src="images/tarot/back_plain.jpg?v=20261123az" alt="덮인 Tarot 카드" width="768" height="1024">
               <!-- 뒷면 장식. 두 원은 그대로 두고, 그 사이 문양만 그립니다. -->
               <div class="tarot_back_motion" aria-hidden="true">
-                <!-- 남색 바탕만 검정으로 덮었다가, 채우기 진행만큼 걷어 냅니다. -->
+                <!-- 검정 덮개는 올리지 않습니다. 뒷면은 남색으로 둡니다. -->
                 <canvas class="tarot_back_wash" aria-hidden="true"></canvas>
                 <!-- 바깥 금색 테두리만 어둡게 덮었다가, 문양과 함께 걷어 냅니다. -->
                 <canvas id="tarot_border_dim" class="tarot_border_dim" aria-hidden="true"></canvas>
@@ -504,7 +504,7 @@
   <script src="js/sketch.js?v=20261122z"></script>
   <script src="js/faces.js"></script>
   <script src="js/tarot_cards.js?v=20261115r"></script>
-  <script src="js/tarot.js?v=20261123bg"></script>
+  <script src="js/tarot.js?v=20261123bj"></script>
   <script src="js/validate.js"></script>
   <script src="js/picker.js?v=20261118f"></script>
   <script src="js/storage.js"></script>

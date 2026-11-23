@@ -151,55 +151,15 @@
   }
 
   /**
-   * 남색 픽셀만 검정으로 칠합니다. 금색 선과 초승달은 비워 둡니다.
+   * 카드 뒷면은 남색으로 고정합니다. 검정 덮개는 올리지 않습니다.
    */
-  function ensure_back_wash(wash) {
-    const image = document.getElementById("tarot_image");
-    if (!wash || !image || !image.naturalWidth || !image.complete) {
-      return;
-    }
-    if (wash.dataset.ready === image.currentSrc && wash.width === image.naturalWidth) {
-      return;
-    }
-    const view = wash.getContext("2d");
-    if (!view) {
-      return;
-    }
-    wash.width = image.naturalWidth;
-    wash.height = image.naturalHeight;
-    view.drawImage(image, 0, 0, wash.width, wash.height);
-    const frame = view.getImageData(0, 0, wash.width, wash.height);
-    const data = frame.data;
-    for (let index = 0; index < data.length; index += 4) {
-      const red = data[index];
-      const green = data[index + 1];
-      const blue = data[index + 2];
-      const is_gold = red > 70 && red > blue + 18 && green + 15 > blue;
-      if (is_gold) {
-        data[index + 3] = 0;
-      } else {
-        data[index] = 0;
-        data[index + 1] = 0;
-        data[index + 2] = 0;
-        data[index + 3] = 255;
-      }
-    }
-    view.putImageData(frame, 0, 0);
-    wash.dataset.ready = image.currentSrc;
-  }
-
-  /**
-   * 채우기 진행만큼 검정 덮개를 걷습니다. 1이면 검정, 0이면 남색입니다.
-   */
-  function paint_back_wash(black_amount) {
+  function paint_back_wash() {
     const wash = find_back_wash();
     if (!wash) {
       return;
     }
     try {
-      ensure_back_wash(wash);
-      const amount = Math.max(0, Math.min(1, black_amount));
-      wash.style.opacity = String(amount);
+      wash.style.opacity = "0";
     } catch (error) {
       console.error("카드 바탕색을 바꾸지 못했습니다. 페이지를 새로고침해 주세요.", error);
       wash.style.opacity = "0";
@@ -310,7 +270,7 @@
     if (!canvas || !glint) {
       return;
     }
-    paint_back_wash(1);
+    paint_back_wash();
     paint_border_rise(0);
     load_weave_images().then(function (filigree) {
       if (token !== weave_token) {
@@ -395,7 +355,6 @@
           drawn += 1;
         }
         paint_glints(now);
-        paint_back_wash(1 - progress);
         paint_border_rise(progress);
         if (progress < 1 || glints.length) {
           window.requestAnimationFrame(draw_lines);
@@ -405,7 +364,7 @@
       window.requestAnimationFrame(draw_lines);
     }).catch(function (error) {
       console.error("카드 무늬를 그리지 못했습니다. 완성된 뒷면을 보여 줍니다.", error);
-      paint_back_wash(0);
+      paint_back_wash();
       paint_border_rise(1);
       const image = document.getElementById("tarot_image");
       if (image && root.TAROT_FOLDER && root.TAROT_BACK) {
@@ -519,6 +478,36 @@
     });
   }
 
+  let slide_weave_wait = 0;
+
+  /**
+   * 밀어서 들어오는 동안에는 문양을 그리지 않고, 화면이 완전히 멈춘 뒤에 시작합니다.
+   */
+  function arm_weave_after_slide() {
+    const wait_id = ++slide_weave_wait;
+    let has_started = false;
+    let backup_timer = 0;
+    function start_when_settled() {
+      if (has_started || wait_id !== slide_weave_wait) {
+        document.removeEventListener("today_word_slide_settled", start_when_settled);
+        window.clearTimeout(backup_timer);
+        return;
+      }
+      if (document.documentElement.classList.contains("is_design_sliding")) {
+        return;
+      }
+      has_started = true;
+      document.removeEventListener("today_word_slide_settled", start_when_settled);
+      window.clearTimeout(backup_timer);
+      if (document.documentElement.dataset.design !== root.DESIGN_TAROT || prefers_still_motion() || is_opening_plain) {
+        return;
+      }
+      start_back_weave();
+    }
+    document.addEventListener("today_word_slide_settled", start_when_settled);
+    backup_timer = window.setTimeout(start_when_settled, 1700);
+  }
+
   /**
    * 덮인 뒷면을 보여 줍니다. 순서는 바꾸지 않습니다.
    */
@@ -541,6 +530,11 @@
         // 첫 화면에서 화면을 넘길 때는 문양이 없는 뒷면만 보여 줍니다.
         stop_back_weave();
         image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261123az";
+      } else if (document.documentElement.classList.contains("is_design_sliding")) {
+        // 화면이 아직 밀리는 중이면 가만히 둔 뒷면만 보여 주고, 도착한 뒤에 문양을 그립니다.
+        stop_back_weave();
+        image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261123az";
+        arm_weave_after_slide();
       } else {
         image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261123az";
         start_back_weave();
@@ -840,6 +834,7 @@
       return;
     }
     document.dispatchEvent(new CustomEvent("today_word_hold_opening"));
+    slide_weave_wait += 1;
     if (prefers_still_motion()) {
       stop_back_weave();
       image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";
