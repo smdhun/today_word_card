@@ -894,6 +894,12 @@
       const is_pushed = Math.abs(shift_x) >= Math.max(SWIPE_MIN_X, travel * 0.33);
       const next_design = design_for_swipe(delta_x);
       if (!is_horizontal || !next_design || (!is_flung && !is_pushed)) {
+        // 카드를 톡 누른 터치는 화면을 밀지 않습니다. 되돌리는 동작을 넣으면 카드가 번쩍입니다.
+        if (Math.abs(shift_x) < 2 && !slide_preview) {
+          is_slide_playing = false;
+          release_stage();
+          return;
+        }
         spring_stage_back();
         return;
       }

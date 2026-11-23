@@ -836,6 +836,9 @@
       return;
     }
     if (document.documentElement.classList.contains("is_design_sliding")) {
+      // 화면이 아직 움직이는 터치라면, 멈춘 뒤에 문양을 그립니다. 그 자리에서 다시 시작하면 카드가 번쩍입니다.
+      document.dispatchEvent(new CustomEvent("today_word_hold_opening"));
+      arm_weave_after_slide();
       return;
     }
     document.dispatchEvent(new CustomEvent("today_word_hold_opening"));
