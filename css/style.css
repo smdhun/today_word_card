@@ -1328,6 +1328,42 @@ html.is_slide_to_aurora[data-design="aurora"] .stage {
     #0f131d;
 }
 
+/*
+  오로라에서 타로로 밀 때, 밤하늘은 페이지 전체가 아니라 따라가는 층에만 둡니다.
+  페이지 바탕은 미리 타로 색이라, 밤하늘이 지나간 자리가 번쩍이지 않습니다.
+*/
+html.is_slide_to_tarot {
+  background: #16130a;
+}
+
+html.is_slide_to_tarot[data-design="aurora"] body {
+  background: transparent;
+}
+
+html.is_slide_to_tarot .stage {
+  position: relative;
+  z-index: 2;
+}
+
+.design_sky {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% -8%, rgba(3, 181, 211, 0.22), transparent 34%),
+    radial-gradient(circle at 100% 18%, rgba(160, 120, 255, 0.28), transparent 36%),
+    radial-gradient(circle at 30% 100%, rgba(247, 81, 161, 0.14), transparent 32%),
+    #0f131d;
+}
+
+.design_sky.is_design_sliding {
+  transition: transform 540ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 html.is_slide_to_tarot[data-design="tarot"] .stage,
 html.is_slide_to_aurora[data-design="tarot"] .stage {
   background: var(--surface);

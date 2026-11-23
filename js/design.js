@@ -323,7 +323,76 @@
     document.documentElement.classList.add("is_design_sliding");
     stage.classList.toggle("is_design_sliding", Boolean(is_animated));
     stage.style.transform = "translate3d(" + Math.round(shift_x) + "px, 0, 0)";
+    move_aurora_sky(shift_x, is_animated);
     return stage;
+  }
+
+  /**
+   * 오로라 밤하늘 층입니다. 없으면 null입니다.
+   */
+  function aurora_sky_element() {
+    return document.getElementById("design_sky");
+  }
+
+  /**
+   * 밤하늘을 만들 때 정한 비율로 본문 이동을 바꿉니다.
+   * 본문 폭만 옮기면 가장자리에 밤하늘이 남아, 끝날 때 번쩍이고 사라집니다.
+   */
+  function aurora_sky_shift(sky, stage_shift) {
+    const scale = Number(sky.dataset.sky_scale);
+    if (!scale) {
+      return stage_shift;
+    }
+    return stage_shift * scale;
+  }
+
+  /**
+   * 오로라에서 타로로 밀 때 밤하늘을 본문과 같이 옮깁니다.
+   * 이미 만든 층은 화면이 바뀐 뒤에도 같은 방향으로 이어 갑니다.
+   */
+  function move_aurora_sky(stage_shift, is_animated, duration_ms, force_leave) {
+    try {
+      const root_el = document.documentElement;
+      const is_leaving = Boolean(force_leave) || (root_el.dataset.design === root.DESIGN_AURORA && stage_shift < 0);
+      let sky = aurora_sky_element();
+      if (!sky && !is_leaving) {
+        return;
+      }
+      if (!sky) {
+        const stage = stage_element();
+        const stage_width = stage ? stage.getBoundingClientRect().width : 0;
+        const view_width = window.innerWidth || stage_width || 1;
+        sky = document.createElement("div");
+        sky.id = "design_sky";
+        sky.className = "design_sky";
+        sky.setAttribute("aria-hidden", "true");
+        sky.dataset.sky_scale = String(stage_width ? view_width / stage_width : 1);
+        document.body.appendChild(sky);
+        root_el.classList.add("is_slide_to_tarot");
+      }
+      sky.classList.toggle("is_design_sliding", Boolean(is_animated));
+      if (duration_ms) {
+        sky.style.transitionDuration = duration_ms + "ms";
+      } else if (!is_animated) {
+        sky.style.transitionDuration = "";
+      }
+      if (is_animated) {
+        void sky.offsetWidth;
+      }
+      sky.style.transform = "translate3d(" + Math.round(aurora_sky_shift(sky, stage_shift)) + "px, 0, 0)";
+    } catch (error) {
+      console.error("오로라 바탕을 함께 옮기지 못했습니다. 화면 버튼으로 바꿀 수 있습니다.", error);
+    }
+  }
+
+  /**
+   * 밀기가 끝나면 따라가던 밤하늘을 치웁니다.
+   */
+  function remove_aurora_sky() {
+    const sky = aurora_sky_element();
+    if (sky) {
+      sky.remove();
+    }
   }
 
   /**
@@ -334,6 +403,7 @@
     document.documentElement.classList.remove("is_design_sliding", "is_slide_to_tarot", "is_slide_to_aurora");
     document.documentElement.style.removeProperty("--slide_from");
     remove_preview();
+    remove_aurora_sky();
     if (!stage) {
       return;
     }
@@ -361,6 +431,7 @@
     }
     void stage.offsetWidth;
     stage.style.transform = "translate3d(0, 0, 0)";
+    move_aurora_sky(0, true);
     if (slide_preview && preview_direction) {
       slide_preview.style.transform = "translate3d(" + (-preview_direction * preview_travel) + "px, 0, 0)";
     }
@@ -599,6 +670,9 @@
     const current_design = document.documentElement.dataset.design || "";
     const ghost = build_slide_ghost(stage, current_design, from_x);
     const stage_start = from_x - direction * travel;
+    if (current_design === root.DESIGN_AURORA && next_design === root.DESIGN_TAROT) {
+      move_aurora_sky(from_x, false, 0, true);
+    }
     document.documentElement.classList.add("is_design_sliding");
     stage.classList.remove("is_design_sliding");
     stage.style.transform = "translate3d(" + stage_start + "px, 0, 0)";
@@ -608,6 +682,7 @@
         if (ghost) {
           ghost.remove();
         }
+        remove_aurora_sky();
         return;
       }
       if (ghost) {
@@ -615,6 +690,7 @@
         ghost.style.transitionDuration = join_ms + "ms";
         ghost.style.transform = "translate3d(" + (from_x - stage_start) + "px, 0, 0)";
       }
+      move_aurora_sky(from_x - stage_start, true, join_ms, true);
       stage.classList.add("is_design_sliding");
       stage.style.transitionDuration = join_ms + "ms";
       stage.style.transform = "translate3d(0, 0, 0)";
@@ -669,6 +745,7 @@
     void stage.offsetWidth;
     stage.style.transform = "translate3d(" + end_shift + "px, 0, 0)";
     slide_preview.style.transform = "translate3d(" + (end_shift - direction * travel) + "px, 0, 0)";
+    move_aurora_sky(end_shift, true, duration_ms);
     window.setTimeout(function finish_settle() {
       if (token !== slide_token) {
         return;
