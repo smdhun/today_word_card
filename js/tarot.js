@@ -458,9 +458,9 @@
       } else if (is_opening_plain) {
         // 첫 화면에서 화면을 넘길 때는 문양이 없는 뒷면만 보여 줍니다.
         stop_back_weave();
-        image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261119i";
+        image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261123az";
       } else {
-        image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261119i";
+        image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261123az";
         start_back_weave();
       }
       reading.hidden = true;

@@ -101,9 +101,9 @@
   animation: sketch_pastel_drift 18s ease-in-out infinite;
 }
 
-/* 뒤 사진이 비치되, 흐림 필터는 쓰지 않습니다. 목록을 닫을 때 필터가 사라지면 사진이 번쩍입니다. */
+/* 오로라 목록과 같은 74% 불투명도입니다. 흐림 필터는 쓰지 않습니다. 목록을 닫을 때 필터가 사라지면 사진이 번쩍입니다. */
 :root[data-design="sketch"] .music_panel::before {
-  background: rgba(16, 20, 24, 0.92);
+  background: rgba(16, 20, 24, 0.74);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }

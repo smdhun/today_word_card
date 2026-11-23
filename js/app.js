@@ -24,9 +24,11 @@
   let is_intro_running = false;
   // 음악 재생 여부를 한 번 고른 뒤에만 자동 변경을 켭니다.
   let has_music_choice = false;
-  // 기분, 문장, 얼굴 찾기를 누르면 다시 시작하지 않습니다.
-  // 좌우 화살표는 지금만 멈추고, 다른 화면을 갔다가 돌아오면 다시 시작합니다.
+  // 기분, 문장, 얼굴 찾기를 누르면 이번 오로라 화면의 자동 변경만 멈춥니다.
+  // 타로나 스케치에서 오로라로 돌아오면 처음 실행처럼 다시 시작합니다.
   let has_user_stopped_intro = false;
+  // 직전에 보던 화면입니다. 다른 화면에서 오로라로 들어왔는지 구분합니다.
+  let last_design = root.DESIGN_AURORA || "aurora";
   let intro_timer = 0;
   // 한 바퀴에 여섯 기분을 한 번씩 담습니다. 비면 다시 섞습니다.
   let intro_queue = [];
@@ -704,7 +706,8 @@
   }
 
   /**
-   * 사용자가 기분이나 문장, 얼굴 찾기를 누르면 변화를 끝내고 다시 켜지 않습니다.
+   * 사용자가 기분이나 문장, 얼굴 찾기를 누르면 이번 오로라 화면의 변화를 끝냅니다.
+   * 타로나 스케치에서 다시 들어오면 처음 실행처럼 다시 시작합니다.
    */
   function stop_intro_faces_for_user() {
     has_user_stopped_intro = true;
@@ -1509,13 +1512,21 @@
 
   /**
    * 디자인이 바뀌면 같은 순번의 문장과 그림을 그 모드 덱에서 다시 고릅니다.
-   * 오로라를 떠나면 자동 변경만 멈추고, 돌아오면 다시 시작합니다.
+   * 오로라를 떠나면 자동 변경만 멈추고, 타로나 스케치에서 돌아오면 처음처럼 다시 시작합니다.
    */
   function on_design_change() {
     try {
-      if (document.documentElement.dataset.design !== root.DESIGN_AURORA) {
+      const design = document.documentElement.dataset.design;
+      const came_back_to_aurora = design === root.DESIGN_AURORA
+        && last_design
+        && last_design !== root.DESIGN_AURORA;
+      if (design !== root.DESIGN_AURORA) {
         stop_intro_faces();
+      } else if (came_back_to_aurora) {
+        // 다른 화면을 다녀온 뒤에는, 사용자가 멈춘 적 있어도 처음 실행과 같이 다시 바꿉니다.
+        has_user_stopped_intro = false;
       }
+      last_design = design;
       aurora_motion_no += 1;
       window.clearTimeout(aurora_hold_timer);
       release_flying_image();

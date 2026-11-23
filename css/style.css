@@ -1357,24 +1357,106 @@ html.is_slide_to_aurora[data-design="tarot"] .stage {
   letter-spacing: -0.025em;
 }
 
-/* 타로의 오늘의 한마디는 명조 대신 고딕으로 보여 줍니다. */
+/* 타로 제목은 오로라 상단 문구와 같은 고딕, 굵기, 글자색입니다. */
 :root[data-design="tarot"] .intro h1 {
   font-family: var(--font_label);
+  font-weight: 600;
+  color: #dfe2f1;
+}
+
+/*
+  글자 칸을 한 줄 블록으로 둡니다.
+  그림자 위치와 번짐은 오로라와 같고, 색만 순검정보다 조금 밝게 둡니다.
+*/
+:root[data-design="tarot"] .title_tarot {
+  display: block;
+  text-shadow: 3px 4px 6px rgba(72, 68, 62, 0.95);
+}
+
+/* 제목 위 여백도 오로라와 같게 둡니다. 카드를 연 뒤의 여백은 아래 규칙이 다시 정합니다. */
+:root[data-design="tarot"] .stage {
+  padding-top: 24px;
+}
+
+/*
+  덮인 카드일 때만, 결과 카드 바탕을 제목까지 올립니다.
+  제목 위 24px은 오로라 제목 위 밤하늘과 같은 간격입니다.
+  제목과 카드 그림은 겹쳐 두고, 그림 위치는 패딩으로 그대로 유지합니다.
+*/
+:root[data-design="tarot"]:has(#tarot_reading[hidden]) .stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  padding-top: 0;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading[hidden]) .intro,
+:root[data-design="tarot"]:has(#tarot_reading[hidden]) .layout {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading[hidden]) .intro {
+  z-index: 2;
+  margin-top: 24px;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading[hidden]) .layout {
+  z-index: 1;
+}
+
+:root[data-design="tarot"]:has(#tarot_reading[hidden]) .result_card {
+  /* 제목 아래 간격과 버튼 위 간격이 같도록 24px만 비웁니다. 24 + 제목 34 + 간격 24 */
+  padding-top: 82px;
+}
+
+/*
+  덮인 카드는 기존 280px보다 10% 큰 308px입니다.
+  그림자는 오른쪽 아래 그대로 두고, 밖으로 나온 폭과 높이는 절반입니다.
+*/
+:root[data-design="tarot"]:has(#tarot_reading[hidden]) .tarot_stage {
+  width: min(308px, 100%);
+  box-shadow:
+    7.5px 8px 6px rgba(98, 90, 72, 0.96),
+    3px 3.5px 2px rgba(68, 62, 50, 0.92);
+}
+
+/* 바닥 타원도 카드 아래로 나오는 높이를 절반으로 줄입니다. */
+:root[data-design="tarot"]:has(#tarot_reading[hidden]) .tarot_stage::after {
+  bottom: -7px;
+  height: 14px;
+  background: radial-gradient(ellipse at center, rgba(104, 96, 76, 0.96) 0%, rgba(78, 72, 58, 0.78) 52%, rgba(78, 72, 58, 0) 78%);
+}
+
+/* 금빛 흐림이 제목 뒤에 있으면 글자가 묻힙니다. 제목 아래로 내립니다. */
+:root[data-design="tarot"]:has(#tarot_reading[hidden]) .result_card::before {
+  top: 72px;
+}
+
+@media (min-width: 760px) {
+  :root[data-design="tarot"] .stage {
+    padding-top: 32px;
+  }
+
+  :root[data-design="tarot"]:has(#tarot_reading[hidden]) .stage {
+    gap: 32px;
+    padding-top: 0;
+  }
+
+  :root[data-design="tarot"]:has(#tarot_reading[hidden]) .intro {
+    margin-top: 32px;
+  }
+
+  /* 제목 아래 간격과 버튼 위 간격이 같도록 24px만 비웁니다. 32 + 제목 44 + 간격 24 */
+  :root[data-design="tarot"]:has(#tarot_reading[hidden]) .result_card {
+    padding-top: 100px;
+  }
 }
 
 /* 타로는 기분을 고르지 않습니다. 왼쪽 칸을 숨기고 카드만 가운데에 둡니다. */
 :root[data-design="tarot"] .panel {
   display: none;
-}
-
-:root[data-design="tarot"] .tarot_lead {
-  display: block;
-  max-width: 28em;
-  margin: 8px 0 0;
-  color: var(--ink_soft);
-  font-family: var(--font_label);
-  font-size: 13px;
-  line-height: 20px;
 }
 
 /* 타로는 문장 카드 대신 세로 카드 한 장만 보여 줍니다. */
@@ -1541,10 +1623,11 @@ html.is_tarot_opening.is_tarot_text .tarot_reading {
   display: block;
 }
 
-/* 뒷면은 터치하면 문양이 그려지므로, 누를 수 있는 카드처럼 보입니다. */
+/* 뒷면은 터치하면 문양이 그려지므로, 누를 수 있는 카드처럼 보입니다. 바깥 금색 선은 한 단계 더 어둡게 둡니다. */
 :root[data-design="tarot"]:has(#tarot_reading[hidden]) .tarot_frame {
   cursor: pointer;
   box-shadow: none;
+  border-color: #816c3e;
 }
 
 .tarot_weave {
@@ -1820,7 +1903,6 @@ fieldset {
 /* 오로라에서만 보이는 기호. 타로에서는 기분 이름만 둡니다. */
 .choice_mark,
 .choice_dot,
-.tarot_lead,
 .title_aurora,
 .epilogue_aurora,
 .label_aurora {
