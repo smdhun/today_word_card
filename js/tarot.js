@@ -499,9 +499,11 @@
       has_started = true;
       document.removeEventListener("today_word_slide_settled", start_when_settled);
       window.clearTimeout(backup_timer);
-      if (document.documentElement.dataset.design !== root.DESIGN_TAROT || prefers_still_motion() || is_opening_plain) {
+      if (document.documentElement.dataset.design !== root.DESIGN_TAROT || prefers_still_motion()) {
         return;
       }
+      // 손가락으로 타로에 도착하면, 처음 화면이어도 멈춘 뒤에 문양을 그립니다.
+      is_opening_plain = false;
       start_back_weave();
     }
     document.addEventListener("today_word_slide_settled", start_when_settled);
@@ -526,15 +528,15 @@
       if (prefers_still_motion()) {
         stop_back_weave();
         image.src = root.TAROT_FOLDER + root.TAROT_BACK + "?v=20261116m";
-      } else if (is_opening_plain) {
-        // 첫 화면에서 화면을 넘길 때는 문양이 없는 뒷면만 보여 줍니다.
-        stop_back_weave();
-        image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261123az";
       } else if (document.documentElement.classList.contains("is_design_sliding")) {
-        // 화면이 아직 밀리는 중이면 가만히 둔 뒷면만 보여 주고, 도착한 뒤에 문양을 그립니다.
+        // 손가락으로 들어오는 동안은 가만히 두고, 화면이 멈춘 뒤에 문양을 그립니다.
         stop_back_weave();
         image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261123az";
         arm_weave_after_slide();
+      } else if (is_opening_plain) {
+        // 버튼으로 처음 연 화면은 문양 없이 뒷면만 보여 줍니다.
+        stop_back_weave();
+        image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261123az";
       } else {
         image.src = root.TAROT_FOLDER + "back_plain.jpg?v=20261123az";
         start_back_weave();
@@ -831,6 +833,9 @@
     const reading = document.getElementById("tarot_reading");
     const image = document.getElementById("tarot_image");
     if (!reading || !reading.hidden || !image) {
+      return;
+    }
+    if (document.documentElement.classList.contains("is_design_sliding")) {
       return;
     }
     document.dispatchEvent(new CustomEvent("today_word_hold_opening"));

@@ -335,8 +335,8 @@
   }
 
   /**
-   * 밤하늘을 만들 때 정한 비율로 본문 이동을 바꿉니다.
-   * 본문 폭만 옮기면 가장자리에 밤하늘이 남아, 끝날 때 번쩍이고 사라집니다.
+   * 밤하늘은 본문과 같은 거리만 움직입니다.
+   * 더 빨리 빼면 가장자리 빛이 카드보다 먼저 사라져 번쩍입니다.
    */
   function aurora_sky_shift(sky, stage_shift) {
     const scale = Number(sky.dataset.sky_scale);
@@ -359,14 +359,11 @@
         return;
       }
       if (!sky) {
-        const stage = stage_element();
-        const stage_width = stage ? stage.getBoundingClientRect().width : 0;
-        const view_width = window.innerWidth || stage_width || 1;
         sky = document.createElement("div");
         sky.id = "design_sky";
         sky.className = "design_sky";
         sky.setAttribute("aria-hidden", "true");
-        sky.dataset.sky_scale = String(stage_width ? view_width / stage_width : 1);
+        sky.dataset.sky_scale = "1";
         document.body.appendChild(sky);
         root_el.classList.add("is_slide_to_tarot");
       }
@@ -490,6 +487,21 @@
   }
 
   /**
+   * 옆 화면을 화면 너비로 붙입니다.
+   * 스케치 사진과, 오로라에서 타로로 가는 밤하늘은 화면 끝까지 칠해져 있습니다.
+   * 본문만 밀면 가장자리가 먼저 비어 번쩍이므로, 들어오는 화면도 같은 너비로 맞춥니다.
+   */
+  function full_page_bleed(next_design) {
+    const current_design = document.documentElement.dataset.design;
+    const is_full_page = next_design === root.DESIGN_SKETCH
+      || (current_design === root.DESIGN_AURORA && next_design === root.DESIGN_TAROT);
+    if (!is_full_page) {
+      return null;
+    }
+    return sketch_bleed_rect();
+  }
+
+  /**
    * 스케치가 도착한 뒤의 사진 칸입니다. 위 버튼을 뺀 화면 전체라, 넘기는 동안 비율이 바뀌지 않습니다.
    */
   function sketch_bleed_rect() {
@@ -548,10 +560,10 @@
     }
     const from_x = read_stage_shift(stage);
     const rect = stage.getBoundingClientRect();
-    const bleed = next_design === root.DESIGN_SKETCH ? sketch_bleed_rect() : null;
+    const bleed = full_page_bleed(next_design);
     preview_travel = (bleed && bleed.width) || Math.round(rect.width) || 320;
     preview_direction = direction;
-    slide_preview = build_slide_ghost(stage, next_design, from_x);
+    slide_preview = build_slide_ghost(stage, next_design, from_x, bleed);
     if (!slide_preview) {
       preview_direction = 0;
       preview_travel = 0;
@@ -590,10 +602,11 @@
   /**
    * 고른 디자인의 화면을 다른 문서에 붙여, 옆에서 함께 밀리게 합니다.
    */
-  function build_slide_ghost(stage, design_name, from_x) {
+  function build_slide_ghost(stage, design_name, from_x, bleed_rect) {
     try {
       const is_sketch = design_name === root.DESIGN_SKETCH;
-      const rect = is_sketch ? (sketch_bleed_rect() || stage.getBoundingClientRect()) : stage.getBoundingClientRect();
+      const rect = bleed_rect
+        || (is_sketch ? (sketch_bleed_rect() || stage.getBoundingClientRect()) : stage.getBoundingClientRect());
       const frame = document.createElement("iframe");
       const css_parts = [collect_css_text()];
       frame.className = "stage_ghost_frame";
@@ -668,11 +681,12 @@
     const join_ms = duration_scale === 2 ? 1200 : 600;
     const from_x = read_stage_shift(stage);
     const direction = delta_x < 0 ? -1 : 1;
-    const bleed = next_design === root.DESIGN_SKETCH ? sketch_bleed_rect() : null;
-    const width = (bleed && bleed.width) || Math.round(stage.getBoundingClientRect().width) || 320;
-    const travel = width + 24;
     const current_design = document.documentElement.dataset.design || "";
-    const ghost = build_slide_ghost(stage, current_design, from_x);
+    const is_aurora_to_tarot = current_design === root.DESIGN_AURORA && next_design === root.DESIGN_TAROT;
+    const bleed = next_design === root.DESIGN_SKETCH || is_aurora_to_tarot ? sketch_bleed_rect() : null;
+    const width = (bleed && bleed.width) || Math.round(stage.getBoundingClientRect().width) || 320;
+    const travel = is_aurora_to_tarot ? width : width + 24;
+    const ghost = build_slide_ghost(stage, current_design, from_x, is_aurora_to_tarot ? bleed : null);
     const stage_start = from_x - direction * travel;
     if (current_design === root.DESIGN_AURORA && next_design === root.DESIGN_TAROT) {
       move_aurora_sky(from_x, false, 0, true);

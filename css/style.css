@@ -1318,14 +1318,25 @@ html.is_design_cut .card_vignette img {
   transition: none;
 }
 
-/* 넘기는 동안 유리 카드가 뒤 화면에 비치지 않도록 바탕을 채웁니다. */
-html.is_slide_to_tarot[data-design="aurora"] .stage,
+/* 타로에서 오로라로 돌아올 때, 유리 카드가 빈 화면에 비치지 않도록 바탕을 채웁니다. */
 html.is_slide_to_aurora[data-design="aurora"] .stage {
   background:
     radial-gradient(circle at 12% -8%, rgba(3, 181, 211, 0.22), transparent 34%),
     radial-gradient(circle at 100% 18%, rgba(160, 120, 255, 0.28), transparent 36%),
     radial-gradient(circle at 30% 100%, rgba(247, 81, 161, 0.14), transparent 32%),
     #0f131d;
+}
+
+/* 오로라에서 타로로 밀 때는 밤하늘을 한 장만 옮깁니다. 본문에 다시 칠하면 가장자리가 어긋납니다. */
+html.is_slide_to_tarot[data-design="aurora"] .stage {
+  background: transparent;
+}
+
+/* 위 띠가 밀리는 밤하늘을 비추면 띠 색이 흔들립니다. 밀리는 동안만 단색으로 덮습니다. */
+html.is_slide_to_tarot[data-design="aurora"] .top_bar {
+  background: #0f131d;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 /*
