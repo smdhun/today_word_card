@@ -1121,45 +1121,343 @@
   }
 
   /**
-   * 재생된 색은 붓을 떼지 않고 파형의 능선을 따라 그 지점까지 잇습니다.
+   * 화면의 y는 아래로 갈수록 커집니다. 값이 줄면 선이 올라가는 구간입니다.
+   * 가파를수록 1에 가깝고, 내려가면 -1에 가깝습니다. 완만한 곳은 0입니다.
    */
-  function stroke_wave_trace(context, width, height, color, limit_ratio) {
+  function trace_slope_amount(from_point, to_point) {
+    const rise = from_point.y - to_point.y;
+    const run = Math.max(0.35, to_point.x - from_point.x);
+    const amount = (rise / run) / 1.15;
+    if (amount > 1) {
+      return 1;
+    }
+    if (amount < -1) {
+      return -1;
+    }
+    return amount;
+  }
+
+  /**
+   * 끝단에서는 올라가면 눈에 띄게 굵고, 내려가면 눈에 띄게 얇습니다.
+   * 끝단이 지나간 뒤에는 이 차이가 원래 굵기로 돌아갑니다.
+   */
+  function trace_line_width(amount) {
+    if (amount >= 0) {
+      return WAVE_LINE_WIDTH + amount * 1.45;
+    }
+    return Math.max(0.28, WAVE_LINE_WIDTH + amount * 0.57);
+  }
+
+  /**
+   * #d6d3cc 같은 색에서 두 자리씩 밝기 값을 읽습니다. 형식이 다르면 빈 값을 돌려줍니다.
+   */
+  function hex_channel(color, offset) {
+    if (!color || color.charAt(0) !== "#" || color.length < 7) {
+      return null;
+    }
+    const channel = parseInt(color.slice(offset, offset + 2), 16);
+    return Number.isFinite(channel) ? channel : null;
+  }
+
+  /**
+   * 두 밝기 사이를 비율만큼 섞습니다.
+   */
+  function mix_channel(from_value, to_value, weight) {
+    return Math.round(from_value + (to_value - from_value) * weight);
+  }
+
+  // 이만큼 내려가면 가장 얇고 어두운 끝에 닿습니다. 그보다 짧은 내리막은 덜 변합니다.
+  const WAVE_DROP_FULL_PX = 14;
+  // 이만큼 올라가면 선이 밝고 투명한 금색에 닿습니다. 짧은 오르막은 덜 물듭니다.
+  const WAVE_RISE_FULL_PX = 6;
+  const WAVE_GOLD_RED = 255;
+  const WAVE_GOLD_GREEN = 236;
+  const WAVE_GOLD_BLUE = 160;
+  const WAVE_GOLD_ALPHA = 0.82;
+
+  /**
+   * 기울기에 맞는 색입니다.
+   * 올라갈수록 흰색에서 밝고 투명한 금색으로 바뀌고, 내려갈수록 어두워집니다.
+   */
+  function trace_channels(base_color, amount) {
+    const red = hex_channel(base_color, 1);
+    const green = hex_channel(base_color, 3);
+    const blue = hex_channel(base_color, 5);
+    if (red === null || green === null || blue === null) {
+      return null;
+    }
+    if (amount >= 0) {
+      return {
+        red: mix_channel(red, WAVE_GOLD_RED, amount),
+        green: mix_channel(green, WAVE_GOLD_GREEN, amount),
+        blue: mix_channel(blue, WAVE_GOLD_BLUE, amount),
+        alpha: 1 - amount * (1 - WAVE_GOLD_ALPHA),
+      };
+    }
+    const weight = Math.abs(amount) * 0.58;
+    return {
+      red: mix_channel(red, 118, weight),
+      green: mix_channel(green, 114, weight),
+      blue: mix_channel(blue, 106, weight),
+      alpha: 1,
+    };
+  }
+
+  /**
+   * 한 구간의 굵기와 색입니다. 색을 읽지 못하면 기본 흰색 굵기를 씁니다.
+   */
+  function trace_style(base_color, amount) {
+    const channels = trace_channels(base_color, amount);
+    if (!channels) {
+      return { line_width: WAVE_LINE_WIDTH, red: 214, green: 211, blue: 204, alpha: 1 };
+    }
+    return {
+      line_width: trace_line_width(amount),
+      red: channels.red,
+      green: channels.green,
+      blue: channels.blue,
+      alpha: channels.alpha,
+    };
+  }
+
+  /**
+   * 직전 모습에서 목표 모습으로 비율만큼 옮깁니다.
+   */
+  function lerp_trace_style(from_style, to_style, weight) {
+    return {
+      line_width: from_style.line_width + (to_style.line_width - from_style.line_width) * weight,
+      red: mix_channel(from_style.red, to_style.red, weight),
+      green: mix_channel(from_style.green, to_style.green, weight),
+      blue: mix_channel(from_style.blue, to_style.blue, weight),
+      alpha: from_style.alpha + (to_style.alpha - from_style.alpha) * weight,
+    };
+  }
+
+  // 끝단이 지나간 뒤 이 시간 동안은 굵기를 유지하고, 그다음 시간 동안 원래 굵기로 돌아옵니다.
+  const WAVE_WIDTH_HOLD_S = 0.7;
+  const WAVE_WIDTH_RESTORE_S = 1.8;
+
+  /**
+   * 재생 끝단이 지나간 지 오래될수록 굵기를 원래 값으로 되돌립니다. 색은 바꾸지 않습니다.
+   */
+  function settled_line_width(expressive_width, point_x, age) {
+    try {
+      if (!age || !(age.duration_s > 0) || !(age.view_width > 0)) {
+        return expressive_width;
+      }
+      const seconds_behind = ((age.tip_x - point_x) / age.view_width) * age.duration_s;
+      if (!(seconds_behind > WAVE_WIDTH_HOLD_S)) {
+        return expressive_width;
+      }
+      const restore = Math.min(1, (seconds_behind - WAVE_WIDTH_HOLD_S) / WAVE_WIDTH_RESTORE_S);
+      return expressive_width + (WAVE_LINE_WIDTH - expressive_width) * restore;
+    } catch (error) {
+      console.error("지나간 선의 굵기를 되돌리지 못했습니다. 지금 굵기를 유지합니다.", error);
+      return expressive_width;
+    }
+  }
+
+  /**
+   * 정해진 굵기와 색으로 짧은 선을 긋습니다.
+   * 투명한 금색은 아래 회색과 섞이면 탁해지므로, 그 자리의 회색을 먼저 지웁니다.
+   */
+  function stroke_fixed_segment(context, from_point, to_point, style) {
+    const alpha = typeof style.alpha === "number" ? style.alpha : 1;
+    context.lineWidth = style.line_width;
+    if (alpha < 0.98) {
+      context.save();
+      context.globalCompositeOperation = "destination-out";
+      context.strokeStyle = "rgba(0,0,0,1)";
+      context.beginPath();
+      context.moveTo(from_point.x, from_point.y);
+      context.lineTo(to_point.x, to_point.y);
+      context.stroke();
+      context.restore();
+    }
+    context.beginPath();
+    context.strokeStyle = "rgba(" + style.red + "," + style.green + "," + style.blue + "," + alpha.toFixed(3) + ")";
+    context.moveTo(from_point.x, from_point.y);
+    context.lineTo(to_point.x, to_point.y);
+    context.stroke();
+  }
+
+  /**
+   * 정해진 색으로 긋고, 굵기는 끝단에서 멀어진 만큼 원래 두께로 되돌립니다.
+   */
+  function stroke_settled_segment(context, from_point, to_point, style, age) {
+    stroke_fixed_segment(context, from_point, to_point, {
+      line_width: settled_line_width(style.line_width, from_point.x, age),
+      red: style.red,
+      green: style.green,
+      blue: style.blue,
+      alpha: style.alpha,
+    });
+  }
+
+  /**
+   * 오르막은 시작 색에서 출발해, 올라온 만큼 밝고 투명한 금색으로 바뀝니다.
+   */
+  function stroke_ascending_run(context, points, start_index, end_index, start_style, base_color, age) {
+    const y_start = points[start_index].y;
+    const total_rise = y_start - points[end_index].y;
+    if (!(total_rise > 0)) {
+      return start_style;
+    }
+    const target_amount = Math.min(1, total_rise / WAVE_RISE_FULL_PX);
+    const white_style = trace_style(base_color, 0);
+    const end_style = trace_style(base_color, target_amount);
+    let last_style = start_style;
+    for (let point_index = start_index + 1; point_index <= end_index; point_index += 1) {
+      const from_point = points[point_index - 1];
+      const to_point = points[point_index];
+      const steps = 4;
+      for (let step_index = 0; step_index < steps; step_index += 1) {
+        const from_weight = step_index / steps;
+        const to_weight = (step_index + 1) / steps;
+        const from_y = from_point.y + (to_point.y - from_point.y) * from_weight;
+        const progress = Math.max(0, Math.min(1, (y_start - from_y) / total_rise));
+        const width_style = lerp_trace_style(start_style, end_style, progress);
+        // 골짜기의 어두운 색에서 바로 금색으로 가면 탁해집니다. 먼저 흰색을 지나 금색이 됩니다.
+        const color_style = progress < 0.28
+          ? lerp_trace_style(start_style, white_style, progress / 0.28)
+          : lerp_trace_style(white_style, end_style, (progress - 0.28) / 0.72);
+        last_style = {
+          line_width: width_style.line_width,
+          red: color_style.red,
+          green: color_style.green,
+          blue: color_style.blue,
+          alpha: color_style.alpha,
+        };
+        stroke_settled_segment(context, {
+          x: from_point.x + (to_point.x - from_point.x) * from_weight,
+          y: from_y,
+        }, {
+          x: from_point.x + (to_point.x - from_point.x) * to_weight,
+          y: from_point.y + (to_point.y - from_point.y) * to_weight,
+        }, last_style, age);
+      }
+    }
+    return lerp_trace_style(start_style, end_style, 1);
+  }
+
+  /**
+   * 내리막은 시작점의 굵기와 밝기를 유지한 채, 내려온 만큼 점점 얇고 어두워집니다.
+   */
+  function stroke_descending_run(context, points, start_index, end_index, start_style, base_color, age) {
+    const y_start = points[start_index].y;
+    const total_drop = points[end_index].y - y_start;
+    if (!(total_drop > 0)) {
+      return start_style;
+    }
+    const target_amount = -Math.min(1, total_drop / WAVE_DROP_FULL_PX);
+    const end_style = trace_style(base_color, target_amount);
+    let last_style = start_style;
+    for (let point_index = start_index + 1; point_index <= end_index; point_index += 1) {
+      const from_point = points[point_index - 1];
+      const to_point = points[point_index];
+      const steps = 4;
+      for (let step_index = 0; step_index < steps; step_index += 1) {
+        const from_weight = step_index / steps;
+        const to_weight = (step_index + 1) / steps;
+        const from_y = from_point.y + (to_point.y - from_point.y) * from_weight;
+        const progress = Math.max(0, Math.min(1, (from_y - y_start) / total_drop));
+        last_style = lerp_trace_style(start_style, end_style, progress);
+        stroke_settled_segment(context, {
+          x: from_point.x + (to_point.x - from_point.x) * from_weight,
+          y: from_y,
+        }, {
+          x: from_point.x + (to_point.x - from_point.x) * to_weight,
+          y: from_point.y + (to_point.y - from_point.y) * to_weight,
+        }, last_style, age);
+      }
+    }
+    return lerp_trace_style(start_style, end_style, 1);
+  }
+
+  /**
+   * 재생된 구간을 따라갈 점만 모읍니다. 마지막 점은 재생 위치에서 자릅니다.
+   */
+  function played_trace_points(wave, ratio) {
+    const exact = ratio * (wave.points.length - 1);
+    const last_index = Math.min(wave.points.length - 1, Math.floor(exact));
+    const fraction = exact - last_index;
+    const points = wave.points.slice(0, last_index + 1);
+    if (ratio < 1 && fraction > 0 && last_index < wave.points.length - 1) {
+      const current = wave.points[last_index];
+      const next = wave.points[last_index + 1];
+      points.push({
+        x: current.x + (next.x - current.x) * fraction,
+        y: current.y + (next.y - current.y) * fraction,
+      });
+    }
+    return points;
+  }
+
+  /**
+   * 재생된 색은 파형의 능선을 따라 그 지점까지 잇습니다.
+   * 올라가는 구간은 직전 색에서 시작해 밝고 투명한 금색으로 바뀝니다.
+   * 내려가는 구간은 직전 굵기와 밝기에서 시작해 점점 얇고 어두워집니다.
+   * 끝단이 지나간 뒤에는 굵기만 원래 두께로 천천히 돌아옵니다.
+   */
+  function stroke_wave_trace(context, width, height, color, limit_ratio, duration_s) {
     const ratio = Math.max(0, Math.min(1, limit_ratio));
     if (ratio <= 0) {
       return;
     }
     const wave = wave_points(width, height);
-    context.strokeStyle = color;
     context.lineCap = "round";
     context.lineJoin = "round";
-    context.lineWidth = WAVE_LINE_WIDTH;
-    context.beginPath();
     if (wave.points.length < 2) {
+      context.strokeStyle = color;
+      context.lineWidth = WAVE_LINE_WIDTH;
+      context.beginPath();
       context.moveTo(0, wave.mid_y);
       context.lineTo(width * ratio, wave.mid_y);
       context.stroke();
       return;
     }
-    const exact = ratio * (wave.points.length - 1);
-    const last_index = Math.min(wave.points.length - 1, Math.floor(exact));
-    const fraction = exact - last_index;
-    context.moveTo(wave.points[0].x, wave.points[0].y);
-    for (let point_index = 1; point_index <= last_index; point_index += 1) {
-      context.lineTo(wave.points[point_index].x, wave.points[point_index].y);
+    const points = played_trace_points(wave, ratio);
+    const age = {
+      tip_x: points[points.length - 1].x,
+      view_width: width,
+      duration_s: duration_s,
+    };
+    let carry_style = trace_style(color, 0);
+    let point_index = 1;
+    while (point_index < points.length) {
+      const from_point = points[point_index - 1];
+      const to_point = points[point_index];
+      const is_ascending = from_point.y - to_point.y > 0.4;
+      if (is_ascending) {
+        const run_start = point_index - 1;
+        let run_end = point_index;
+        while (run_end + 1 < points.length && points[run_end].y - points[run_end + 1].y > 0.4) {
+          run_end += 1;
+        }
+        carry_style = stroke_ascending_run(context, points, run_start, run_end, carry_style, color, age);
+        point_index = run_end + 1;
+        continue;
+      }
+      const is_descending = to_point.y - from_point.y > 0.4;
+      if (!is_descending) {
+        const style = trace_style(color, 0);
+        stroke_settled_segment(context, from_point, to_point, style, age);
+        carry_style = style;
+        point_index += 1;
+        continue;
+      }
+      const run_start = point_index - 1;
+      let run_end = point_index;
+      while (run_end + 1 < points.length && points[run_end + 1].y - points[run_end].y > 0.4) {
+        run_end += 1;
+      }
+      carry_style = stroke_descending_run(context, points, run_start, run_end, carry_style, color, age);
+      point_index = run_end + 1;
     }
-    if (ratio < 1 && fraction > 0 && last_index < wave.points.length - 1) {
-      const current = wave.points[last_index];
-      const next = wave.points[last_index + 1];
-      context.lineTo(
-        current.x + (next.x - current.x) * fraction,
-        current.y + (next.y - current.y) * fraction
-      );
-    }
-    context.stroke();
   }
 
   /**
-   * 전체 음파는 회색으로 두고, 재생된 부분은 능선을 한 번에 따라 흰색으로 긋습니다.
+   * 전체 음파는 회색으로 두고, 재생된 부분은 능선을 흰색으로 따라 긋습니다.
    */
   function draw_wave() {
     const plate = document.getElementById("sketch_wave");
@@ -1199,7 +1497,7 @@
       stroke_wave_shape(context, width, height, WAVE_REST);
       context.restore();
       if (progress > 0) {
-        stroke_wave_trace(context, width, height, WAVE_PLAYED, progress);
+        stroke_wave_trace(context, width, height, WAVE_PLAYED, progress, has_duration ? duration : 0);
       }
       const elapsed_seconds = has_duration ? audio.currentTime : 0;
       const total_seconds = has_duration ? duration : 0;
