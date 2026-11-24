@@ -232,9 +232,10 @@ h2 {
   background-size: 220% 100%;
   background-position: 0% 50%;
   color: #412d00;
+  /* 화면이 바뀔 때 버튼이 따라오는 속도를 이전의 두 배로 늦춥니다. */
   animation:
-    selected_color_flow 8s ease-in-out infinite,
-    selected_button_pop 1.2s cubic-bezier(0.22, 0.7, 0.2, 1);
+    selected_color_flow 16s ease-in-out infinite,
+    selected_button_pop 2.4s cubic-bezier(0.22, 0.7, 0.2, 1);
 }
 
 /* 인간관계 오른쪽의 음악 목록. 막대 높이를 밀지 않도록 아래에 겹칩니다. */
