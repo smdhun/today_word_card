@@ -63,6 +63,13 @@
   background: #101418;
 }
 
+/* 지금 사진(원본+파스텔)을 한 겹으로 두고, 다음 사진과 겹쳐 바꿉니다. */
+.sketch_layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
 .sketch_image {
   position: absolute;
   inset: 0;
@@ -75,30 +82,52 @@
   transition: none;
 }
 
-/* 파스텔은 원본 위에 얹습니다. 손을 대지 않으면 천천히 나타났다가 사라집니다. */
+/* 파스텔은 원본 위에 얹습니다. 손을 대지 않으면 원본에서 파스텔까지 한 번 갑니다. */
 .sketch_pastel {
   z-index: 2;
   opacity: 0;
   pointer-events: none;
 }
 
-@keyframes sketch_pastel_drift {
-  0% {
+@keyframes sketch_pastel_in {
+  from {
     opacity: 0;
   }
 
-  50% {
+  to {
+    opacity: 1;
+  }
+}
+
+/* 9초 동안 원본이 파스텔로 바뀌고, 그 상태에서 멈춥니다. */
+.sketch_pastel.is_breathing {
+  animation: sketch_pastel_in 9s ease-in-out forwards;
+}
+
+/* 지금 사진은 사라지고, 다음 사진은 같은 시간 동안 나타납니다. */
+@keyframes sketch_fade_out {
+  from {
     opacity: 1;
   }
 
-  100% {
+  to {
     opacity: 0;
   }
 }
 
-/* 한 번 왕복에 18초. 앞 9초는 파스텔, 뒤 9초는 원본으로 돌아옵니다. */
-.sketch_pastel.is_breathing {
-  animation: sketch_pastel_drift 18s ease-in-out infinite;
+@keyframes sketch_fade_in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.sketch_layer.is_leaving {
+  animation: sketch_fade_out 6s ease-in-out forwards;
+  pointer-events: none;
 }
 
 /* 오로라 목록과 같은 74% 불투명도입니다. 흐림 필터는 쓰지 않습니다. 목록을 닫을 때 필터가 사라지면 사진이 번쩍입니다. */
@@ -117,6 +146,11 @@
 
 .sketch_image_next.is_shown {
   opacity: 1;
+}
+
+/* 다음 사진이 들어오는 6초. 위의 사라짐과 같이 시작합니다. */
+.sketch_image_next.is_arriving {
+  animation: sketch_fade_in 6s ease-in-out forwards;
 }
 
 /* 사진 맨 아래에 겹치는 음파. 높이는 이전 80px의 절반입니다. */
@@ -160,8 +194,8 @@
   background-size: 220% 100%;
   background-position: 0% 50%;
   color: #1c1914;
-  /* 화면이 바뀔 때 버튼이 따라오는 속도를 이전의 두 배로 늦춥니다. */
+  /* 화면이 바뀔 때 버튼이 따라오는 속도를 한 번 더 늦춥니다. 직전보다 두 배입니다. */
   animation:
-    selected_color_flow 16s ease-in-out infinite,
-    selected_button_pop 2.4s cubic-bezier(0.22, 0.7, 0.2, 1);
+    selected_color_flow 32s ease-in-out infinite,
+    selected_button_pop 4.8s cubic-bezier(0.22, 0.7, 0.2, 1);
 }

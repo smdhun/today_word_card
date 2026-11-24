@@ -181,6 +181,14 @@
         console.error("알 수 없는 디자인입니다.", next_design);
         return;
       }
+      // 스케치를 떠나면 고른 사진을 바로 잊습니다. 관찰자보다 먼저 풀어, 곧장 다시 들어와도 다른 사진이 나옵니다.
+      if (next_design !== root.DESIGN_SKETCH && root.cancel_sketch_arrival) {
+        root.cancel_sketch_arrival();
+      }
+      // 스케치로 들어오기 전에 사진을 정해 두어, 도착한 화면과 밀려 들어오는 화면이 같습니다.
+      if (next_design === root.DESIGN_SKETCH && document.documentElement.dataset.design !== root.DESIGN_SKETCH && root.prepare_sketch_arrival) {
+        root.prepare_sketch_arrival();
+      }
       // 브라우저 화면 전환이 옛 화면을 찍어 새 크기로 늘리지 않게, 바꾸는 순간에 끊습니다.
       document.documentElement.classList.add("is_design_cut");
       apply_design(next_design);
@@ -413,6 +421,10 @@
     } catch (error) {
       console.error("화면 넘김이 끝났다는 소식을 전하지 못했습니다.", error);
     }
+    // 스케치에 도착하지 못한 밀기면, 다음에 들어올 때 사진을 다시 고릅니다.
+    if (document.documentElement.dataset.design !== root.DESIGN_SKETCH && root.cancel_sketch_arrival) {
+      root.cancel_sketch_arrival();
+    }
   }
 
   /**
@@ -558,6 +570,10 @@
     const next_design = design_beside(direction);
     if (!next_design) {
       return;
+    }
+    // 옆 화면을 복사하기 전에 스케치 사진을 정해, 밀리는 동안 다른 사진이 보이지 않게 합니다.
+    if (next_design === root.DESIGN_SKETCH && root.prepare_sketch_arrival) {
+      root.prepare_sketch_arrival();
     }
     const from_x = read_stage_shift(stage);
     const rect = stage.getBoundingClientRect();

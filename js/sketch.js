@@ -1,5 +1,6 @@
 /**
- * 스케치 화면에서 원본 사진을 한 장씩 보여 줍니다.
+ * 스케치 화면에서 원본 사진을 보여 줍니다.
+ * 들어올 때마다 다른 사진을 고르고, 파스텔로 바뀌면 또 다른 사진으로 겹쳐 넘깁니다.
  * 화면을 짧게 터치하면 다음 사진으로 바뀌고, 가로로 밀면 화면 넘기기에 맡깁니다.
  */
 (function init_sketch() {
@@ -33,9 +34,14 @@
   let tap_y = 0;
   let is_tap_tracking = false;
   let is_pastel_held = false;
+  let is_crossfading = false;
+  let has_prepared_arrival = false;
   let pastel_token = 0;
+  let crossfade_timer = 0;
   let last_touch_at = 0;
   const PASTEL_FOLDER = "images/sketches/";
+  // 사진이 겹쳐 바뀌는 시간. 스타일의 6초보다 조금 길게 잡아, 끝이 빠져도 마칩니다.
+  const CROSSFADE_BACKUP_MS = 6400;
 
   /**
    * 지금 화면이 스케치인지 확인합니다.
@@ -45,11 +51,17 @@
   }
 
   /**
-   * 원본 목록에서 지금 차례의 사진 정보를 고릅니다.
+   * 원본 사진이 들어 있는 폴더 주소입니다.
    */
-  function current_photo() {
-    const file_name = sketch_files[photo_index];
-    const folder = root.VIGNETTE_FOLDER || "images/vignettes/";
+  function original_folder() {
+    return root.VIGNETTE_FOLDER || "images/vignettes/";
+  }
+
+  /**
+   * 고른 번호의 원본과 파스텔, 짧은 설명을 만듭니다.
+   */
+  function photo_at(index) {
+    const file_name = sketch_files[index];
     let caption = "달빛에 비친 물";
     const listed = root.VIGNETTES && root.VIGNETTES.joy;
     if (listed && listed.length) {
@@ -61,10 +73,31 @@
       }
     }
     return {
-      src: folder + file_name,
+      src: original_folder() + file_name,
       pastel_src: PASTEL_FOLDER + file_name + "?v=20261121e",
       caption: caption,
     };
+  }
+
+  /**
+   * 원본 목록에서 지금 차례의 사진 정보를 고릅니다.
+   */
+  function current_photo() {
+    return photo_at(photo_index);
+  }
+
+  /**
+   * 지금 사진이 아닌 다른 번호를 뽑습니다. 한 장뿐이면 그 장을 그대로 둡니다.
+   */
+  function random_other_index(except_index) {
+    if (sketch_files.length < 2) {
+      return 0;
+    }
+    let next_index = except_index;
+    while (next_index === except_index) {
+      next_index = Math.floor(Math.random() * sketch_files.length);
+    }
+    return next_index;
   }
 
   /**
@@ -80,6 +113,27 @@
   }
 
   /**
+   * 겹쳐 바꾸기 타이머를 지우고, 두 사진의 투명도를 원래대로 돌립니다.
+   */
+  function clear_crossfade() {
+    const current_layer = document.getElementById("sketch_current");
+    const cover = document.getElementById("sketch_image_next");
+    const pastel = document.getElementById("sketch_pastel");
+    window.clearTimeout(crossfade_timer);
+    crossfade_timer = 0;
+    is_crossfading = false;
+    if (current_layer) {
+      current_layer.classList.remove("is_leaving");
+    }
+    if (cover) {
+      cover.classList.remove("is_arriving");
+    }
+    if (pastel) {
+      pastel.style.opacity = "";
+    }
+  }
+
+  /**
    * 파스텔을 거두고 원본만 남깁니다.
    */
   function stop_pastel_fade() {
@@ -91,17 +145,18 @@
   }
 
   /**
-   * 손을 대지 않으면 파스텔로 천천히 갔다가 원본으로 천천히 돌아옵니다.
+   * 손을 대지 않으면 원본이 파스텔로 천천히 바뀝니다. 파스텔에서 다시 돌아오지는 않습니다.
    */
   function begin_pastel_fade() {
     try {
       const pastel = document.getElementById("sketch_pastel");
-      if (!pastel || is_pastel_held || !is_sketch_design() || prefers_still_motion()) {
+      if (!pastel || is_pastel_held || is_crossfading || !is_sketch_design() || prefers_still_motion()) {
         return;
       }
       if (!pastel.getAttribute("src") || !pastel.complete || pastel.naturalWidth === 0) {
         return;
       }
+      pastel.style.opacity = "";
       pastel.classList.remove("is_breathing");
       void pastel.offsetWidth;
       pastel.classList.add("is_breathing");
@@ -144,6 +199,184 @@
   }
 
   /**
+   * 도착 전에 고른 사진을 바로 화면에 올립니다. 숨은 상태라 빈 화면이 보이지 않습니다.
+   */
+  function paint_photo_immediately() {
+    const shown = document.getElementById("sketch_image");
+    const cover = document.getElementById("sketch_image_next");
+    const pastel = document.getElementById("sketch_pastel");
+    if (!shown || !cover || !pastel || !sketch_files.length) {
+      console.error("스케치 사진을 찾지 못했습니다.");
+      return;
+    }
+    const photo = current_photo();
+    paint_token += 1;
+    clear_crossfade();
+    stop_pastel_fade();
+    cover.classList.remove("is_shown");
+    shown.alt = "원본 사진, " + photo.caption;
+    shown.src = photo.src;
+    shown_src = photo.src;
+    pastel.src = photo.pastel_src;
+  }
+
+  /**
+   * 스케치로 넘어가기 직전에 지금과 다른 사진을 고릅니다.
+   * 밀리는 옆 화면을 만들기 전에 부르므로, 도착 사진과 미리보기 사진이 같습니다.
+   */
+  function prepare_sketch_arrival() {
+    try {
+      if (is_sketch_design() || has_prepared_arrival || !sketch_files.length) {
+        return;
+      }
+      photo_index = random_other_index(photo_index);
+      has_prepared_arrival = true;
+      paint_photo_immediately();
+    } catch (error) {
+      console.error("스케치 사진을 고르지 못했습니다. 이전 사진을 보여 줍니다.", error);
+    }
+  }
+
+  /**
+   * 스케치에 도착하지 못했으면, 다음에 들어올 때 사진을 다시 고릅니다.
+   */
+  function cancel_sketch_arrival() {
+    has_prepared_arrival = false;
+  }
+
+  /**
+   * 두 사진이 겹친 뒤, 아래 사진을 새 원본으로 맞추고 파스텔을 다시 시작합니다.
+   */
+  function finish_crossfade(token, next_index, next_src) {
+    if (token !== paint_token || !is_crossfading) {
+      return;
+    }
+    try {
+      const shown = document.getElementById("sketch_image");
+      if (!shown) {
+        clear_crossfade();
+        return;
+      }
+      is_crossfading = false;
+      window.clearTimeout(crossfade_timer);
+      crossfade_timer = 0;
+      photo_index = next_index;
+      const photo = current_photo();
+      shown.alt = "원본 사진, " + photo.caption;
+      shown.src = next_src;
+      shown_src = next_src;
+      window.requestAnimationFrame(function reveal_settled_photo() {
+        if (token !== paint_token) {
+          return;
+        }
+        clear_crossfade();
+        if (!is_sketch_design() || is_pastel_held) {
+          return;
+        }
+        load_pastel(begin_pastel_fade);
+      });
+    } catch (error) {
+      clear_crossfade();
+      console.error("다음 사진으로 겹쳐 바꾸지 못했습니다. 사진을 다시 터치해 주세요.", error);
+    }
+  }
+
+  /**
+   * 파스텔로 바뀐 사진을 다른 원본과 동시에 겹쳐 바꿉니다.
+   * 지금 사진은 흐려지며 사라지고, 다음 사진은 흐려진 상태에서 나타납니다.
+   */
+  function crossfade_to_other() {
+    try {
+      if (is_crossfading || !is_sketch_design() || is_pastel_held || sketch_files.length < 2) {
+        return;
+      }
+      const next_index = random_other_index(photo_index);
+      const next_src = photo_at(next_index).src;
+      const cover = document.getElementById("sketch_image_next");
+      const current_layer = document.getElementById("sketch_current");
+      const pastel = document.getElementById("sketch_pastel");
+      if (!cover || !current_layer || !pastel) {
+        console.error("겹쳐 바꿀 사진을 찾지 못했습니다.");
+        return;
+      }
+      const token = ++paint_token;
+      is_crossfading = true;
+      cover.onload = function on_next_ready() {
+        if (token !== paint_token || !is_sketch_design()) {
+          return;
+        }
+        // 파스텔이 사라지지 않은 채로, 두 장의 투명도를 같은 순간에 움직입니다.
+        pastel.style.opacity = "1";
+        pastel.classList.remove("is_breathing");
+        current_layer.classList.remove("is_leaving");
+        cover.classList.remove("is_arriving", "is_shown");
+        void current_layer.offsetWidth;
+        current_layer.classList.add("is_leaving");
+        cover.classList.add("is_arriving");
+        window.clearTimeout(crossfade_timer);
+        crossfade_timer = window.setTimeout(function backup_crossfade_end() {
+          finish_crossfade(token, next_index, next_src);
+        }, CROSSFADE_BACKUP_MS);
+      };
+      cover.onerror = function on_next_error() {
+        if (token !== paint_token) {
+          return;
+        }
+        is_crossfading = false;
+        console.error("다음 사진을 불러오지 못했습니다. 이 사진을 한 번 더 보여 줍니다.", next_src);
+        begin_pastel_fade();
+      };
+      if (cover.getAttribute("src") === next_src && cover.complete && cover.naturalWidth > 0) {
+        cover.onload();
+        return;
+      }
+      cover.src = next_src;
+    } catch (error) {
+      is_crossfading = false;
+      console.error("다른 사진으로 바꾸지 못했습니다. 사진을 다시 터치해 주세요.", error);
+    }
+  }
+
+  /**
+   * 파스텔이 원본을 다 덮으면 다른 사진으로 넘깁니다.
+   */
+  function on_pastel_animation_end(event) {
+    try {
+      if (!event || event.animationName !== "sketch_pastel_in") {
+        return;
+      }
+      if (!is_sketch_design() || is_pastel_held || prefers_still_motion()) {
+        return;
+      }
+      crossfade_to_other();
+    } catch (error) {
+      console.error("파스텔 다음 사진으로 넘기지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 겹쳐 들어오는 사진의 나타남이 끝나면 아래 사진을 그 그림으로 바꿉니다.
+   */
+  function on_arrive_animation_end(event) {
+    try {
+      if (!event || event.animationName !== "sketch_fade_in") {
+        return;
+      }
+      const cover = document.getElementById("sketch_image_next");
+      const next_src = cover ? cover.getAttribute("src") : "";
+      const next_index = sketch_files.findIndex(function match_src(file_name) {
+        return next_src.indexOf(file_name) !== -1;
+      });
+      if (next_index < 0 || !next_src) {
+        return;
+      }
+      finish_crossfade(paint_token, next_index, next_src);
+    } catch (error) {
+      console.error("겹친 사진을 마치지 못했습니다.", error);
+    }
+  }
+
+  /**
    * 지금 차례의 원본을 화면에 겁니다.
    * 다음 사진이 다 열리기 전에는 지금 사진을 그대로 두어 빈 화면이 번쩍이지 않습니다.
    */
@@ -159,6 +392,7 @@
       const request_src = photo.src;
       const token = ++paint_token;
       shown.alt = "원본 사진, " + photo.caption;
+      clear_crossfade();
       stop_pastel_fade();
       if (!shown.getAttribute("src")) {
         shown.src = request_src;
@@ -267,6 +501,8 @@
       tap_y = event.touches[0].clientY;
       is_tap_tracking = true;
       is_pastel_held = true;
+      paint_token += 1;
+      clear_crossfade();
       stop_pastel_fade();
     } catch (error) {
       is_tap_tracking = false;
@@ -325,6 +561,21 @@
   }
 
   /**
+   * 스케치에 쓰기 전에 원본을 미리 읽어, 무작위로 고른 사진이 늦게 뜨지 않게 합니다.
+   */
+  function preload_originals() {
+    try {
+      const folder = original_folder();
+      sketch_files.forEach(function preload_file(file_name) {
+        const image = new Image();
+        image.src = folder + file_name;
+      });
+    } catch (error) {
+      console.error("스케치 사진을 미리 읽지 못했습니다. 화면에서 다시 불러옵니다.", error);
+    }
+  }
+
+  /**
    * 스케치 사진과 터치를 연결합니다.
    */
   function bind_sketch() {
@@ -332,7 +583,8 @@
       const stage = document.getElementById("sketch_stage");
       const image = document.getElementById("sketch_image");
       const cover = document.getElementById("sketch_image_next");
-      if (!stage || !image || !cover) {
+      const current_layer = document.getElementById("sketch_current");
+      if (!stage || !image || !cover || !current_layer) {
         console.error("스케치 화면을 찾지 못했습니다.");
         return;
       }
@@ -343,6 +595,8 @@
       }
       image.addEventListener("error", on_photo_error);
       image.addEventListener("load", on_photo_load);
+      pastel.addEventListener("animationend", on_pastel_animation_end);
+      cover.addEventListener("animationend", on_arrive_animation_end);
       stage.addEventListener("touchstart", on_sketch_touch_start, { passive: true });
       stage.addEventListener("touchend", on_sketch_touch_end);
       stage.addEventListener("touchcancel", function on_sketch_touch_cancel() {
@@ -358,6 +612,9 @@
             return;
           }
           is_pastel_held = false;
+          has_prepared_arrival = false;
+          paint_token += 1;
+          clear_crossfade();
           stop_pastel_fade();
         } catch (error) {
           console.error("스케치 파스텔 전환을 맞추지 못했습니다.", error);
@@ -367,6 +624,9 @@
         attributes: true,
         attributeFilter: ["data-design"],
       });
+      root.prepare_sketch_arrival = prepare_sketch_arrival;
+      root.cancel_sketch_arrival = cancel_sketch_arrival;
+      preload_originals();
       show_current_photo();
     } catch (error) {
       console.error("스케치 화면을 준비하지 못했습니다. 페이지를 새로고침해 주세요.", error);

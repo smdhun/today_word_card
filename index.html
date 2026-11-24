@@ -23,13 +23,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261124a">
-  <link rel="stylesheet" href="css/aurora.css?v=20261124a">
-  <link rel="stylesheet" href="css/sketch.css?v=20261124a">
+  <link rel="stylesheet" href="css/style.css?v=20261124b">
+  <link rel="stylesheet" href="css/aurora.css?v=20261124b">
+  <link rel="stylesheet" href="css/sketch.css?v=20261124e">
   <link rel="stylesheet" href="css/relation.css">
   <!-- 화면이 그려지기 전에 디자인을 정해야 색이 깜빡이지 않습니다. -->
   <script src="js/constants.js?v=20261122a"></script>
-  <script src="js/design.js?v=20261123bn"></script>
+  <script src="js/design.js?v=20261124d"></script>
 </head>
 <body>
   <!-- 아이콘 모음. 화면에는 보이지 않고, 아래에서 <use>로 꺼내 씁니다. -->
@@ -420,8 +420,11 @@
     <!-- 스케치에서는 원본 사진만 보입니다. 터치하면 다음 한 장으로 바뀝니다. -->
     <section id="sketch_stage" class="sketch_stage" aria-label="원본 사진">
       <div class="sketch_frame">
-        <img id="sketch_image" class="sketch_image" alt="원본 사진" width="540" height="960">
-        <img id="sketch_pastel" class="sketch_image sketch_pastel" alt="" aria-hidden="true" width="540" height="960">
+        <!-- 원본과 파스텔을 한 장으로 묶어, 다음 사진과 같이 흐리게 바꿉니다. -->
+        <div id="sketch_current" class="sketch_layer">
+          <img id="sketch_image" class="sketch_image" alt="원본 사진" width="540" height="960">
+          <img id="sketch_pastel" class="sketch_image sketch_pastel" alt="" aria-hidden="true" width="540" height="960">
+        </div>
         <img id="sketch_image_next" class="sketch_image sketch_image_next" alt="" aria-hidden="true" width="540" height="960">
         <!-- 사진 하단에 겹치는 음파입니다. 재생 색은 능선을 따라 긋고, 사진 터치는 막지 않습니다. -->
         <div id="sketch_wave" class="sketch_wave" role="img" aria-label="음악 진행" hidden>
@@ -501,7 +504,7 @@
   <script src="js/phrases.js?v=20261115f"></script>
   <script src="js/wise_quotes.js"></script>
   <script src="js/vignettes.js"></script>
-  <script src="js/sketch.js?v=20261122z"></script>
+  <script src="js/sketch.js?v=20261124e"></script>
   <script src="js/faces.js"></script>
   <script src="js/tarot_cards.js?v=20261115r"></script>
   <script src="js/tarot.js?v=20261123bn"></script>
