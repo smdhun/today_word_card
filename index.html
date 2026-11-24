@@ -2,6 +2,63 @@
 <html lang="ko" data-theme="dark" data-design="aurora">
 <head>
   <meta charset="UTF-8">
+  <!-- 가로가 긴 PC 창은 휴대폰과 같은 세로 비율의 화면 안에서 봅니다. -->
+  <script>
+    (function mount_phone_ratio() {
+      try {
+        if (window.name === "today_phone_frame") {
+          return;
+        }
+        var view_width = window.innerWidth;
+        var view_height = window.innerHeight;
+        if (!(view_width > 0) || !(view_height > 0)) {
+          return;
+        }
+        // 0.8보다 좁으면 이미 휴대폰에 가깝습니다. 창이 가로로 넓어지면 그때 다시 맞춥니다.
+        if (view_width / view_height <= 0.8) {
+          window.addEventListener("resize", function on_grow_to_desktop() {
+            if (window.innerWidth / Math.max(window.innerHeight, 1) > 0.8) {
+              window.location.reload();
+            }
+          });
+          return;
+        }
+        var listen = EventTarget.prototype.addEventListener;
+        // 바깥 창은 액자만 둡니다. 안쪽 휴대폰 화면이 앱을 한 번만 시작합니다.
+        EventTarget.prototype.addEventListener = function skip_outer_startup(type, listener, options) {
+          if (type === "DOMContentLoaded" || type === "load") {
+            return;
+          }
+          return listen.call(this, type, listener, options);
+        };
+        var page_url = window.location.href;
+        var hide = document.createElement("style");
+        hide.textContent = "html,body{background:#070605;}body{visibility:hidden;}";
+        document.head.appendChild(hide);
+        listen.call(document, "DOMContentLoaded", function build_phone_frame() {
+          try {
+            var frame = document.createElement("iframe");
+            frame.name = "today_phone_frame";
+            frame.title = "휴대폰 화면";
+            frame.src = page_url;
+            document.body.replaceChildren(frame);
+            document.body.style.cssText = "visibility:visible;margin:0;height:100dvh;background:#070605;display:flex;align-items:center;justify-content:center;overflow:hidden;";
+            frame.style.cssText = "flex:none;height:100dvh;width:calc(100dvh * 9 / 19.5);max-width:100vw;max-height:calc(100vw * 19.5 / 9);border:0;background:#16130a;box-shadow:0 24px 80px rgba(0,0,0,.5);";
+          } catch (error) {
+            document.body.style.visibility = "visible";
+            console.error("휴대폰 비율 화면을 붙이지 못했습니다. 넓은 화면 그대로 봅니다.", error);
+          }
+        });
+        listen.call(window, "resize", function on_shrink_to_phone() {
+          if (window.innerWidth / Math.max(window.innerHeight, 1) <= 0.8) {
+            window.location.reload();
+          }
+        });
+      } catch (error) {
+        console.error("휴대폰 비율로 맞추지 못했습니다. 넓은 화면 그대로 봅니다.", error);
+      }
+    })();
+  </script>
   <!-- 처음 화면은 100%입니다. 확대는 5배까지, 축소는 80%까지 허용합니다. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.8, maximum-scale=5, user-scalable=yes">
   <title>오늘의 한마디</title>
