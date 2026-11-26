@@ -3,6 +3,7 @@
  * 곡을 누르면 그 곡이 바로 나오고, 곡이 끝나면 고른 반복 방식대로 다음 곡을 정합니다.
  */
 (function init_music() {
+  const root = (window.TodayWordCard = window.TodayWordCard || {});
   const MUSIC_FOLDER = "music/";
   const TRACKS = [
     { file: "alexzavesa-dance-playful-night-510786.mp3", title: "Dance Playful Night" },
@@ -346,7 +347,7 @@
       return;
     }
     sound_button.setAttribute("aria-pressed", is_muted ? "true" : "false");
-    sound_button.setAttribute("aria-label", is_muted ? "음소거 해제" : "음소거");
+    root.set_i18n_aria(sound_button, is_muted ? "sound_unmute" : "sound_mute");
   }
 
   /**
@@ -476,7 +477,7 @@
    */
   function show_music_error(message_element) {
     message_element.hidden = false;
-    message_element.textContent = "이 곡을 재생하지 못했습니다. 다른 곡을 눌러 주세요.";
+    message_element.textContent = root.t("music_play_failed");
   }
 
   /**
@@ -518,7 +519,6 @@
    * 본문을 고정했다가 풀면 목록을 닫는 순간에 사진이 번쩍입니다.
    */
   function is_sketch_screen() {
-    const root = window.TodayWordCard || {};
     return document.documentElement.dataset.design === (root.DESIGN_SKETCH || "sketch");
   }
 

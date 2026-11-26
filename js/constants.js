@@ -6,14 +6,15 @@
   const root = (window.TodayWordCard = window.TodayWordCard || {});
 
   // 고를 수 있는 기분. 문장 덱과 속담 덱도 이 id로 나뉘어 있습니다.
-  root.MOODS = [
-    { id: "joy", label: "기쁨" },
-    { id: "calm", label: "평온" },
-    { id: "excited", label: "설렘" },
-    { id: "anxious", label: "불안" },
-    { id: "tired", label: "피곤" },
-    { id: "sad", label: "우울" },
-  ];
+  // label은 읽을 때마다 지금 언어의 이름을 js/i18n.js에서 가져옵니다.
+  root.MOODS = ["joy", "calm", "excited", "anxious", "tired", "sad"].map(function make_mood(id) {
+    return {
+      id: id,
+      get label() {
+        return root.t("mood_" + id);
+      },
+    };
+  });
 
   // 고른 기분이 없으면 기쁨으로 첫 카드를 엽니다.
   root.MOOD_DEFAULT = "joy";
@@ -33,14 +34,23 @@
   root.DESIGN_HINT_KEY = "today_word_card_design_hint";
 
   // 사용자에게 보여줄 안내. 원인 내부 정보는 넣지 않습니다.
-  root.MESSAGES = {
-    mood_required: "오늘 기분을 선택한 뒤 다시 뽑아 주세요.",
-    draw_failed: "문장을 만들지 못했습니다. 기분을 다시 고른 뒤 뽑아 주세요.",
-    copy_done: "문장을 복사했습니다. 원하는 곳에 붙여 넣으면 됩니다.",
-    copy_failed: "복사에 실패했습니다. 문장을 드래그해서 직접 복사해 주세요.",
-    save_failed: "이 브라우저에는 카드를 기억해 두지 못했습니다. 새로고침 후에는 다시 뽑아 주세요.",
-    empty_guide: "오늘의 기분을 고르면 오늘을 위한 짧은 문장이 여기에 나타납니다.",
-    data_missing: "문장 데이터를 불러오지 못했습니다. 페이지를 새로고침해 주세요.",
-    design_save_failed: "이 브라우저에는 고른 디자인을 기억해 두지 못했습니다. 다음에 열 때 다시 골라 주세요.",
-  };
+  // 글자는 js/i18n.js의 msg_ 키에 있고, 읽을 때마다 지금 언어로 가져옵니다.
+  root.MESSAGES = {};
+  [
+    "mood_required",
+    "draw_failed",
+    "copy_done",
+    "copy_failed",
+    "save_failed",
+    "empty_guide",
+    "data_missing",
+    "design_save_failed",
+  ].forEach(function add_message(name) {
+    Object.defineProperty(root.MESSAGES, name, {
+      enumerable: true,
+      get: function read_message() {
+        return root.t("msg_" + name);
+      },
+    });
+  });
 })();

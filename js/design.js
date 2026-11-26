@@ -233,7 +233,7 @@
       if (!target || typeof target.closest !== "function") {
         return false;
       }
-      return Boolean(target.closest("button, a, input, textarea, select, label, #music_panel"));
+      return Boolean(target.closest("button, a, input, textarea, select, label, #music_panel, #lang_panel"));
     } catch (error) {
       console.error("밀기 시작 위치를 확인하지 못했습니다.", error);
       return true;

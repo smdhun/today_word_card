@@ -131,7 +131,8 @@
 }
 
 /* 오로라 목록과 같은 74% 불투명도입니다. 흐림 필터는 쓰지 않습니다. 목록을 닫을 때 필터가 사라지면 사진이 번쩍입니다. */
-:root[data-design="sketch"] .music_panel::before {
+:root[data-design="sketch"] .music_panel::before,
+:root[data-design="sketch"] .lang_panel::before {
   background: rgba(16, 20, 24, 0.74);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;

@@ -7,6 +7,8 @@
 
   let deck = [];
   let deck_index = 0;
+  // 지금 앞면이 열려 있는 카드입니다. 언어를 바꾸면 이 카드의 그림을 다시 그립니다.
+  let shown_card = null;
   let weave_token = 0;
   // 처음 타로 화면은 두 원 사이를 채우지 않습니다. 화면을 넘긴 뒤에 다시 오면 그립니다.
   let is_opening_plain = true;
@@ -448,15 +450,16 @@
 
   /**
    * 이미지 아래 버튼 문구를 바꿉니다. 뒷면과 앞면의 말이 다릅니다.
+   * label_key는 js/i18n.js의 번역 키입니다.
    */
-  function set_draw_label(label_text) {
+  function set_draw_label(label_key) {
     const button = document.getElementById("draw_button");
     const label = button ? button.querySelector(".label_tarot") : null;
     if (!label) {
       console.error("카드 고르기 문구를 찾지 못했습니다. 페이지를 새로고침해 주세요.");
       return;
     }
-    label.textContent = label_text;
+    root.set_i18n_text(label, label_key);
   }
 
   /**
@@ -545,6 +548,8 @@
         return;
       }
       image.alt = "덮인 Tarot 카드";
+      shown_card = null;
+      prepare_upcoming_face();
       load_weave_images().catch(function (error) {
         console.error("카드 문양을 미리 불러오지 못했습니다. 페이지를 새로고침해 주세요.", error);
       });
@@ -565,11 +570,11 @@
         start_back_weave();
       }
       reading.hidden = true;
-      set_draw_label("오늘의 카드 고르기");
+      set_draw_label("draw_tarot");
       show_tarot_status("");
     } catch (error) {
       console.error("카드 뒷면을 보여 주지 못했습니다. 페이지를 새로고침해 주세요.", error);
-      show_tarot_status("카드를 열지 못했습니다. 페이지를 새로고침한 뒤 다시 뒤집어 주세요.");
+      show_tarot_status(root.t("card_open_failed_reload"));
     }
   }
 
@@ -585,7 +590,7 @@
       }
       if (!deck.length) {
         console.error("뒤집을 타로 카드가 없습니다.");
-        show_tarot_status("카드를 열지 못했습니다. 페이지를 새로고침한 뒤 다시 뒤집어 주세요.");
+        show_tarot_status(root.t("card_open_failed_reload"));
         return null;
       }
       if (deck_index >= deck.length) {
@@ -595,15 +600,78 @@
       deck_index += 1;
       if (!is_card_ready(card)) {
         console.error("타로 카드의 내용이 비어 있습니다.", card);
-        show_tarot_status("이 카드의 글을 열지 못했습니다. 다시 뒤집어 주세요.");
+        show_tarot_status(root.t("card_text_failed"));
         return null;
       }
+      prepare_upcoming_face();
       return card;
     } catch (error) {
       console.error("다음 타로 카드를 꺼내지 못했습니다. 다시 눌러 주세요.", error);
-      show_tarot_status("카드를 열지 못했습니다. 잠시 후 다시 눌러 주세요.");
+      show_tarot_status(root.t("card_open_failed_retry"));
       return null;
     }
+  }
+
+  /**
+   * 한국어 이름이 그려진 원래 앞면 주소입니다.
+   */
+  function korean_face_src(card) {
+    return root.TAROT_FOLDER + card.file + "?v=20261115q";
+  }
+
+  /**
+   * 지금 언어로 바로 쓸 수 있는 앞면 주소입니다.
+   * 번역 이름을 넣은 그림이 아직 없으면 원래 그림을 씁니다.
+   */
+  function face_src(card) {
+    const ready_src = typeof root.ready_tarot_face === "function" ? root.ready_tarot_face(card) : null;
+    return ready_src || korean_face_src(card);
+  }
+
+  /**
+   * 앞면 그림의 설명입니다. 한국어는 "바보 카드", 다른 언어는 번역 이름입니다.
+   */
+  function face_alt(card) {
+    const language = typeof root.get_language === "function" ? root.get_language() : "ko";
+    return language === "ko" ? card.name + " 카드" : root.tc(card.name);
+  }
+
+  /**
+   * 다음에 뒤집을 카드의 번역 그림을 미리 만들어 둡니다. 뒤집는 순간 한국어 이름이 비치지 않게 합니다.
+   */
+  function prepare_upcoming_face() {
+    try {
+      if (typeof root.prepare_tarot_face !== "function") {
+        return;
+      }
+      const upcoming = deck[deck_index];
+      if (upcoming) {
+        root.prepare_tarot_face(upcoming);
+      }
+    } catch (error) {
+      console.error("다음 타로 그림을 미리 만들지 못했습니다.", error);
+    }
+  }
+
+  /**
+   * 열린 카드의 그림을 지금 언어로 바꿉니다. 번역 그림이 늦게 만들어져도 그때 바꿉니다.
+   */
+  function paint_shown_face() {
+    const image = document.getElementById("tarot_image");
+    const reading = document.getElementById("tarot_reading");
+    const card = shown_card;
+    if (!image || !reading || !card || reading.hidden || typeof root.prepare_tarot_face !== "function") {
+      return;
+    }
+    root.prepare_tarot_face(card).then(function swap_face(src) {
+      if (shown_card !== card || reading.hidden) {
+        return;
+      }
+      if (image.src !== src) {
+        image.src = src;
+      }
+      image.alt = face_alt(card);
+    });
   }
 
   /**
@@ -617,22 +685,24 @@
     const reading = document.getElementById("tarot_reading");
     if (!image || !name || !insight || !question || !reading || !card) {
       console.error("타로 카드 칸을 찾지 못했습니다. 페이지를 새로고침해 주세요.");
-      show_tarot_status("카드를 열지 못했습니다. 페이지를 새로고침한 뒤 다시 뒤집어 주세요.");
+      show_tarot_status(root.t("card_open_failed_reload"));
       return false;
     }
     stop_back_weave();
     image.onerror = function on_tarot_failed() {
       console.error("타로 카드 그림을 불러오지 못했습니다.", card.file);
-      show_tarot_status("카드 그림을 불러오지 못했습니다. 다시 뒤집어 주세요.");
+      show_tarot_status(root.t("card_image_failed"));
     };
-    image.alt = card.name + " 카드";
-    image.src = root.TAROT_FOLDER + card.file + "?v=20261115q";
-    name.textContent = card.name;
-    insight.textContent = card.insight;
-    question.textContent = card.question;
+    image.alt = face_alt(card);
+    image.src = face_src(card);
+    root.set_content_text(name, card.name);
+    root.set_content_text(insight, card.insight);
+    root.set_content_text(question, card.question);
     reading.classList.remove("is_tarot_hold");
     reading.hidden = false;
-    set_draw_label("카드 다시 고르기");
+    shown_card = card;
+    paint_shown_face();
+    set_draw_label("draw_tarot_again");
     show_tarot_status("");
     return true;
   }
@@ -642,7 +712,7 @@
    */
   function turn_tarot_to_next(card) {
     const frame = document.querySelector(".tarot_frame");
-    const next_src = root.TAROT_FOLDER + card.file + "?v=20261115q";
+    const next_src = face_src(card);
     const loader = new Image();
     loader.src = next_src;
     if (!frame || prefers_still_motion()) {
@@ -672,7 +742,7 @@
         frame.style.transition = "";
         frame.style.transform = "";
         is_card_flying = false;
-        show_tarot_status("카드를 바꾸지 못했습니다. 잠시 후 다시 눌러 주세요.");
+        show_tarot_status(root.t("card_change_failed"));
       }
     }, 350);
     window.scrollTo(0, 0);
@@ -694,7 +764,7 @@
       turn_tarot_to_next(card);
     } catch (error) {
       console.error("타로 카드를 뒤집지 못했습니다. 다시 눌러 주세요.", error);
-      show_tarot_status("카드를 뒤집지 못했습니다. 잠시 후 다시 눌러 주세요.");
+      show_tarot_status(root.t("card_flip_failed"));
     }
   }
 
@@ -732,7 +802,7 @@
         show_tarot_front(card);
         return true;
       }
-      const front_src = root.TAROT_FOLDER + card.file + "?v=20261115q";
+      const front_src = face_src(card);
       const fly = document.createElement("div");
       const spin = document.createElement("div");
       const back = document.createElement("div");
@@ -743,7 +813,7 @@
       spin.className = "tarot_to_face_spin";
       back.className = "tarot_to_face_back";
       front.className = "tarot_to_face_front";
-      front.alt = card.name + " 카드";
+      front.alt = face_alt(card);
       back_image.alt = "";
       back_image.src = image.currentSrc || image.src;
       front.src = front_src;
@@ -820,7 +890,7 @@
     } catch (error) {
       console.error("카드를 타로 칸으로 옮기지 못했습니다. 다시 눌러 주세요.", error);
       finish_tarot_opening(document.querySelector(".tarot_to_face"), document.querySelector(".tarot_frame"), document.getElementById("tarot_reading"));
-      show_tarot_status("카드를 열지 못했습니다. 잠시 후 다시 눌러 주세요.");
+      show_tarot_status(root.t("card_open_failed_retry"));
       return true;
     }
   }
@@ -883,6 +953,22 @@
       return;
     }
     stop_back_weave();
+  });
+
+  /**
+   * 언어를 바꾸면 열린 카드의 그림을 새 언어 이름으로 바꾸고, 다음 카드 그림도 미리 만듭니다.
+   * 한 줄과 질문은 js/content_i18n.js가 바꿉니다.
+   */
+  document.addEventListener("today_word_language_change", function on_language_change() {
+    try {
+      if (!deck.length) {
+        shuffle_deck();
+      }
+      paint_shown_face();
+      prepare_upcoming_face();
+    } catch (error) {
+      console.error("타로 카드를 새 언어로 바꾸지 못했습니다. 카드를 다시 골라 주세요.", error);
+    }
   });
 
   /**

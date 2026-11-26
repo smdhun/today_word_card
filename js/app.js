@@ -215,9 +215,7 @@
       }
       current_card[offset_key] = cursor;
       current_card[text_key] = next_text;
-      if (text_el) {
-        text_el.textContent = next_text;
-      }
+      root.set_content_text(text_el, next_text);
       return true;
     }
     console.error("다른 문장을 찾지 못했습니다.", field_name);
@@ -275,32 +273,33 @@
         return;
       }
       if (!current_card) {
-        show_status("먼저 새로운 문장 보기를 누른 뒤 칸을 눌러 주세요.");
+        show_status(root.t("status_draw_first"));
         return;
       }
       const is_changed = slot_name === "wise_0" || slot_name === "wise_1"
         ? replace_wise_slot(slot_name === "wise_0" ? 0 : 1)
         : replace_phrase_slot(slot_name);
       if (!is_changed) {
-        show_status("이 칸의 문장을 바꾸지 못했습니다. 잠시 후 다시 눌러 주세요.", true);
+        show_status(root.t("status_slot_failed"), true);
       }
     } catch (error) {
       console.error("누른 칸의 문장을 바꾸지 못했습니다. 잠시 후 다시 눌러 주세요.", error);
-      show_status("이 칸의 문장을 바꾸지 못했습니다. 잠시 후 다시 눌러 주세요.", true);
+      show_status(root.t("status_slot_failed"), true);
     }
   }
 
   /**
    * 오로라 문장 칸을 누르면 그 칸만 바뀌게 연결합니다.
+   * label_key는 화면 읽기용 설명의 번역 키입니다.
    */
-  function bind_aurora_slot(block, slot_name, label) {
+  function bind_aurora_slot(block, slot_name, label_key) {
     if (!block) {
       console.error("문장 칸을 찾지 못했습니다.", slot_name);
       return;
     }
     block.setAttribute("role", "button");
     block.tabIndex = 0;
-    block.setAttribute("aria-label", label);
+    root.set_i18n_aria(block, label_key);
     block.addEventListener("click", function on_slot_click() {
       refresh_aurora_slot(slot_name);
     });
@@ -329,6 +328,7 @@
 
   /**
    * 격언 칸 하나를 채웁니다. 문장이나 인물이 없으면 칸을 숨깁니다.
+   * 분류, 격언, 인물은 한국어 원문을 남기고 지금 언어로 보여 줍니다.
    */
   function render_wise_quote(block, category_el, text_el, person_el, quote) {
     try {
@@ -336,9 +336,9 @@
         return;
       }
       const is_ready = Boolean(quote && quote.category && quote.text && quote.person);
-      category_el.textContent = is_ready ? quote.category : "";
-      text_el.textContent = is_ready ? quote.text : "";
-      person_el.textContent = is_ready ? quote.person : "";
+      root.set_content_text(category_el, is_ready ? quote.category : "");
+      root.set_content_text(text_el, is_ready ? quote.text : "");
+      root.set_content_text(person_el, is_ready ? quote.person : "");
       block.hidden = !is_ready;
     } catch (error) {
       console.error("격언을 보여주지 못했습니다.", error);
@@ -740,7 +740,7 @@
         return item.id === mood_id;
       });
       if (els.card_mood && mood) {
-        els.card_mood.textContent = mood.label;
+        root.set_i18n_text(els.card_mood, "mood_" + mood.id);
       }
       if (els.result_card) {
         els.result_card.dataset.mood = mood_id;
@@ -804,25 +804,25 @@
       const validated = root.validate_input(collect_input());
       if (!validated || !validated.is_valid) {
         console.error("고른 감정을 확인하지 못했습니다.");
-        show_status("감정을 확인하지 못했습니다. 다시 골라 주세요.", true);
+        show_status(root.t("status_mood_unknown"), true);
         return;
       }
       const offset = current_card && Number.isInteger(current_card.offset) ? current_card.offset : 0;
       const picked = root.pick_today_phrase(validated, offset);
       if (!picked || !picked.vignette || !picked.mood) {
         console.error("고른 감정의 그림이 없습니다.", validated.mood);
-        show_status("이 감정의 그림을 열지 못했습니다. 페이지를 새로고침한 뒤 다시 골라 주세요.", true);
+        show_status(root.t("status_mood_image_missing"), true);
         return;
       }
       render_vignette(picked.vignette);
       if (current_card) {
         current_card.vignette = picked.vignette;
       }
-      els.card_mood.textContent = picked.mood.label;
+      root.set_i18n_text(els.card_mood, "mood_" + picked.mood.id);
       els.result_card.dataset.mood = picked.mood.id;
     } catch (error) {
       console.error("고른 감정의 그림으로 바꾸지 못했습니다. 감정을 다시 골라 주세요.", error);
-      show_status("그림을 바꾸지 못했습니다. 감정을 다시 골라 주세요.", true);
+      show_status(root.t("status_image_change_failed"), true);
     }
   }
 
@@ -855,13 +855,13 @@
       // 화살표로 넘기는 동안만 멈춥니다. 다른 화면을 갔다가 오로라로 돌아오면 다시 시작합니다.
       stop_intro_faces();
       if (typeof root.list_vignettes !== "function") {
-        show_status("그림 목록을 열지 못했습니다. 페이지를 새로고침한 뒤 다시 눌러 주세요.", true);
+        show_status(root.t("status_image_list_failed"), true);
         return;
       }
 
       const list = root.list_vignettes(current_browse_mood());
       if (!list.length) {
-        show_status("지금은 넘길 그림이 없습니다. 페이지를 새로고침한 뒤 다시 눌러 주세요.", true);
+        show_status(root.t("status_no_images"), true);
         return;
       }
 
@@ -889,7 +889,7 @@
       }
     } catch (error) {
       console.error("그림을 넘기지 못했습니다.", error);
-      show_status("그림을 넘기지 못했습니다. 잠시 후 다시 눌러 주세요.", true);
+      show_status(root.t("status_image_flip_failed"), true);
     }
   }
 
@@ -977,12 +977,8 @@
       }
       label.textContent = reading.label;
       link.textContent = reading.link_text;
-      if (els.card_lead) {
-        els.card_lead.textContent = reading.lead_text || "";
-      }
-      if (els.card_caution) {
-        els.card_caution.textContent = reading.caution_text || "";
-      }
+      root.set_content_text(els.card_lead, reading.lead_text || "");
+      root.set_content_text(els.card_caution, reading.caution_text || "");
       if (typeof root.list_vignettes === "function") {
         const list = root.list_vignettes(reading.mood_id);
         if (list && list.length > 0) {
@@ -994,7 +990,7 @@
         return item.id === reading.mood_id;
       });
       if (els.card_mood && mood) {
-        els.card_mood.textContent = mood.label;
+        root.set_i18n_text(els.card_mood, "mood_" + mood.id);
       }
       if (els.result_card) {
         els.result_card.dataset.mood = reading.mood_id;
@@ -1024,9 +1020,9 @@
     try {
       const keep_vignette = Boolean(options && options.keep_vignette);
       reset_face_reading();
-      els.card_mood.textContent = card.mood.label;
-      els.card_lead.textContent = card.lead_text;
-      els.card_caution.textContent = card.caution_text;
+      root.set_i18n_text(els.card_mood, "mood_" + card.mood.id);
+      root.set_content_text(els.card_lead, card.lead_text);
+      root.set_content_text(els.card_caution, card.caution_text);
       render_wise_quotes(card.wise_quotes);
       if (!keep_vignette) {
         render_vignette(card.vignette);
@@ -1428,7 +1424,7 @@
       if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
         if (typeof root.flip_tarot_card !== "function") {
           console.error("타로 카드를 뒤집는 기능을 찾지 못했습니다.");
-          show_error("카드를 열지 못했습니다. 페이지를 새로고침한 뒤 다시 뒤집어 주세요.", "draw_button");
+          show_error(root.t("card_open_failed_reload"), "draw_button");
           return;
         }
         if (typeof root.fly_tarot_to_character === "function" && root.fly_tarot_to_character()) {
@@ -1599,10 +1595,10 @@
       els.vignette_next.addEventListener("click", function on_next_vignette() {
         on_browse_vignette(1);
       });
-      bind_aurora_slot(document.querySelector(".verse_lead"), "lead", "밤의 한 줄을 다른 문장으로 바꿉니다");
-      bind_aurora_slot(document.querySelector(".verse_caution"), "caution", "사색의 결을 다른 문장으로 바꿉니다");
-      bind_aurora_slot(els.wise_quote_first, "wise_0", "첫 격언을 다른 문장으로 바꿉니다");
-      bind_aurora_slot(els.wise_quote_second, "wise_1", "둘째 격언을 다른 문장으로 바꿉니다");
+      bind_aurora_slot(document.querySelector(".verse_lead"), "lead", "slot_lead");
+      bind_aurora_slot(document.querySelector(".verse_caution"), "caution", "slot_caution");
+      bind_aurora_slot(els.wise_quote_first, "wise_0", "slot_wise_first");
+      bind_aurora_slot(els.wise_quote_second, "wise_1", "slot_wise_second");
       document.addEventListener("today_word_design_change", on_design_change);
       document.addEventListener("today_word_music_choice", on_music_choice);
       const camera_open = document.getElementById("camera_open");

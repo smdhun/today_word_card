@@ -267,18 +267,30 @@ h2 {
     selected_button_pop 4.8s cubic-bezier(0.22, 0.7, 0.2, 1);
 }
 
-/* 음량 막대 왼쪽의 남은 시간. 숫자가 바뀌어도 너비가 흔들리지 않습니다. */
+/* Music 오른쪽 한 칸. 위에는 음량 막대, 바로 아래에는 남은 시간을 둡니다. */
+.music_readout {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+/* 세로 줄 안에서는 flex 길이가 높이가 되므로, 막대 크기를 24×16 그대로 고정합니다. */
+.music_readout .music_meter {
+  flex: none;
+}
+
+/* 막대 아래의 남은 시간. 예전 13px보다 30% 작습니다. 숫자가 바뀌어도 너비가 흔들리지 않습니다. */
 .music_remain {
   flex: 0 0 auto;
-  min-width: 40px;
   color: var(--ink);
   font-family: var(--font_label);
-  font-size: 13px;
+  font-size: 9px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
-  line-height: 16px;
-  text-align: right;
+  line-height: 11px;
 }
 
 /* 음악 목록이 열린 동안 오로라, 타로, 인간관계 화면은 스크롤되지 않습니다. */
@@ -314,8 +326,9 @@ html.is_music_list_open .top_bar {
   box-shadow: var(--shadow_result);
 }
 
-/* 바탕과 테두리만 담습니다. 버튼과 제목은 이 판 위에서 따로 움직입니다. */
-.music_panel::before {
+/* 바탕과 테두리만 담습니다. 버튼과 제목은 이 판 위에서 따로 움직입니다. 언어 목록도 같은 바탕입니다. */
+.music_panel::before,
+.lang_panel::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -429,7 +442,8 @@ html.is_music_list_open .top_bar {
 }
 
 /* 타로 목록도 오로라처럼 뒤 화면이 비치게 합니다. */
-:root[data-design="tarot"] .music_panel::before {
+:root[data-design="tarot"] .music_panel::before,
+:root[data-design="tarot"] .lang_panel::before {
   background: rgba(34, 32, 22, 0.74);
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
@@ -2638,9 +2652,9 @@ fieldset {
   /* 오른쪽 스피커 자리만큼 비우고, 그 안에 버튼 줄을 가운데에 둡니다. */
   .top_bar_inner {
     align-items: center;
-    width: calc(100% - 68px);
-    margin-right: 60px;
-    margin-left: 8px;
+    width: calc(100% - 104px);
+    margin-right: 52px;
+    margin-left: 52px;
   }
 
   #design_aurora,
@@ -2652,22 +2666,27 @@ fieldset {
   }
 }
 
-@media (max-width: 340px) {
-  .top_bar_inner {
-    width: calc(100% - 60px);
-    margin-right: 56px;
-    margin-left: 4px;
+/* 아주 좁은 휴대폰은 양쪽 아이콘을 32px로 줄이고 바깥 여백도 양쪽 똑같이 10px로 맞춥니다. 언어 버튼은 language.css에 있습니다. */
+@media (max-width: 354px) {
+  .sound_toggle {
+    top: 16px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
   }
 
-  .music_head .music_level {
-    display: none;
+  .top_bar_inner {
+    width: calc(100% - 92px);
+    margin-right: 46px;
+    margin-left: 46px;
   }
 
   #design_aurora,
   #design_tarot,
   #design_sketch,
   #music_toggle {
-    width: 50px;
+    width: 46px;
+    padding: 0 2px;
   }
 }
 

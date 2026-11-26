@@ -7,10 +7,11 @@
   const VISION_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.17/vision_bundle.mjs";
   const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.17/wasm";
   const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
-  const REFRAME_MESSAGE = "얼굴을 정면으로, 프레임 안에 두고 다시 찍어 주세요.";
-  const PREPARE_MESSAGE = "얼굴 읽기를 준비하지 못했습니다. 감정을 직접 고른 뒤 뽑아 주세요.";
-  const CAMERA_MESSAGE = "카메라 권한을 허용한 뒤 다시 눌러 주세요.";
-  const PICK_MESSAGE = "추천 글을 고르지 못했습니다. 다시 찍어 주세요.";
+  // 안내 문장의 번역 키입니다. 글자는 js/i18n.js에 있습니다.
+  const REFRAME_MESSAGE_KEY = "face_reframe";
+  const PREPARE_MESSAGE_KEY = "face_prepare_failed";
+  const CAMERA_MESSAGE_KEY = "face_camera_permission";
+  const PICK_MESSAGE_KEY = "face_pick_failed";
   // 기분은 격언 분류를 정합니다. 온도는 그 기분의 말, 반대편은 균형 형에서만 옆에 둡니다.
   const FACE_QUOTE_CATEGORIES = {
     joy: { tone: "행복과 긍정, 희망", counter: "겸손과 인간관계, 진정성" },
@@ -98,10 +99,10 @@
   function show_prepare_error() {
     const status = document.getElementById("status_message");
     if (!status) {
-      console.error(PREPARE_MESSAGE);
+      console.error(root.t(PREPARE_MESSAGE_KEY));
       return;
     }
-    status.textContent = PREPARE_MESSAGE;
+    status.textContent = root.t(PREPARE_MESSAGE_KEY);
   }
 
   /**
@@ -714,7 +715,7 @@
     sheet.hidden = false;
     shutter.disabled = true;
     set_trace_ready(false);
-    show_camera_message(message_element, "얼굴을 읽을 준비를 하고 있습니다.");
+    show_camera_message(message_element, root.t("face_preparing"));
     try {
       await ensure_landmarker();
       if (!is_sheet_open) {
@@ -737,7 +738,7 @@
       if (is_camera_denied) {
         const status = document.getElementById("status_message");
         if (status) {
-          status.textContent = CAMERA_MESSAGE;
+          status.textContent = root.t(CAMERA_MESSAGE_KEY);
         }
         return;
       }
@@ -1227,7 +1228,7 @@
       console.error("판독보기 버튼을 찾지 못했습니다.");
       return;
     }
-    button.textContent = is_trace_visible ? "판독 안보기" : "판독보기";
+    root.set_i18n_text(button, is_trace_visible ? "trace_hide" : "trace_show");
     button.setAttribute("aria-pressed", is_trace_visible ? "true" : "false");
     if (!is_trace_visible) {
       clear_trace();
@@ -1318,7 +1319,7 @@
     const message_element = require_element("camera_message");
     const shutter = require_element("camera_shutter");
     if (!video || !message_element || !shutter || !video.videoWidth) {
-      show_camera_message(message_element, REFRAME_MESSAGE);
+      show_camera_message(message_element, root.t(REFRAME_MESSAGE_KEY));
       return;
     }
     is_reading = true;
@@ -1332,7 +1333,7 @@
       }
       const found = await find_face(video);
       if (!found) {
-        show_camera_message(message_element, REFRAME_MESSAGE);
+        show_camera_message(message_element, root.t(REFRAME_MESSAGE_KEY));
         return;
       }
       const shape_id = read_shape(found.landmarks, found.width, found.height);
@@ -1345,7 +1346,7 @@
       const mood_name = mood_label(mood_id);
       if (!card || !label || !link_text || !mood_name || typeof root.show_face_reading !== "function") {
         console.error("얼굴 추천 글을 고르지 못했습니다. 다시 찍어 주세요.");
-        show_camera_message(message_element, PICK_MESSAGE);
+        show_camera_message(message_element, root.t(PICK_MESSAGE_KEY));
         return;
       }
       close_sheet();
@@ -1361,7 +1362,7 @@
       });
     } catch (error) {
       console.error("얼굴을 읽지 못했습니다. 다시 찍어 주세요.", error);
-      show_camera_message(message_element, REFRAME_MESSAGE);
+      show_camera_message(message_element, root.t(REFRAME_MESSAGE_KEY));
     } finally {
       is_reading = false;
       if (is_sheet_open) {
