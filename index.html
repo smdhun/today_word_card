@@ -43,7 +43,8 @@
             frame.src = page_url;
             document.body.replaceChildren(frame);
             document.body.style.cssText = "visibility:visible;margin:0;height:100dvh;background:#070605;display:flex;align-items:center;justify-content:center;overflow:hidden;";
-            frame.style.cssText = "flex:none;height:100dvh;width:calc(100dvh * 9 / 19.5);max-width:100vw;max-height:calc(100vw * 19.5 / 9);border:0;background:#16130a;box-shadow:0 24px 80px rgba(0,0,0,.5);";
+            // 폭은 휴대폰 비율(9:19.5)을 따르되, 세로가 짧은 노트북에서도 아이폰 기본 폭 390px보다 좁아지지 않습니다.
+            frame.style.cssText = "flex:none;height:100dvh;width:max(390px, calc(100dvh * 9 / 19.5));max-width:100vw;max-height:calc(100vw * 19.5 / 9);border:0;background:#16130a;box-shadow:0 24px 80px rgba(0,0,0,.5);";
           } catch (error) {
             document.body.style.visibility = "visible";
             console.error("휴대폰 비율 화면을 붙이지 못했습니다. 넓은 화면 그대로 봅니다.", error);
