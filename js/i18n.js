@@ -9,7 +9,10 @@
   const root = (window.TodayWordCard = window.TodayWordCard || {});
 
   const LANGUAGE_STORAGE_KEY = "today_word_card_language";
-  const LANGUAGE_DEFAULT = "ko";
+  // 페이지 HTML과 번역의 기준이 되는 언어입니다. 받아 올 파일이 없습니다.
+  const LANGUAGE_SOURCE = "ko";
+  // 처음 방문해서 고른 언어가 없을 때 보여 줄 언어입니다.
+  const LANGUAGE_FIRST_VISIT = "en";
   const LANGUAGE_FOLDER = "js/i18n/";
   const LANGUAGE_FILE_VERSION = "20261126b";
   // 오로라 문장, 격언, 타로 글의 번역입니다. 화면 글자보다 커서 따로 받습니다.
@@ -22,21 +25,22 @@
   const MOOD_NAME_STEP_PX = 0.5;
 
   // 목록에는 그 나라 글자로 적습니다. file은 js/i18n/ 안의 파일 이름입니다.
+  // 순서는 언어의 영어 이름 abc순입니다. 새 언어를 넣을 때도 오른쪽 주석의 영어 이름 순서에 맞춥니다.
   root.LANGUAGES = [
-    { code: "ko", name: "한국어", file: "" },
-    { code: "en", name: "English", file: "en" },
-    { code: "ja", name: "日本語", file: "ja" },
-    { code: "zh-Hans", name: "简体中文", file: "zh_hans" },
-    { code: "zh-Hant", name: "繁體中文", file: "zh_hant" },
-    { code: "hi", name: "हिन्दी", file: "hi" },
-    { code: "es", name: "Español", file: "es" },
-    { code: "pt", name: "Português", file: "pt" },
-    { code: "ar", name: "العربية", file: "ar" },
-    { code: "fr", name: "Français", file: "fr" },
-    { code: "id", name: "Indonesia", file: "id" },
-    { code: "de", name: "Deutsch", file: "de" },
-    { code: "ru", name: "Русский", file: "ru" },
-    { code: "vi", name: "Tiếng Việt", file: "vi" },
+    { code: "ar", name: "العربية", file: "ar" }, // Arabic
+    { code: "zh-Hans", name: "简体中文", file: "zh_hans" }, // Chinese (Simplified)
+    { code: "zh-Hant", name: "繁體中文", file: "zh_hant" }, // Chinese (Traditional)
+    { code: "en", name: "English", file: "en" }, // English
+    { code: "fr", name: "Français", file: "fr" }, // French
+    { code: "de", name: "Deutsch", file: "de" }, // German
+    { code: "hi", name: "हिन्दी", file: "hi" }, // Hindi
+    { code: "id", name: "Indonesia", file: "id" }, // Indonesian
+    { code: "ja", name: "日本語", file: "ja" }, // Japanese
+    { code: "ko", name: "한국어", file: "" }, // Korean
+    { code: "pt", name: "Português", file: "pt" }, // Portuguese
+    { code: "ru", name: "Русский", file: "ru" }, // Russian
+    { code: "es", name: "Español", file: "es" }, // Spanish
+    { code: "vi", name: "Tiếng Việt", file: "vi" }, // Vietnamese
   ];
 
   // 기준이 되는 한국어 글자입니다. 다른 언어 파일도 같은 키를 씁니다.
@@ -135,7 +139,7 @@
   const contents = {};
   const pending_loads = {};
   const pending_content_loads = {};
-  let current_language = LANGUAGE_DEFAULT;
+  let current_language = LANGUAGE_SOURCE;
   let is_panel_open = false;
   let hide_timer = 0;
 
@@ -222,15 +226,15 @@
   };
 
   /**
-   * 이 브라우저에 기억해 둔 언어입니다. 처음 방문이면 한국어입니다.
+   * 이 브라우저에 기억해 둔 언어입니다. 처음 방문이면 영어입니다.
    */
   function read_saved_language() {
     try {
       const saved = window.localStorage ? window.localStorage.getItem(LANGUAGE_STORAGE_KEY) : null;
-      return saved && find_language(saved) ? saved : LANGUAGE_DEFAULT;
+      return saved && find_language(saved) ? saved : LANGUAGE_FIRST_VISIT;
     } catch (error) {
-      console.error("기억해 둔 언어를 읽지 못했습니다. 한국어로 보여 줍니다.", error);
-      return LANGUAGE_DEFAULT;
+      console.error("기억해 둔 언어를 읽지 못했습니다. 영어로 보여 줍니다.", error);
+      return LANGUAGE_FIRST_VISIT;
     }
   }
 
@@ -311,7 +315,7 @@
    * 고른 언어의 화면 글자와 문장 번역을 함께 받아 옵니다.
    */
   function load_language(code) {
-    if (code === LANGUAGE_DEFAULT) {
+    if (code === LANGUAGE_SOURCE) {
       return Promise.resolve();
     }
     const language = find_language(code);
@@ -541,7 +545,7 @@
   function start_i18n() {
     const saved_language = read_saved_language();
     let language_ready = Promise.resolve();
-    if (saved_language !== LANGUAGE_DEFAULT) {
+    if (saved_language !== LANGUAGE_SOURCE) {
       document.documentElement.classList.add("is_language_loading");
       hide_timer = window.setTimeout(reveal_page, LANGUAGE_HIDE_MAX_MS);
       language_ready = load_language(saved_language)
