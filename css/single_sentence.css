@@ -1,0 +1,59 @@
+/* 한 문장 모드(js/single_sentence.js): 오로라 카드에 문장 칸 하나만 보입니다. */
+
+.card_body.is_single_sentence {
+  /* 시범 페이지(trial/sparkle_sentence.html)와 같은 금색 제목과 밝은 문장색입니다. */
+  --single_label_color: #e8c176;
+  --single_text_color: #fff7ea;
+}
+
+/* 고른 칸(is_single_pick)이 아닌 문장 칸과 얼굴 추천 글은 숨깁니다. */
+.card_body.is_single_sentence > .verse:not(.is_single_pick) {
+  display: none;
+}
+
+/* 고른 칸은 상자 없이 밤하늘 위에 가운데 정렬로 놓습니다. 위쪽 여백은 별이 터질 자리입니다. */
+.card_body.is_single_sentence > .verse.is_single_pick {
+  position: relative;
+  align-items: center;
+  gap: 14px;
+  padding: 44px 8px 12px;
+  background: transparent;
+  text-align: center;
+}
+
+.card_body.is_single_sentence > .verse.is_single_pick .verse_label {
+  justify-content: center;
+  color: var(--single_label_color);
+  letter-spacing: 0.12em;
+}
+
+.card_body.is_single_sentence > .verse.is_single_pick .sentence {
+  margin: 0;
+  color: var(--single_text_color);
+  font-family: var(--font_serif);
+  font-size: clamp(22px, 6.6vw, 26px);
+  font-weight: 500;
+  line-height: 1.6;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+  word-break: keep-all;
+}
+
+.card_body.is_single_sentence > .verse.is_single_pick .wise_person {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+
+/* 별이 이름표 위에서 터질 수 있게, 별빛 판을 칸보다 위아래로 넉넉히 넓힙니다. */
+.card_body.is_single_sentence > .verse > .sparkle_canvas {
+  inset: auto;
+  top: -72px;
+  left: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 100px);
+  z-index: 2;
+}
+
+/* 격언의 인물 이름은 문장이 다 나온 뒤에 나타납니다. */
+.card_body.is_single_sentence .wise_person.is_single_waiting {
+  opacity: 0;
+}

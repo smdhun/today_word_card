@@ -1,0 +1,32 @@
+/* 별빛 문장 연출(js/sparkle_text.js)이 쓰는 모양입니다. */
+
+/* 연출 중에는 따옴표를 첫 단어와 끝 단어에 붙여 함께 움직이므로, 칸의 따옴표는 잠시 감춥니다. */
+html:root .sentence.is_sparkle_playing::before,
+html:root .sentence.is_sparkle_playing::after {
+  content: none;
+}
+
+/* 카메라: 문장 전체가 한 덩어리로 확대, 축소됩니다. */
+.sparkle_camera {
+  position: relative;
+  display: block;
+}
+
+/* 단어 묶음은 별빛을 받기 전까지 숨어 있습니다. */
+.sparkle_group {
+  display: inline-block;
+  opacity: 0;
+}
+
+.is_sparkle_playing .sparkle_group {
+  will-change: transform, opacity, filter;
+}
+
+/* 별빛을 그리는 투명한 판입니다. 누르기는 아래 칸으로 통과시킵니다. */
+.sparkle_canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}

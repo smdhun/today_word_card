@@ -1,0 +1,54 @@
+/* ───────── 키네틱 타이포그래피: 문장을 단어 묶음으로 하나씩 드러냅니다 (js/kinetic_text.js) ───────── */
+
+/* 연출 중에는 따옴표를 첫 묶음과 끝 묶음에 붙여 함께 움직이므로, 원래 따옴표는 잠시 숨깁니다. */
+html:root .sentence.has_kinetic_stage::before,
+html:root .sentence.has_kinetic_stage::after {
+  content: none;
+}
+
+/* 카메라가 다가가 있는 동안 글이 칸 밖으로 넘치지 않게 문장 칸 안에서만 보이게 합니다. */
+.sentence.is_kinetic_playing {
+  overflow: clip;
+  overflow-clip-margin: 6px;
+}
+
+/* 카메라: 문장 전체를 담고 확대, 이동합니다. 빛 점의 기준 위치이기도 합니다. */
+.kinetic_camera {
+  position: relative;
+  display: block;
+}
+
+/* 단어 묶음 하나. 묶음 안에서는 줄이 나뉘지 않아 조사가 단어와 떨어지지 않습니다. */
+.kinetic_group {
+  display: inline-block;
+}
+
+.is_kinetic_playing .kinetic_group {
+  will-change: transform, opacity, filter;
+}
+
+/* 빛 점: 기분 색의 작은 별이 방금 나온 단어 끝을 따라 흐릅니다. */
+.kinetic_spark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--primary);
+  font-size: 11px;
+  line-height: 1;
+  text-shadow:
+    0 0 6px var(--primary),
+    0 0 14px color-mix(in srgb, var(--primary) 60%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* 화면에는 보이지 않고 화면 읽기 프로그램만 읽는 문장 전체입니다. */
+.kinetic_reader {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

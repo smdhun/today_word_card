@@ -38,6 +38,8 @@
   const INTRO_MOOD_IDS = ["joy", "calm", "excited", "anxious", "tired", "sad"];
   // 얼굴이 나타난 뒤 다음 기분으로 넘어가기까지 기다립니다.
   const INTRO_STEP_MS = 1600;
+  // 한 문장 모드에서 문장 칸 아래와 화면 아래 사이에 남길 여백입니다.
+  const SINGLE_ARRIVAL_BOTTOM_GAP = 24;
 
   /**
    * id로 요소를 찾고, 없으면 기록만 남깁니다.
@@ -215,7 +217,13 @@
       }
       current_card[offset_key] = cursor;
       current_card[text_key] = next_text;
-      root.set_content_text(text_el, next_text);
+      if (is_lead && can_play_kinetic()) {
+        root.swap_kinetic_text(text_el, function apply_lead_text() {
+          root.set_content_text(text_el, next_text);
+        });
+      } else {
+        root.set_content_text(text_el, next_text);
+      }
       return true;
     }
     console.error("다른 문장을 찾지 못했습니다.", field_name);
@@ -276,6 +284,14 @@
         show_status(root.t("status_draw_first"));
         return;
       }
+      if (is_single_sentence_mode()) {
+        refresh_single_sentence();
+        return;
+      }
+      // 문장이 드러나는 중에 그 칸을 누르면 바꾸지 않고 연출만 끝 장면으로 건너뜁니다.
+      if (slot_name === "lead" && can_play_kinetic() && root.finish_kinetic_text(els.card_lead)) {
+        return;
+      }
       const is_changed = slot_name === "wise_0" || slot_name === "wise_1"
         ? replace_wise_slot(slot_name === "wise_0" ? 0 : 1)
         : replace_phrase_slot(slot_name);
@@ -286,6 +302,26 @@
       console.error("누른 칸의 문장을 바꾸지 못했습니다. 잠시 후 다시 눌러 주세요.", error);
       show_status(root.t("status_slot_failed"), true);
     }
+  }
+
+  /**
+   * 한 문장 모드에서 칸을 누르면, 연출 중이면 끝 장면으로 건너뛰고,
+   * 아니면 다른 종류의 칸을 골라 새 문장을 넣습니다. 그림은 그대로 둡니다.
+   */
+  function refresh_single_sentence() {
+    if (root.finish_single_sentence()) {
+      return;
+    }
+    root.swap_single_sentence(function fill_kind(kind_id) {
+      if (kind_id === "wise_0" || kind_id === "wise_1") {
+        return replace_wise_slot(kind_id === "wise_0" ? 0 : 1);
+      }
+      return replace_phrase_slot(kind_id);
+    }).then(function on_swapped(is_changed) {
+      if (is_changed === false) {
+        show_status(root.t("status_slot_failed"), true);
+      }
+    });
   }
 
   /**
@@ -977,6 +1013,7 @@
       }
       label.textContent = reading.label;
       link.textContent = reading.link_text;
+      stop_kinetic_texts();
       root.set_content_text(els.card_lead, reading.lead_text || "");
       root.set_content_text(els.card_caution, reading.caution_text || "");
       if (typeof root.list_vignettes === "function") {
@@ -999,6 +1036,8 @@
       els.card_head.hidden = false;
       els.card_body.hidden = false;
       show_face_slots(reading);
+      // 한 문장 모드에서는 얼굴 형태가 고른 칸들 중 하나만 보입니다. 얼굴 추천 글은 숨습니다.
+      sync_single_sentence(reading.mood_id, false);
       clear_messages();
       play_reveal();
       if (uses_card_arrival()) {
@@ -1020,6 +1059,7 @@
     try {
       const keep_vignette = Boolean(options && options.keep_vignette);
       reset_face_reading();
+      stop_kinetic_texts();
       root.set_i18n_text(els.card_mood, "mood_" + card.mood.id);
       root.set_content_text(els.card_lead, card.lead_text);
       root.set_content_text(els.card_caution, card.caution_text);
@@ -1031,6 +1071,7 @@
       els.card_empty.hidden = true;
       els.card_head.hidden = false;
       els.card_body.hidden = false;
+      sync_single_sentence(card.mood.id, Boolean(options && options.keep_kind));
       if (!keep_vignette) {
         play_reveal();
       }
@@ -1188,6 +1229,75 @@
   }
 
   /**
+   * 문장을 단어 묶음으로 드러내는 연출(js/kinetic_text.js)을 쓸 수 있는지 확인합니다.
+   * 시제품 단계라 오로라 화면의 밤의 한 줄에만 씁니다.
+   */
+  function can_play_kinetic() {
+    return document.documentElement.dataset.design === root.DESIGN_AURORA
+      && !is_single_sentence_mode()
+      && typeof root.play_kinetic_text === "function"
+      && typeof root.swap_kinetic_text === "function"
+      && typeof root.finish_kinetic_text === "function";
+  }
+
+  /**
+   * 카드에 문장 칸 하나만 보이는 한 문장 모드(js/single_sentence.js)인지 확인합니다.
+   */
+  function is_single_sentence_mode() {
+    return typeof root.is_single_sentence_active === "function" && root.is_single_sentence_active();
+  }
+
+  /**
+   * 카드의 기분에 맞춰 한 문장 모드를 켜거나 끕니다. 오로라에서만 켭니다.
+   * keep_kind가 참이면 전에 보이던 칸 종류를 그대로 씁니다.
+   */
+  function sync_single_sentence(mood_id, keep_kind) {
+    try {
+      if (typeof root.apply_single_sentence !== "function" || typeof root.clear_single_sentence !== "function") {
+        return;
+      }
+      const is_aurora = document.documentElement.dataset.design === root.DESIGN_AURORA;
+      if (is_aurora && root.is_single_sentence_mood(mood_id)) {
+        root.apply_single_sentence({ keep_kind: Boolean(keep_kind) });
+      } else {
+        root.clear_single_sentence();
+      }
+    } catch (error) {
+      console.error("한 문장 화면을 맞추지 못했습니다. 네 칸을 그대로 보여 줍니다.", error);
+    }
+  }
+
+  /**
+   * 새 문장을 넣기 전에 진행 중인 문장 연출을 멈춥니다.
+   */
+  function stop_kinetic_texts() {
+    if (typeof root.stop_kinetic_text === "function") {
+      root.stop_kinetic_text(els.card_lead);
+    }
+    if (typeof root.stop_single_sentence === "function") {
+      root.stop_single_sentence();
+    }
+  }
+
+  /**
+   * 그림이 제자리에 도착하면 문장을 드러냅니다.
+   * 한 문장 모드는 고른 칸을 별빛으로, 네 칸 모드는 밤의 한 줄을 단어 묶음으로 보여 줍니다.
+   */
+  function play_lead_kinetic() {
+    try {
+      if (is_single_sentence_mode() && typeof root.play_single_sentence === "function") {
+        root.play_single_sentence();
+        return;
+      }
+      if (can_play_kinetic()) {
+        root.play_kinetic_text(els.card_lead);
+      }
+    } catch (error) {
+      console.error("문장 연출을 시작하지 못했습니다. 문장은 그대로 보여 줍니다.", error);
+    }
+  }
+
+  /**
    * 날아다니던 그림을 카드 안의 제자리로 되돌립니다.
    */
   function release_flying_image() {
@@ -1248,6 +1358,9 @@
    */
   function scroll_top_for_arrival() {
     try {
+      if (is_single_sentence_mode()) {
+        return scroll_top_for_single_arrival();
+      }
       const start = els.draw_button;
       const has_second_quote = els.wise_quote_second && !els.wise_quote_second.hidden;
       const end = has_second_quote ? els.wise_quote_second : els.card_body;
@@ -1265,6 +1378,24 @@
       console.error("문장 묶음의 위치를 계산하지 못했습니다. 문장 칸만 가운데로 맞춥니다.", error);
       return scroll_top_for_center(els.card_body);
     }
+  }
+
+  /**
+   * 한 문장 모드는 위로 올라간 캐릭터 그림부터 문장 칸까지를 한 묶음으로 보고 가운데에 둡니다.
+   * 화면이 짧으면 문장이 먼저입니다. 문장 칸 아래가 화면 안에 남을 만큼만 그림을 위로 올립니다.
+   */
+  function scroll_top_for_single_arrival() {
+    // 날아가는 동안 그림은 body로 옮겨지고, 원래 자리는 같은 높이의 빈칸이 지킵니다.
+    const picture = document.getElementById("card_vignette_hold") || els.card_vignette;
+    if (!picture || !els.card_body) {
+      return scroll_top_for_center(els.card_body);
+    }
+    const picture_top = picture.getBoundingClientRect().top + window.scrollY;
+    const sentence_bottom = els.card_body.getBoundingClientRect().bottom + window.scrollY;
+    const centered = (picture_top + sentence_bottom) / 2 - window.innerHeight / 2;
+    const picture_limit = picture_top - arrival_top_gap();
+    const sentence_floor = sentence_bottom + SINGLE_ARRIVAL_BOTTOM_GAP - window.innerHeight;
+    return Math.max(0, Math.min(centered, picture_limit), sentence_floor);
   }
 
   /**
@@ -1328,6 +1459,7 @@
         const reduced_scroll = scroll_top_for_arrival();
         ensure_scroll_room(reduced_scroll);
         window.scrollTo(0, reduced_scroll);
+        play_lead_kinetic();
         return;
       }
 
@@ -1401,6 +1533,7 @@
             if (els.result_card) {
               els.result_card.classList.add("is_aurora_arriving");
             }
+            play_lead_kinetic();
           }
           window.requestAnimationFrame(step_flight);
         } catch (error) {
@@ -1527,6 +1660,10 @@
       window.clearTimeout(aurora_hold_timer);
       release_flying_image();
       document.documentElement.style.paddingBottom = "";
+      // 한 문장 모드는 오로라에만 씁니다. 다른 화면에서는 네 칸으로 되돌리고, 돌아오면 아래에서 다시 켭니다.
+      if (design !== root.DESIGN_AURORA && typeof root.clear_single_sentence === "function") {
+        root.clear_single_sentence();
+      }
       if (document.documentElement.dataset.design === root.DESIGN_TAROT) {
         if (typeof root.show_tarot_back === "function") {
           root.show_tarot_back();
@@ -1549,7 +1686,7 @@
       const keep_vignette = document.documentElement.dataset.design === root.DESIGN_AURORA
         && has_music_choice
         && !has_user_stopped_intro;
-      apply_card(validated, card, { keep_vignette: keep_vignette });
+      apply_card(validated, card, { keep_vignette: keep_vignette, keep_kind: true });
     } catch (error) {
       console.error("디자인에 맞는 문장을 다시 고르지 못했습니다.", error);
       show_error(root.MESSAGES.draw_failed);
