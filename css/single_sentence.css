@@ -6,6 +6,27 @@
   --single_text_color: #fff7ea;
 }
 
+/*
+  칸 높이와 위아래 여백은 js/app.js(fit_single_sentence_layout)가 화면 높이에 맞춰 넣습니다.
+  아래 문구가 화면 맨 아래에 닿고, 문장은 칸 가운데, 곧 화면 가운데에 옵니다.
+*/
+.card_body.is_single_sentence {
+  position: relative;
+  justify-content: center;
+  min-height: var(--single_body_height, auto);
+  padding-top: var(--single_shift_top, 0px);
+  padding-bottom: var(--single_shift_bottom, 0px);
+}
+
+/* 구분선은 칸 맨 아래에 붙여, 문장 가운데 맞추기에 끼어들지 않게 합니다. */
+.card_body.is_single_sentence > .star_divider {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+}
+
 /* 고른 칸(is_single_pick)이 아닌 문장 칸과 얼굴 추천 글은 숨깁니다. */
 .card_body.is_single_sentence > .verse:not(.is_single_pick) {
   display: none;

@@ -38,8 +38,10 @@
   const INTRO_MOOD_IDS = ["joy", "calm", "excited", "anxious", "tired", "sad"];
   // 얼굴이 나타난 뒤 다음 기분으로 넘어가기까지 기다립니다.
   const INTRO_STEP_MS = 1600;
-  // 한 문장 모드에서 문장 칸 아래와 화면 아래 사이에 남길 여백입니다.
-  const SINGLE_ARRIVAL_BOTTOM_GAP = 24;
+  // 한 문장 모드에서 아래 문구의 별 줄과 화면 아래 사이에 남길 여백입니다.
+  const SINGLE_EPILOGUE_BOTTOM_GAP = 16;
+  // 한 문장 모드가 마지막으로 도착한 스크롤 위치입니다. 칸을 바꿀 때 같은 화면 기준으로 다시 맞춥니다.
+  let single_layout_scroll_top = null;
 
   /**
    * id로 요소를 찾고, 없으면 기록만 남깁니다.
@@ -320,6 +322,16 @@
     }).then(function on_swapped(is_changed) {
       if (is_changed === false) {
         show_status(root.t("status_slot_failed"), true);
+        return;
+      }
+      // 칸 종류가 바뀌면 라벨, 인물 이름, 줄 수가 달라지므로 처음 도착한 화면 기준으로 다시 맞춥니다.
+      if (single_layout_scroll_top !== null) {
+        // 높이를 잠깐 지우는 사이 페이지가 짧아지면 브라우저가 스크롤을 끌어올리므로, 원래 자리로 되돌립니다.
+        const scroll_before = window.scrollY;
+        fit_single_sentence_layout(single_layout_scroll_top);
+        if (Math.abs(window.scrollY - scroll_before) > 1) {
+          window.scrollTo({ top: scroll_before, behavior: "instant" });
+        }
       }
     });
   }
@@ -1381,21 +1393,74 @@
   }
 
   /**
-   * 한 문장 모드는 위로 올라간 캐릭터 그림부터 문장 칸까지를 한 묶음으로 보고 가운데에 둡니다.
-   * 화면이 짧으면 문장이 먼저입니다. 문장 칸 아래가 화면 안에 남을 만큼만 그림을 위로 올립니다.
+   * 한 문장 모드는 칸이 짧아도 다른 기분과 같은 자리, 곧 위쪽 막대 바로 아래에 문장 뽑기 버튼을 둡니다.
    */
   function scroll_top_for_single_arrival() {
-    // 날아가는 동안 그림은 body로 옮겨지고, 원래 자리는 같은 높이의 빈칸이 지킵니다.
-    const picture = document.getElementById("card_vignette_hold") || els.card_vignette;
-    if (!picture || !els.card_body) {
+    if (!els.draw_button) {
       return scroll_top_for_center(els.card_body);
     }
-    const picture_top = picture.getBoundingClientRect().top + window.scrollY;
-    const sentence_bottom = els.card_body.getBoundingClientRect().bottom + window.scrollY;
-    const centered = (picture_top + sentence_bottom) / 2 - window.innerHeight / 2;
-    const picture_limit = picture_top - arrival_top_gap();
-    const sentence_floor = sentence_bottom + SINGLE_ARRIVAL_BOTTOM_GAP - window.innerHeight;
-    return Math.max(0, Math.min(centered, picture_limit), sentence_floor);
+    const button_top = els.draw_button.getBoundingClientRect().top + window.scrollY;
+    const scroll_top = Math.max(0, button_top - arrival_top_gap());
+    single_layout_scroll_top = scroll_top;
+    fit_single_sentence_layout(scroll_top);
+    return scroll_top;
+  }
+
+  /**
+   * 한 문장 모드에서 스크롤이 scroll_top에 멈췄을 때를 기준으로 문장 칸 높이를 늘립니다.
+   * 아래 문구(화면을 닫기 전…, 별 줄)는 화면 맨 아래에 닿고, 문장은 화면 세로 가운데에 옵니다.
+   * 칸 안에서는 CSS가 문장을 가운데에 두므로, 문장 길이가 바뀌어도 다시 계산하지 않아도 됩니다.
+   */
+  function fit_single_sentence_layout(scroll_top) {
+    const body = els.card_body;
+    if (!body) {
+      return;
+    }
+    try {
+      body.style.removeProperty("--single_body_height");
+      body.style.removeProperty("--single_shift_top");
+      body.style.removeProperty("--single_shift_bottom");
+      const epilogue_end = document.querySelector(".epilogue_stars");
+      if (!is_single_sentence_mode() || !epilogue_end) {
+        return;
+      }
+      const body_rect = body.getBoundingClientRect();
+      const body_top = body_rect.top + window.scrollY;
+      const body_bottom = body_rect.bottom + window.scrollY;
+      const epilogue_bottom = epilogue_end.getBoundingClientRect().bottom + window.scrollY + SINGLE_EPILOGUE_BOTTOM_GAP;
+      const screen_bottom = scroll_top + window.innerHeight;
+      const extra = screen_bottom - epilogue_bottom;
+      // 글이 이미 화면보다 길면 늘리지 않습니다.
+      if (extra <= 0) {
+        return;
+      }
+      // 칸 위쪽(화면 위~칸 위)과 아래쪽(칸 아래~화면 아래) 높이가 같아야 칸 가운데가 화면 가운데입니다.
+      const space_above = body_top - scroll_top;
+      const space_below = epilogue_bottom - body_bottom;
+      let shift = space_above - space_below;
+      body.style.setProperty("--single_body_height", Math.round(body_rect.height + extra) + "px");
+      apply_single_shift(body, shift);
+      // 칸 안에는 라벨과 인물 이름도 있으므로, 문장 줄 자체의 가운데를 한 번 더 화면 가운데로 옮깁니다.
+      // 아래 여백이 1px 늘면 내용은 0.5px 올라가므로 차이의 두 배만큼 고칩니다.
+      const sentence = body.querySelector(".is_single_pick .sentence");
+      if (sentence) {
+        const sentence_rect = sentence.getBoundingClientRect();
+        const sentence_center = sentence_rect.top + window.scrollY + sentence_rect.height / 2;
+        const screen_center = scroll_top + window.innerHeight / 2;
+        shift += (sentence_center - screen_center) * 2;
+        apply_single_shift(body, shift);
+      }
+    } catch (error) {
+      console.error("한 문장 화면의 높이를 맞추지 못했습니다. 기본 배치로 보여 줍니다.", error);
+    }
+  }
+
+  /**
+   * shift가 양수면 아래 여백을, 음수면 위 여백을 늘려 칸 안의 내용을 위아래로 옮깁니다.
+   */
+  function apply_single_shift(body, shift) {
+    body.style.setProperty("--single_shift_top", Math.round(Math.max(0, -shift)) + "px");
+    body.style.setProperty("--single_shift_bottom", Math.round(Math.max(0, shift)) + "px");
   }
 
   /**
